@@ -11,20 +11,22 @@ export const About = () => {
           
           <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)]">
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              I'm a motivated Computer Science student with a strong foundation in software development 
-              and a passion for creating impactful technology solutions. My journey in tech has been 
-              driven by curiosity and a commitment to continuous learning.
+              I'm a Statistics and Machine Learning student at Carnegie Mellon University with a strong 
+              foundation in data science, statistical analysis, and forensic evidence research. My academic 
+              journey includes dual enrollment at Iowa State University where I achieved a perfect 4.0 GPA.
             </p>
             
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              Throughout my academic career, I've developed expertise in full-stack development, 
-              working with modern frameworks and technologies. I thrive in collaborative environments 
-              and enjoy tackling complex problems with creative solutions.
+              My research experience spans multiple projects in forensic statistics, including camera fingerprinting 
+              for criminal investigations and handwriting analysis. I've contributed to published research manuscripts 
+              and presented at state-level science fairs, earning recognition and awards for my work.
             </p>
 
             <p className="text-lg text-muted-foreground leading-relaxed">
-              I'm actively seeking an internship opportunity where I can contribute my skills, 
-              learn from experienced professionals, and make a meaningful impact on real-world projects.
+              Beyond academics, I'm an active member of FIRST Robotics Competition Team Neutrino, having qualified 
+              for World Championships multiple years and winning the prestigious World Championship Engineering 
+              Inspiration Award. I'm seeking internship opportunities to apply my analytical skills and passion 
+              for data-driven problem solving to real-world challenges.
             </p>
           </Card>
         </div>
