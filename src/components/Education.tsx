@@ -3,13 +3,34 @@ import { GraduationCap } from "lucide-react";
 
 const educationData = [
   {
-    degree: "Bachelor of Science in Computer Science",
-    institution: "University Name",
-    period: "2021 - 2025",
+    degree: "Bachelor of Science in Statistics and Machine Learning",
+    institution: "Carnegie Mellon University",
+    location: "Pittsburgh, PA",
+    period: "Aug 2025 - May 2029",
     details: [
-      "GPA: 3.8/4.0",
-      "Relevant Coursework: Data Structures, Algorithms, Web Development, Database Systems",
-      "Dean's List: Fall 2022, Spring 2023"
+      "Major in Statistics and Machine Learning",
+      "Department of Statistics and Data Science"
+    ]
+  },
+  {
+    degree: "Dual Enrollment (PSEO Program)",
+    institution: "Iowa State University",
+    location: "Ames, IA",
+    period: "Aug 2023 - May 2025",
+    details: [
+      "GPA: 4.00/4.00",
+      "Post-Secondary Enrollment Options program"
+    ]
+  },
+  {
+    degree: "High School Diploma",
+    institution: "Ames High School",
+    location: "Ames, IA",
+    period: "Aug 2021 - May 2025",
+    details: [
+      "GPA: 4.02/4.00",
+      "The American Legion Certificate of Distinguished Academic Achievement",
+      "National Honor Society"
     ]
   }
 ];
@@ -40,6 +61,10 @@ export const Education = () => {
                     <div className="flex flex-wrap gap-2 items-center mb-4">
                       <p className="text-lg text-primary font-medium">
                         {edu.institution}
+                      </p>
+                      <span className="text-muted-foreground">•</span>
+                      <p className="text-muted-foreground">
+                        {edu.location}
                       </p>
                       <span className="text-muted-foreground">•</span>
                       <p className="text-muted-foreground">

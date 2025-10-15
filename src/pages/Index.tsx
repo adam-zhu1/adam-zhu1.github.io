@@ -2,7 +2,9 @@ import { Hero } from "@/components/Hero";
 import { About } from "@/components/About";
 import { Skills } from "@/components/Skills";
 import { Education } from "@/components/Education";
-import { Projects } from "@/components/Projects";
+import { Experience } from "@/components/Experience";
+import { Research } from "@/components/Research";
+import { Robotics } from "@/components/Robotics";
 import { Contact } from "@/components/Contact";
 
 const Index = () => {
@@ -12,12 +14,14 @@ const Index = () => {
       <About />
       <Skills />
       <Education />
-      <Projects />
+      <Experience />
+      <Research />
+      <Robotics />
       <Contact />
       
       <footer className="bg-foreground/5 py-8 text-center">
         <p className="text-muted-foreground">
-          © {new Date().getFullYear()} Your Name. All rights reserved.
+          © {new Date().getFullYear()} Adam Zhu. All rights reserved.
         </p>
       </footer>
     </main>

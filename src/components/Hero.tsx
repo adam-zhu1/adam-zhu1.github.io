@@ -21,16 +21,16 @@ export const Hero = () => {
       <div className="relative z-10 container mx-auto px-6 py-20 text-center">
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground leading-tight">
-            Hello, I'm <span className="bg-gradient-to-r from-white to-primary-foreground/80 bg-clip-text text-transparent">Your Name</span>
+            Hello, I'm <span className="bg-gradient-to-r from-white to-primary-foreground/80 bg-clip-text text-transparent">Adam Zhu</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-primary-foreground/90 font-light">
-            Computer Science Student | Full-Stack Developer | Tech Enthusiast
+            Statistics & Machine Learning Student | Research Intern | Robotics Enthusiast
           </p>
           
           <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-            Passionate about building innovative solutions and learning new technologies. 
-            Currently seeking internship opportunities to apply my skills and grow as a developer.
+            Carnegie Mellon University student passionate about data science, machine learning, and forensic statistics. 
+            Currently seeking internship opportunities to apply statistical analysis and research skills.
           </p>
 
           <div className="flex gap-4 justify-center pt-4">
@@ -55,6 +55,15 @@ export const Hero = () => {
 
           <div className="flex gap-6 justify-center pt-8">
             <a 
+              href="https://www.linkedin.com/in/adam-zhu-cmu" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              aria-label="LinkedIn Profile"
+            >
+              <Linkedin className="w-6 h-6" />
+            </a>
+            <a 
               href="https://github.com" 
               target="_blank" 
               rel="noopener noreferrer"
@@ -64,16 +73,7 @@ export const Hero = () => {
               <Github className="w-6 h-6" />
             </a>
             <a 
-              href="https://linkedin.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-              aria-label="LinkedIn Profile"
-            >
-              <Linkedin className="w-6 h-6" />
-            </a>
-            <a 
-              href="mailto:your.email@example.com"
+              href="mailto:adamzhu@andrew.cmu.edu"
               className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
               aria-label="Email Contact"
             >

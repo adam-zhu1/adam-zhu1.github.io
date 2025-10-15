@@ -12,7 +12,8 @@ export const Contact = () => {
           </h2>
           
           <p className="text-lg text-muted-foreground mb-12">
-            I'm actively looking for internship opportunities. Feel free to reach out if you'd like to discuss potential opportunities or just want to connect!
+            I'm actively looking for internship opportunities in data science, machine learning, and statistical analysis. 
+            Feel free to reach out if you'd like to discuss potential opportunities or just want to connect!
           </p>
 
           <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)]">
@@ -23,11 +24,11 @@ export const Contact = () => {
                 className="gap-2 h-auto py-4"
                 asChild
               >
-                <a href="mailto:your.email@example.com">
+                <a href="mailto:adamzhu@andrew.cmu.edu">
                   <Mail className="w-5 h-5" />
                   <div className="text-left">
                     <div className="font-semibold">Email</div>
-                    <div className="text-sm text-muted-foreground">your.email@example.com</div>
+                    <div className="text-sm text-muted-foreground">adamzhu@andrew.cmu.edu</div>
                   </div>
                 </a>
               </Button>
@@ -38,11 +39,11 @@ export const Contact = () => {
                 className="gap-2 h-auto py-4"
                 asChild
               >
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.linkedin.com/in/adam-zhu-cmu" target="_blank" rel="noopener noreferrer">
                   <Linkedin className="w-5 h-5" />
                   <div className="text-left">
                     <div className="font-semibold">LinkedIn</div>
-                    <div className="text-sm text-muted-foreground">/in/yourprofile</div>
+                    <div className="text-sm text-muted-foreground">/in/adam-zhu-cmu</div>
                   </div>
                 </a>
               </Button>
