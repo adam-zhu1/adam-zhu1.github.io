@@ -34,18 +34,24 @@ const presentation = {
 
 const awards = [
   {
-    category: "Grant Awards",
-    items: [
-      "First Place in Mathematics Category",
-      "Honorable Mention in the 2024 Larry Schwinger Seminar PPT Presentation"
-    ]
+    title: "World Championship Engineering Inspiration Award",
+    organization: "FIRST Robotics (1 of 6 in the world)",
+    date: "April 2022"
   },
   {
-    category: "Special Awards",
-    items: [
-      "Winner of $500 Scholarship from Department of Industrial and Manufacturing Systems Engineering at Iowa State University",
-      "Winner of RAYGUN – Innovative Scientist Award"
-    ]
+    title: "1st Place – Mathematics Category & RAYGUN Innovative Scientist Award",
+    organization: "State Science & Technology Fair of Iowa",
+    date: "April 2024"
+  },
+  {
+    title: "Congressional Award (Silver Certificate)",
+    organization: "The Congressional Award Foundation, U.S. Congress",
+    date: "January 2025"
+  },
+  {
+    title: "Eagle Scout Rank",
+    organization: "Boy Scouts of America",
+    date: "May 2025"
   }
 ];
 
@@ -131,25 +137,28 @@ export const Research = () => {
           <div>
             <h3 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
               <Award className="w-6 h-6 text-primary" />
-              Honors & Awards - State Science & Technology Fair of Iowa (2024)
+              Honors & Awards
             </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              {awards.map((category, idx) => (
+            <div className="grid md:grid-cols-2 gap-4">
+              {awards.map((award, idx) => (
                 <Card 
                   key={idx} 
-                  className="p-6 bg-card border-border"
+                  className="p-6 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300"
                 >
-                  <h4 className="text-lg font-semibold text-foreground mb-4">
-                    {category.category}
-                  </h4>
-                  <ul className="space-y-2">
-                    {category.items.map((item, itemIdx) => (
-                      <li key={itemIdx} className="text-muted-foreground flex items-start gap-2">
-                        <span className="text-primary mt-1">🏆</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🏆</span>
+                    <div>
+                      <h4 className="text-lg font-semibold text-foreground mb-2">
+                        {award.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {award.organization}
+                      </p>
+                      <p className="text-sm text-primary">
+                        {award.date}
+                      </p>
+                    </div>
+                  </div>
                 </Card>
               ))}
             </div>

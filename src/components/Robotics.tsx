@@ -1,6 +1,16 @@
 import { Card } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 
+const roboticsData = {
+  title: "Co-captain (2023-2024) | Graphic Manager (2022-2023)",
+  period: "June 2021 - June 2025",
+  responsibilities: [
+    "Oversaw seven sub-teams and 40+ members, coordinating outreach, fundraising, and operations year-round",
+    "Organized and led the inaugural FIRST LEGO League Blastoff Camp to provide hands-on STEM experiences",
+    "Represented the team to sponsors, judges, and media, contributing to multiple NASA Engineering Inspiration Awards and FIRST World Championship qualifications"
+  ]
+};
+
 const roboticsYears = [
   {
     year: "2025",
@@ -48,10 +58,27 @@ export const Robotics = () => {
             <h2 className="text-4xl font-bold text-foreground mb-4">
               FIRST Robotics Competition
             </h2>
-            <p className="text-xl text-primary font-semibold">
+            <p className="text-xl text-primary font-semibold mb-2">
               Team Neutrino (FRC #3928)
             </p>
+            <p className="text-muted-foreground">
+              {roboticsData.title} • {roboticsData.period}
+            </p>
           </div>
+
+          <Card className="p-8 mb-8 bg-card border-border">
+            <h3 className="text-2xl font-semibold text-foreground mb-4">Leadership Role</h3>
+            <ul className="space-y-2">
+              {roboticsData.responsibilities.map((resp, idx) => (
+                <li key={idx} className="text-muted-foreground flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>{resp}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <h3 className="text-2xl font-semibold text-foreground mb-6 text-center">Competition Achievements</h3>
           
           <div className="grid md:grid-cols-2 gap-6">
             {roboticsYears.map((yearData, idx) => (

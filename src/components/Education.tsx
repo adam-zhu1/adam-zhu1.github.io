@@ -6,9 +6,10 @@ const educationData = [
     degree: "Bachelor of Science in Statistics and Machine Learning",
     institution: "Carnegie Mellon University",
     location: "Pittsburgh, PA",
-    period: "Aug 2025 - May 2029",
+    period: "Expected May 2029",
     details: [
       "Major in Statistics and Machine Learning",
+      "Minor in Computer Science",
       "Department of Statistics and Data Science"
     ]
   },
@@ -26,11 +27,12 @@ const educationData = [
     degree: "High School Diploma",
     institution: "Ames High School",
     location: "Ames, IA",
-    period: "Aug 2021 - May 2025",
+    period: "Graduated May 2025",
     details: [
       "GPA: 4.02/4.00",
       "The American Legion Certificate of Distinguished Academic Achievement",
-      "National Honor Society"
+      "National Honor Society",
+      "Eagle Scout, Boy Scouts of America"
     ]
   }
 ];
