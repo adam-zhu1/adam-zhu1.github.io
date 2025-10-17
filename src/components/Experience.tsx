@@ -6,33 +6,41 @@ const experiences = [
     title: "Research Internship",
     organization: "Center for Statistics and Applications in Forensic Evidence",
     location: "Iowa State University",
-    period: "June 2024 - August 2024",
+    period: "June 2023 - August 2024",
     responsibilities: [
-      "Helped degrade handwriting samples to create more realistic database for handwriting analysis",
-      "Examined the source of threatening letters using statistical methods",
-      "Learned to use R packages to create metrics measuring similarity scores between threatening letters and suspect handwriting"
+      "Conducted forensic data analysis on 24,000+ camera images to study the effectiveness of camera fingerprinting for device identification",
+      "Developed methods to degrade and compare handwriting samples, creating a realistic dataset for handwriting similarity analysis",
+      "Co-author of a manuscript under review by Forensic Sciences detailing results from camera and handwriting analysis projects"
     ]
   },
   {
-    title: "Summer Research Internship",
-    organization: "Center for Statistics and Applications in Forensic Evidence",
+    title: "Research Collaborator",
+    organization: "Virtual Reality Applications Center",
     location: "Iowa State University",
-    period: "June 2023 - May 2024",
+    period: "January 2024 - June 2024",
     responsibilities: [
-      "Gathered dataset of 24,000 images for camera fingerprinting project",
-      "Studied utilization of camera fingerprints to trace source of images found on criminal sites",
-      "Engaged in data analysis using camera fingerprints, gaining experience in coding"
+      "Conducted statistical analysis on experimental data evaluating the effectiveness of automated communication strategies in simulated school shooting evacuations",
+      "Co-author of a manuscript under preparation on project findings"
     ]
   },
   {
     title: "Camp Co-designer",
-    organization: "COR Robotics Camp",
-    location: "Ames, IA",
-    period: "Summer 2024 and 2025",
+    organization: "COR Robotics Summer Camps",
+    location: "Central Iowa",
+    period: "Summers in 2024 & 2025",
     responsibilities: [
-      "Designed camp courses teaching elementary students Battle drones, Drone racing, Eureka Engineering, RC Wars, Comic Creation, and Game Design",
-      "Provided avenue for educating and inspiring next generation of problem-solvers through entertaining STEM activities",
-      "Kept kids engaged in STEM during summer"
+      "Designed and led hands-on robotics and engineering activities, co-developing curriculum on drone racing, battle drones, and Eureka engineering",
+      "Taught 100+ elementary and middle school students foundational STEM concepts through interactive, project-based learning"
+    ]
+  },
+  {
+    title: "Team Member",
+    organization: "Arby's",
+    location: "Ames, IA",
+    period: "June 2020 - June 2025",
+    responsibilities: [
+      "Operated front register, drive-through, and backline efficiently in a fast-paced environment",
+      "Developed strong customer service and time management skills"
     ]
   }
 ];
