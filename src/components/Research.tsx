@@ -34,29 +34,46 @@ const presentation = {
 
 const awards = [
   {
-    title: "Congressional Award (Silver Certificate)",
-    organization: "The Congressional Award Foundation, U.S. Congress",
-    date: "January 2025"
+    title: "Congressional Award – Silver Certificate",
+    organization: "United States Congress",
+    date: "January 2025",
+    description: "National recognition for achievement in voluntary public service, personal development, physical fitness, and expedition planning."
+  },
+  {
+    title: "Piano Awards – IMTA, OPUS, and MTNA Competitions",
+    organization: "Iowa Music Teachers Association (IMTA), Music Teachers National Association (MTNA), and OPUS",
+    date: "November 2024",
+    description: "Recognized in multiple state and regional piano competitions, including State 1st Prize in OPUS Piano Audition (2023 & 2024), West Central First Alternate in MTNA Senior Piano Duet Competition (2019), and State and Regional Awards in IMTA Piano Auditions (Levels A–F)."
+  },
+  {
+    title: "$500 Scholarship – Department of Industrial and Manufacturing Systems Engineering",
+    organization: "Iowa State University",
+    date: "April 2024",
+    description: "Scholarship awarded to outstanding high school researchers demonstrating excellence in applied data science and statistical analysis."
   },
   {
     title: "1st Place – Mathematics Category",
     organization: "State Science & Technology Fair of Iowa",
-    date: "April 2024"
+    date: "April 2024",
+    description: "Recognized for research excellence in mathematical modeling and data analysis. Presented \"Estimating the Effectiveness of Automated Communication Strategies in School Shooting Evacuations\" at the 67th State Science & Technology Fair of Iowa (SSTFI)."
   },
   {
     title: "RAYGUN Innovative Scientist Award",
-    organization: "State Science & Technology Fair of Iowa",
-    date: "April 2024"
+    organization: "RAYGUN (Des Moines, IA)",
+    date: "April 2024",
+    description: "Awarded for originality, creativity, and innovative scientific thinking demonstrated through research in behavioral modeling and forensic analytics."
   },
   {
     title: "Eagle Scout Rank",
     organization: "Boy Scouts of America",
-    date: "May 2023"
+    date: "May 2023",
+    description: "Achieved the highest rank in Scouting by demonstrating leadership, service, and outdoor proficiency. Led a team in planning and completing a high-impact community service project and served in multiple troop leadership roles, including Assistant Patrol Leader and Troop Historian."
   },
   {
-    title: "World Championship Engineering Inspiration Award",
+    title: "World Championship – Engineering Inspiration Award",
     organization: "FIRST Robotics (1 of 6 in the world)",
-    date: "April 2022"
+    date: "April 2022",
+    description: "Recognized as one of only six teams worldwide for outstanding impact in STEM outreach and community engagement at the FIRST Robotics Championship."
   }
 ];
 
@@ -159,9 +176,14 @@ export const Research = () => {
                       <p className="text-sm text-muted-foreground mb-1">
                         {award.organization}
                       </p>
-                      <p className="text-sm text-primary">
+                      <p className="text-sm text-primary mb-2">
                         {award.date}
                       </p>
+                      {award.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {award.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Card>
