@@ -31,8 +31,7 @@ const educationData = [
     details: [
       "GPA: 4.02/4.00",
       "The American Legion Certificate of Distinguished Academic Achievement",
-      "National Honor Society",
-      "Eagle Scout, Boy Scouts of America"
+      "National Honor Society"
     ]
   }
 ];

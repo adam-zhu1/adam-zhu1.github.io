@@ -30,7 +30,18 @@ const experiences = [
     period: "Summers in 2024 & 2025",
     responsibilities: [
       "Designed and led hands-on robotics and engineering activities, co-developing curriculum on drone racing, battle drones, and Eureka engineering",
-      "Taught 100+ elementary and middle school students foundational STEM concepts through interactive, project-based learning"
+      "Taught 100+ students in grades 3–8 foundational STEM concepts through hands-on, project-based learning"
+    ]
+  },
+  {
+    title: "Co-captain (2023-2024) | Graphic Manager (2022-2023)",
+    organization: "Team Neutrino, FIRST Robotics Team #3928",
+    location: "Story County, IA",
+    period: "June 2021 - June 2025",
+    responsibilities: [
+      "Oversaw seven sub-teams and 40+ members, coordinating outreach, fundraising, and operations year-round",
+      "Organized and led the inaugural FIRST LEGO League Blastoff Camp to provide hands-on STEM experiences",
+      "Represented the team to sponsors, judges, and media, contributing to multiple NASA Engineering Inspiration Awards and FIRST World Championship qualifications"
     ]
   },
   {
@@ -39,8 +50,16 @@ const experiences = [
     location: "Ames, IA",
     period: "June 2020 - June 2025",
     responsibilities: [
-      "Operated front register, drive-through, and backline efficiently in a fast-paced environment",
-      "Developed strong customer service and time management skills"
+      "Operated front register, drive-through, and backline efficiently in a fast-paced environment"
+    ]
+  },
+  {
+    title: "Student Advisory Board (Selected Member)",
+    organization: "State Science & Technology Fair of Iowa (SSTFI)",
+    location: "Ames, IA",
+    period: "July 2024 - April 2025",
+    responsibilities: [
+      "Collaborated with organizers to recruit schools, students, and guest speakers for statewide STEM participation, while planning initiatives to strengthen engagement and improve the fair's outreach"
     ]
   }
 ];

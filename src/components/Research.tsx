@@ -34,24 +34,29 @@ const presentation = {
 
 const awards = [
   {
-    title: "World Championship Engineering Inspiration Award",
-    organization: "FIRST Robotics (1 of 6 in the world)",
-    date: "April 2022"
-  },
-  {
-    title: "1st Place – Mathematics Category & RAYGUN Innovative Scientist Award",
-    organization: "State Science & Technology Fair of Iowa",
-    date: "April 2024"
-  },
-  {
     title: "Congressional Award (Silver Certificate)",
     organization: "The Congressional Award Foundation, U.S. Congress",
     date: "January 2025"
   },
   {
+    title: "1st Place – Mathematics Category",
+    organization: "State Science & Technology Fair of Iowa",
+    date: "April 2024"
+  },
+  {
+    title: "RAYGUN Innovative Scientist Award",
+    organization: "State Science & Technology Fair of Iowa",
+    date: "April 2024"
+  },
+  {
     title: "Eagle Scout Rank",
     organization: "Boy Scouts of America",
-    date: "May 2025"
+    date: "May 2023"
+  },
+  {
+    title: "World Championship Engineering Inspiration Award",
+    organization: "FIRST Robotics (1 of 6 in the world)",
+    date: "April 2022"
   }
 ];
 
