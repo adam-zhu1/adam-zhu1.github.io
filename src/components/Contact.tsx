@@ -54,11 +54,11 @@ export const Contact = () => {
                 className="gap-2 h-auto py-4"
                 asChild
               >
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/adam-zhu1" target="_blank" rel="noopener noreferrer">
                   <Github className="w-5 h-5" />
                   <div className="text-left">
                     <div className="font-semibold">GitHub</div>
-                    <div className="text-sm text-muted-foreground">@yourusername</div>
+                    <div className="text-sm text-muted-foreground">@adam-zhu1</div>
                   </div>
                 </a>
               </Button>
