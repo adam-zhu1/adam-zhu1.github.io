@@ -47,7 +47,8 @@ export const PersonalInterests = () => {
               return (
                 <Card
                   key={idx}
-                  className="overflow-hidden bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300"
+                  className="overflow-hidden bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300 animate-fade-in hover:-translate-y-1"
+                  style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="aspect-[4/3] overflow-hidden">
                     <img

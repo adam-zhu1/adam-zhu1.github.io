@@ -55,7 +55,8 @@ export const Skills = () => {
               return (
                 <Card 
                   key={idx} 
-                  className="p-8 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300"
+                  className="p-8 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300 animate-fade-in hover:-translate-y-1"
+                  style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-3 bg-primary/10 rounded-lg">
@@ -70,7 +71,7 @@ export const Skills = () => {
                     {category.skills.map((skill, skillIdx) => (
                       <span
                         key={skillIdx}
-                        className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-full text-sm hover:bg-primary/10 transition-colors"
+                        className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-full text-sm hover:bg-primary/10 transition-all hover:scale-105 cursor-default"
                       >
                         {skill}
                       </span>

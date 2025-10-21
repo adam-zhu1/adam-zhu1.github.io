@@ -9,7 +9,7 @@ export const About = () => {
             About Me
           </h2>
           
-          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)]">
+          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)] animate-fade-in hover:shadow-[var(--shadow-elegant)] transition-shadow duration-300">
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
               I'm a Statistics and Machine Learning student at Carnegie Mellon University with a strong 
               foundation in data science, statistical analysis, and forensic evidence research. My academic 

@@ -49,7 +49,8 @@ export const Education = () => {
             {educationData.map((edu, idx) => (
               <Card 
                 key={idx} 
-                className="p-8 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-all duration-300"
+                className="p-8 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-all duration-300 animate-fade-in hover:-translate-y-1"
+                style={{ animationDelay: `${idx * 100}ms` }}
               >
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-primary/10 rounded-lg">
