@@ -61,23 +61,23 @@ export const Hero = () => {
                 href="https://www.linkedin.com/in/adam-zhu-cmu" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-all hover:scale-110"
                 aria-label="LinkedIn Profile"
               >
                 <Linkedin className="w-6 h-6" />
               </a>
               <a 
-                href="https://github.com" 
+                href="https://github.com/adam-zhu1" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors hover:scale-110 transition-transform"
                 aria-label="GitHub Profile"
               >
                 <Github className="w-6 h-6" />
               </a>
               <a 
                 href="mailto:adamzhu@andrew.cmu.edu"
-                className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                className="text-primary-foreground/80 hover:text-primary-foreground transition-all hover:scale-110"
                 aria-label="Email Contact"
               >
                 <Mail className="w-6 h-6" />

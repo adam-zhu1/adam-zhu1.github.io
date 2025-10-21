@@ -16,12 +16,12 @@ export const Contact = () => {
             Feel free to reach out if you'd like to discuss potential opportunities or just want to connect!
           </p>
 
-          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)]">
+          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)] animate-fade-in">
             <div className="grid md:grid-cols-2 gap-6">
               <Button 
                 variant="outline"
                 size="lg"
-                className="gap-2 h-auto py-4"
+                className="gap-2 h-auto py-4 hover:-translate-y-1 transition-transform"
                 asChild
               >
                 <a href="mailto:adamzhu@andrew.cmu.edu">
@@ -36,7 +36,7 @@ export const Contact = () => {
               <Button 
                 variant="outline"
                 size="lg"
-                className="gap-2 h-auto py-4"
+                className="gap-2 h-auto py-4 hover:-translate-y-1 transition-transform"
                 asChild
               >
                 <a href="https://www.linkedin.com/in/adam-zhu-cmu" target="_blank" rel="noopener noreferrer">
@@ -51,7 +51,7 @@ export const Contact = () => {
               <Button 
                 variant="outline"
                 size="lg"
-                className="gap-2 h-auto py-4"
+                className="gap-2 h-auto py-4 hover:-translate-y-1 transition-transform"
                 asChild
               >
                 <a href="https://github.com/adam-zhu1" target="_blank" rel="noopener noreferrer">
@@ -65,7 +65,7 @@ export const Contact = () => {
 
               <Button 
                 size="lg"
-                className="gap-2 h-auto py-4 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                className="gap-2 h-auto py-4 bg-gradient-to-r from-primary to-accent hover:opacity-90 hover:-translate-y-1 transition-all"
               >
                 <Download className="w-5 h-5" />
                 <div className="text-left">
