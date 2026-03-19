@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import portrait from "@/assets/adam-portrait-1.jpg";
+import { DecodingName } from "@/components/DecodingName";
 
 const tiles = [
   { title: "About", to: "/about", icon: User, desc: "What I care about and how I work." },
@@ -41,7 +42,7 @@ export default function Landing() {
                 </div>
 
                 <h1 className="mt-6 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
-                  Adam Zhu
+                  <DecodingName />
                 </h1>
                 <p className="mt-4 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed">
                   Statistics &amp; Machine Learning student at CMU. Choose a section below to explore.
