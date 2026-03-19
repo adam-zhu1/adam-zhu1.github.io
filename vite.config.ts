@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // GitHub Pages can be served from different base paths. Using a relative base in
+  // production prevents blank-page issues caused by asset URLs resolving incorrectly.
+  base: mode === "production" ? "./" : "/",
   server: {
     host: "::",
     port: 8080,
