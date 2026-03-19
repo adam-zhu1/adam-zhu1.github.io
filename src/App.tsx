@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
+import { PageTransition } from "@/components/PageTransition";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/AboutPage";
@@ -23,17 +24,18 @@ const App = () => (
       <Sonner />
       <HashRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/education" element={<EducationPage />} />
-          <Route path="/skills" element={<SkillsPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/experience" element={<ExperiencePage />} />
-          <Route path="/research" element={<ResearchPage />} />
-          <Route path="/personal" element={<PersonalPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route element={<PageTransition />}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/education" element={<EducationPage />} />
+            <Route path="/skills" element={<SkillsPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/experience" element={<ExperiencePage />} />
+            <Route path="/research" element={<ResearchPage />} />
+            <Route path="/personal" element={<PersonalPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
       </HashRouter>
     </TooltipProvider>
