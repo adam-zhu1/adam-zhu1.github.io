@@ -9,43 +9,43 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 220 15% 20%;
+    --foreground: 220 15% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 20%;
+    --card-foreground: 220 15% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 20%;
+    --popover-foreground: 220 15% 14%;
 
-    --primary: 200 95% 45%;
+    --primary: 222 89% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 190 85% 55%;
+    --primary-glow: 222 89% 62%;
 
     --secondary: 220 20% 96%;
-    --secondary-foreground: 220 15% 20%;
+    --secondary-foreground: 220 15% 14%;
 
     --muted: 220 15% 96%;
     --muted-foreground: 220 10% 50%;
 
-    --accent: 180 70% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 220 20% 92%;
+    --accent-foreground: 220 15% 14%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 15% 90%;
     --input: 220 15% 90%;
-    --ring: 200 95% 45%;
+    --ring: 222 89% 55%;
     
     --radius: 0.75rem;
     
     /* Custom gradient tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(200 95% 45%), hsl(180 70% 50%));
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(200 30% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(222 89% 55%), hsl(222 89% 62%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 98%));
     
     /* Shadow tokens */
-    --shadow-elegant: 0 10px 40px -10px hsl(200 95% 45% / 0.2);
-    --shadow-card: 0 2px 12px hsl(220 15% 20% / 0.08);
+    --shadow-elegant: 0 18px 60px -24px hsl(222 89% 55% / 0.28);
+    --shadow-card: 0 1px 0 hsl(220 15% 14% / 0.08), 0 12px 40px -26px hsl(220 15% 14% / 0.24);
     
     /* Animation tokens */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -68,40 +68,40 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 220 15% 95%;
+    --background: 225 20% 6%;
+    --foreground: 0 0% 96%;
 
-    --card: 220 20% 12%;
-    --card-foreground: 220 15% 95%;
+    --card: 225 18% 9%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 220 15% 95%;
+    --popover: 225 18% 9%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 200 95% 45%;
+    --primary: 222 89% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 190 85% 55%;
+    --primary-glow: 222 89% 72%;
 
-    --secondary: 220 20% 16%;
-    --secondary-foreground: 220 15% 95%;
+    --secondary: 225 14% 12%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 220 15% 16%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 225 14% 12%;
+    --muted-foreground: 220 8% 68%;
 
-    --accent: 180 70% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 225 14% 14%;
+    --accent-foreground: 0 0% 96%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 200 95% 45%;
+    --border: 225 12% 16%;
+    --input: 225 12% 16%;
+    --ring: 222 89% 65%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(200 95% 45%), hsl(180 70% 50%));
-    --gradient-subtle: linear-gradient(180deg, hsl(220 25% 8%), hsl(220 20% 12%));
+    --gradient-primary: linear-gradient(135deg, hsl(222 89% 65%), hsl(222 89% 72%));
+    --gradient-subtle: linear-gradient(180deg, hsl(225 20% 6%), hsl(225 18% 9%));
     
-    --shadow-elegant: 0 10px 40px -10px hsl(200 95% 45% / 0.3);
-    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.3);
+    --shadow-elegant: 0 18px 60px -26px hsl(222 89% 65% / 0.32);
+    --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.06), 0 16px 50px -34px hsl(0 0% 0% / 0.7);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -120,5 +120,15 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  section[id] {
+    scroll-margin-top: 96px;
   }
 }
