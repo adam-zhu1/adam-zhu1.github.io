@@ -69,43 +69,45 @@ export const Experience = () => {
     <section id="experience" className="py-20">
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-foreground mb-12 text-center">
-            Work Experience
-          </h2>
+          <div className="mb-10">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Experience</h2>
+            <p className="mt-2 text-muted-foreground max-w-2xl">
+              A concise timeline. Each entry is scannable first, with details if you want them.
+            </p>
+          </div>
           
           <div className="space-y-6">
             {experiences.map((exp, idx) => (
               <Card 
                 key={idx} 
-                className="p-8 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300 animate-fade-in hover:-translate-y-1"
-                style={{ animationDelay: `${idx * 50}ms` }}
+                className="p-7 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
               >
                 <div className="flex items-start gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
+                  <div className="p-3 bg-accent/40 rounded-lg border border-border">
                     <Briefcase className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-2xl font-semibold text-foreground mb-2">
+                    <h3 className="text-lg md:text-xl font-semibold text-foreground">
                       {exp.title}
                     </h3>
                     <div className="flex flex-wrap gap-2 items-center mb-4">
-                      <p className="text-lg text-primary font-medium">
+                      <p className="text-sm md:text-base text-foreground font-medium">
                         {exp.organization}
                       </p>
                       <span className="text-muted-foreground">•</span>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm md:text-base text-muted-foreground">
                         {exp.location}
                       </p>
                       <span className="text-muted-foreground">•</span>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm md:text-base text-muted-foreground">
                         {exp.period}
                       </p>
                     </div>
                     <ul className="space-y-2">
                       {exp.responsibilities.map((resp, respIdx) => (
-                        <li key={respIdx} className="text-muted-foreground flex items-start gap-2">
-                          <span className="text-primary mt-1">•</span>
-                          <span>{resp}</span>
+                        <li key={respIdx} className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed">
+                          <span className="text-primary mt-1.5">•</span>
+                          <span className="flex-1">{resp}</span>
                         </li>
                       ))}
                     </ul>

@@ -27,17 +27,13 @@ const interests = [
 
 export const PersonalInterests = () => {
   return (
-    <section id="personal" className="py-20 bg-secondary/30">
+    <section id="personal" className="py-20">
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
-              Beyond Academics
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Outside of academics, I'm passionate about music and the arts. I play piano and bassoon, and I enjoy exploring new pieces whenever I can. 
-              I love photography and capturing meaningful moments through the lens. I also enjoy traveling the world, experiencing new cultures, 
-              and seeing life from different perspectives. When I'm not creating or exploring, I value spending time with friends and family who inspire and support me.
+          <div className="mb-10">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Personal</h2>
+            <p className="mt-2 text-muted-foreground max-w-3xl">
+              A few things I enjoy outside academics: music, photography, and travel.
             </p>
           </div>
 
@@ -47,8 +43,7 @@ export const PersonalInterests = () => {
               return (
                 <Card
                   key={idx}
-                  className="overflow-hidden bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300 animate-fade-in hover:-translate-y-1"
-                  style={{ animationDelay: `${idx * 100}ms` }}
+                  className="overflow-hidden bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
                 >
                   <div className="aspect-[4/3] overflow-hidden">
                     <img
@@ -59,7 +54,7 @@ export const PersonalInterests = () => {
                   </div>
                   <div className="p-6">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
+                      <div className="p-2 bg-accent/40 rounded-lg border border-border">
                         <Icon className="w-5 h-5 text-primary" />
                       </div>
                       <h3 className="text-xl font-semibold text-foreground">
@@ -75,9 +70,9 @@ export const PersonalInterests = () => {
             })}
           </div>
 
-          <Card className="p-8 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)]">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
+              <div className="p-3 bg-accent/40 rounded-lg border border-border">
                 <Heart className="w-6 h-6 text-primary" />
               </div>
               <div>

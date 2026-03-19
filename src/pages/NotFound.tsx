@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,13 +10,23 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-gray-600">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 underline hover:text-blue-700">
-          Return to Home
-        </a>
+    <div className="min-h-screen bg-background text-foreground flex items-center">
+      <div className="container mx-auto px-6">
+        <div className="max-w-xl mx-auto rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
+          <div className="text-xs text-muted-foreground">404</div>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Page not found</h1>
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+            The path <span className="font-mono text-foreground/90">{location.pathname}</span> doesn’t exist.
+          </p>
+          <div className="mt-6 flex items-center gap-2">
+            <Button asChild>
+              <a href="/">Go home</a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="#contact">Contact</a>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
