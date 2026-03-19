@@ -3,7 +3,10 @@ import { PageShell } from "@/components/PageShell";
 
 export default function ResearchPage() {
   return (
-    <PageShell title="Research" subtitle="Publications, manuscripts, presentations, and awards.">
+    <PageShell
+      title="Research"
+      subtitle="Publications, manuscripts, presentations, and selected honors."
+    >
       <Research />
     </PageShell>
   );

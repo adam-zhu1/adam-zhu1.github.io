@@ -3,7 +3,10 @@ import { PageShell } from "@/components/PageShell";
 
 export default function SkillsPage() {
   return (
-    <PageShell title="Skills" subtitle="Tools, methods, and research techniques.">
+    <PageShell
+      title="Skills"
+      subtitle="Tools, methods, and research techniques I’m comfortable with."
+    >
       <Skills />
     </PageShell>
   );

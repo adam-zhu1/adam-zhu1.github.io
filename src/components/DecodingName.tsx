@@ -11,12 +11,13 @@ function randomChar() {
 /**
  * First visit: rapid random jumble that slows down and resolves letter-by-letter into "Adam Zhu".
  * Later visits (same session): show name static.
+ * When startDecoding is false (e.g. during landing intro), show name static until it becomes true.
  */
-function getInitialState() {
+function getInitialState(startDecoding: boolean) {
   const seen =
     typeof sessionStorage !== "undefined" &&
     sessionStorage.getItem(STORAGE_KEY) === "1";
-  if (seen) {
+  if (seen || !startDecoding) {
     return { text: TARGET, lockedCount: TARGET.length };
   }
   return {
@@ -25,18 +26,31 @@ function getInitialState() {
   };
 }
 
-export function DecodingName() {
-  const [state, setState] = useState(getInitialState);
+type DecodingNameProps = {
+  /** When false, show "Adam Zhu" static and do not run the decode animation. Use to delay until after landing intro. */
+  startDecoding?: boolean;
+};
+
+export function DecodingName({ startDecoding = true }: DecodingNameProps) {
+  const [state, setState] = useState(() => getInitialState(startDecoding));
   const { text, lockedCount } = state;
   const lockedRef = useRef(lockedCount);
   lockedRef.current = lockedCount;
 
   useEffect(() => {
+    if (!startDecoding) return;
+
     const hasSeen =
       typeof sessionStorage !== "undefined" &&
       sessionStorage.getItem(STORAGE_KEY) === "1";
 
     if (hasSeen) return;
+
+    // Start from jumble if we were showing static (e.g. after landing intro)
+    setState({
+      text: TARGET.split("").map(() => randomChar()).join(""),
+      lockedCount: 0,
+    });
 
     // Fast jumble: every 35ms, randomize all unlocked positions
     const jumbleInterval = setInterval(() => {
@@ -69,7 +83,7 @@ export function DecodingName() {
       clearInterval(jumbleInterval);
       timeouts.forEach((t) => clearTimeout(t));
     };
-  }, []);
+  }, [startDecoding]);
 
   return <span className="decoding-name">{text}</span>;
 }

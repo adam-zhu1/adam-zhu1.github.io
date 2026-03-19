@@ -79,122 +79,95 @@ const awards = [
 
 export const Research = () => {
   return (
-    <section id="research" className="py-20 border-y border-border bg-secondary/15">
-      <div className="container mx-auto px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Research</h2>
-            <p className="mt-2 text-muted-foreground max-w-2xl">
-              Publications, manuscripts, presentations, and selected honors.
-            </p>
-          </div>
-          
-          {/* Publications */}
-          <div className="mb-12">
-            <h3 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
-              <FileText className="w-6 h-6 text-primary" />
-              Research Manuscripts
-            </h3>
-            <div className="space-y-4">
-              {publications.map((pub, idx) => (
-                <Card 
-                  key={idx} 
-                  className="p-6 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {pub.authors} ({pub.year})
-                      </p>
-                      <h4 className="text-lg font-medium text-foreground mb-2">
-                        {pub.title}
-                      </h4>
-                      {pub.journal && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          <em>{pub.journal}</em>
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`text-sm px-3 py-1 rounded-full border ${
-                            pub.status === "Published"
-                              ? "bg-primary/10 text-primary border-primary/20"
-                              : "bg-accent/20 text-foreground/90 border-border"
-                          }`}
-                        >
-                          {pub.status}
-                        </span>
-                        {pub.link && (
-                          <a 
-                            href={pub.link} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline"
-                          >
-                            View Publication →
-                          </a>
-                        )}
-                      </div>
-                    </div>
+    <section id="research" className="mt-2">
+      {/* Publications */}
+      <div className="mb-12">
+        <h3 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
+          <FileText className="w-6 h-6 text-primary" />
+          Research Manuscripts
+        </h3>
+        <div className="space-y-4">
+          {publications.map((pub, idx) => (
+            <Card
+              key={idx}
+              className="p-6 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {pub.authors} ({pub.year})
+                  </p>
+                  <h4 className="text-lg font-medium text-foreground mb-2">{pub.title}</h4>
+                  {pub.journal && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      <em>{pub.journal}</em>
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`text-sm px-3 py-1 rounded-full border ${
+                        pub.status === "Published"
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-accent/20 text-foreground/90 border-border"
+                      }`}
+                    >
+                      {pub.status}
+                    </span>
+                    {pub.link && (
+                      <a
+                        href={pub.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View Publication →
+                      </a>
+                    )}
                   </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Presentation */}
-          <div className="mb-12">
-            <h3 className="text-2xl font-semibold text-foreground mb-6">
-              Presentations
-            </h3>
-            <Card className="p-6 bg-card border-border shadow-[var(--shadow-card)]">
-              <h4 className="text-lg font-medium text-foreground mb-2">
-                "{presentation.title}"
-              </h4>
-              <p className="text-muted-foreground mb-2">
-                {presentation.event} • {presentation.date}
-              </p>
-              <p className="text-sm text-primary">
-                {presentation.note}
-              </p>
+                </div>
+              </div>
             </Card>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Awards */}
-          <div>
-            <h3 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
-              <Award className="w-6 h-6 text-primary" />
-              Honors & Awards
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {awards.map((award, idx) => (
-                <Card 
-                  key={idx} 
-                  className="p-6 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">🏆</span>
-                    <div>
-                      <h4 className="text-lg font-semibold text-foreground mb-2">
-                        {award.title}
-                      </h4>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {award.organization}
-                      </p>
-                      <p className="text-sm text-primary mb-2">
-                        {award.date}
-                      </p>
-                      {award.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {award.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
+      {/* Presentation */}
+      <div className="mb-12">
+        <h3 className="text-2xl font-semibold text-foreground mb-6">Presentations</h3>
+        <Card className="p-6 bg-card border-border shadow-[var(--shadow-card)]">
+          <h4 className="text-lg font-medium text-foreground mb-2">{presentation.title}</h4>
+          <p className="text-muted-foreground mb-2">
+            {presentation.event} • {presentation.date}
+          </p>
+          <p className="text-sm text-primary">{presentation.note}</p>
+        </Card>
+      </div>
+
+      {/* Awards */}
+      <div>
+        <h3 className="text-2xl font-semibold text-foreground mb-6 flex items-center gap-2">
+          <Award className="w-6 h-6 text-primary" />
+          Honors & Awards
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          {awards.map((award, idx) => (
+            <Card
+              key={idx}
+              className="p-6 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🏆</span>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">{award.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-1">{award.organization}</p>
+                  <p className="text-sm text-primary mb-2">{award.date}</p>
+                  {award.description && (
+                    <p className="text-sm text-muted-foreground">{award.description}</p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
     </section>
