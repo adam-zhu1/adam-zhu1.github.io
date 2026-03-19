@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -20,10 +20,10 @@ const NotFound = () => {
           </p>
           <div className="mt-6 flex items-center gap-2">
             <Button asChild>
-              <a href="/">Go home</a>
+              <NavLink to="/">Go home</NavLink>
             </Button>
             <Button asChild variant="outline">
-              <a href="#contact">Contact</a>
+              <NavLink to="/contact">Contact</NavLink>
             </Button>
           </div>
         </div>
