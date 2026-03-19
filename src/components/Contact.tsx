@@ -4,24 +4,22 @@ import { Mail, Linkedin, Github, Download } from "lucide-react";
 
 export const Contact = () => {
   return (
-    <section id="contact" className="py-20 bg-secondary/30">
+    <section id="contact" className="py-20 border-t border-border bg-secondary/15">
       <div className="container mx-auto px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-foreground mb-6">
-            Let's Connect
-          </h2>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col gap-3 mb-10">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Contact</h2>
+            <p className="text-muted-foreground max-w-2xl leading-relaxed">
+              The fastest way to reach me is email. I usually respond within a day.
+            </p>
+          </div>
           
-          <p className="text-lg text-muted-foreground mb-12">
-            I'm actively looking for internship opportunities in data science, machine learning, and statistical analysis. 
-            Feel free to reach out if you'd like to discuss potential opportunities or just want to connect!
-          </p>
-
-          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)] animate-fade-in">
-            <div className="grid md:grid-cols-2 gap-6">
+          <Card className="p-8 bg-card border-border shadow-[var(--shadow-card)]">
+            <div className="grid md:grid-cols-2 gap-4">
               <Button 
                 variant="outline"
                 size="lg"
-                className="gap-2 h-auto py-4 hover:-translate-y-1 transition-transform"
+                className="gap-3 h-auto py-4 justify-start"
                 asChild
               >
                 <a href="mailto:adamzhu@andrew.cmu.edu">
@@ -36,7 +34,7 @@ export const Contact = () => {
               <Button 
                 variant="outline"
                 size="lg"
-                className="gap-2 h-auto py-4 hover:-translate-y-1 transition-transform"
+                className="gap-3 h-auto py-4 justify-start"
                 asChild
               >
                 <a href="https://www.linkedin.com/in/adam-zhu-cmu" target="_blank" rel="noopener noreferrer">
@@ -51,7 +49,7 @@ export const Contact = () => {
               <Button 
                 variant="outline"
                 size="lg"
-                className="gap-2 h-auto py-4 hover:-translate-y-1 transition-transform"
+                className="gap-3 h-auto py-4 justify-start"
                 asChild
               >
                 <a href="https://github.com/adam-zhu1" target="_blank" rel="noopener noreferrer">
@@ -65,12 +63,12 @@ export const Contact = () => {
 
               <Button 
                 size="lg"
-                className="gap-2 h-auto py-4 bg-gradient-to-r from-primary to-accent hover:opacity-90 hover:-translate-y-1 transition-all"
+                className="gap-3 h-auto py-4 justify-start"
               >
                 <Download className="w-5 h-5" />
                 <div className="text-left">
                   <div className="font-semibold">Resume</div>
-                  <div className="text-sm opacity-90">Download PDF</div>
+                  <div className="text-sm opacity-90">Add a link to your PDF</div>
                 </div>
               </Button>
             </div>
