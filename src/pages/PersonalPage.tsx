@@ -3,7 +3,10 @@ import { PageShell } from "@/components/PageShell";
 
 export default function PersonalPage() {
   return (
-    <PageShell title="Personal" subtitle="Interests beyond academics.">
+    <PageShell
+      title="Personal"
+      subtitle="A few things I enjoy outside academics: music, photography, and travel."
+    >
       <PersonalInterests />
     </PageShell>
   );

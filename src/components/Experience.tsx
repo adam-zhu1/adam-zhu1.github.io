@@ -66,57 +66,41 @@ const experiences = [
 
 export const Experience = () => {
   return (
-    <section id="experience" className="py-20">
-      <div className="container mx-auto px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Experience</h2>
-            <p className="mt-2 text-muted-foreground max-w-2xl">
-              A concise timeline. Each entry is scannable first, with details if you want them.
-            </p>
-          </div>
-          
-          <div className="space-y-6">
-            {experiences.map((exp, idx) => (
-              <Card 
-                key={idx} 
-                className="p-7 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-accent/40 rounded-lg border border-border">
-                    <Briefcase className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg md:text-xl font-semibold text-foreground">
-                      {exp.title}
-                    </h3>
-                    <div className="flex flex-wrap gap-2 items-center mb-4">
-                      <p className="text-sm md:text-base text-foreground font-medium">
-                        {exp.organization}
-                      </p>
-                      <span className="text-muted-foreground">•</span>
-                      <p className="text-sm md:text-base text-muted-foreground">
-                        {exp.location}
-                      </p>
-                      <span className="text-muted-foreground">•</span>
-                      <p className="text-sm md:text-base text-muted-foreground">
-                        {exp.period}
-                      </p>
-                    </div>
-                    <ul className="space-y-2">
-                      {exp.responsibilities.map((resp, respIdx) => (
-                        <li key={respIdx} className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed">
-                          <span className="text-primary mt-1.5">•</span>
-                          <span className="flex-1">{resp}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+    <section id="experience" className="mt-2">
+      <div className="space-y-6">
+        {experiences.map((exp, idx) => (
+          <Card
+            key={idx}
+            className="p-7 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-accent/40 rounded-lg border border-border">
+                <Briefcase className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg md:text-xl font-semibold text-foreground">{exp.title}</h3>
+                <div className="flex flex-wrap gap-2 items-center mb-4">
+                  <p className="text-sm md:text-base text-foreground font-medium">{exp.organization}</p>
+                  <span className="text-muted-foreground">•</span>
+                  <p className="text-sm md:text-base text-muted-foreground">{exp.location}</p>
+                  <span className="text-muted-foreground">•</span>
+                  <p className="text-sm md:text-base text-muted-foreground">{exp.period}</p>
                 </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+                <ul className="space-y-2">
+                  {exp.responsibilities.map((resp, respIdx) => (
+                    <li
+                      key={respIdx}
+                      className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed"
+                    >
+                      <span className="text-primary mt-1.5">•</span>
+                      <span className="flex-1">{resp}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </section>
   );

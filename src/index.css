@@ -178,3 +178,308 @@ All colors MUST be HSL.
 .animate-page-enter {
   animation: page-enter 0.35s ease-out forwards;
 }
+
+/* Landing intro: wave overlay rises (bottom → top) */
+@keyframes landing-wave-rise {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+/* Landing intro: content rises with the wave (used when intro is active) */
+@keyframes landing-intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-intro-rise {
+  opacity: 0;
+  transform: translateY(24px);
+  animation: landing-intro-rise 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards;
+}
+
+/* When intro is active, disable per-element landing animations so the wrapper does one rise */
+.landing-intro-mode .animate-landing-fade-up,
+.landing-intro-mode .animate-landing-scale-in {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* Landing exit (when user clicks "About" from the home tiles) */
+@keyframes landing-hero-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    filter: blur(2px);
+  }
+}
+
+@keyframes landing-tile-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+@keyframes landing-tile-exit-pop {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(0) scale(1.01);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+.landing-exit-mode {
+  pointer-events: none;
+}
+
+.landing-exit-mode nav {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.landing-exit-hero-left {
+  animation: landing-hero-exit 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 1;
+}
+
+.landing-exit-hero-image {
+  animation: landing-hero-exit 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 1;
+}
+
+.landing-exit-tile {
+  animation: landing-tile-exit 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.landing-exit-tile-pop {
+  animation: landing-tile-exit-pop 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* About page intro animation (run once per session) */
+@keyframes about-click-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(1.6);
+  }
+}
+
+@keyframes about-card-timeline {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+  28% {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(2px);
+  }
+  68% {
+    opacity: 0;
+    transform: translateY(-8px);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes about-card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes about-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes about-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes about-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes about-tile-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-18px) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.about-intro-mode .about-intro-tile-1 {
+  opacity: 0;
+  animation: about-tile-in-left 520ms cubic-bezier(0.4, 0, 0.2, 1) 360ms forwards;
+}
+
+@keyframes about-tile-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(18px) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.about-intro-mode .about-intro-tile-2 {
+  opacity: 0;
+  animation: about-tile-in-right 520ms cubic-bezier(0.4, 0, 0.2, 1) 410ms forwards;
+}
+
+@keyframes about-tile-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.about-intro-mode .about-intro-tile-3 {
+  opacity: 0;
+  animation: about-tile-in-up 520ms cubic-bezier(0.4, 0, 0.2, 1) 460ms forwards;
+}
+
+.about-intro-mode .about-intro-click {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: hsl(222 89% 55%);
+  z-index: 5;
+  animation: about-click-pop 180ms cubic-bezier(0.4, 0, 0.2, 1) 0ms forwards;
+}
+
+.about-intro-mode .about-intro-card {
+  opacity: 0;
+  transform: translateY(18px);
+  filter: blur(2px);
+  animation: about-card-appear 650ms cubic-bezier(0.4, 0, 0.2, 1) 80ms forwards;
+  position: relative;
+  z-index: 4;
+}
+
+.about-shell-intro .about-slide,
+.about-intro-mode .about-slide {
+  opacity: 0;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+
+.about-shell-intro .about-slide-up,
+.about-intro-mode .about-slide-up {
+  animation-name: about-slide-up;
+}
+
+.about-shell-intro .about-slide-left,
+.about-intro-mode .about-slide-left {
+  animation-name: about-slide-left;
+}
+
+.about-shell-intro .about-slide-right,
+.about-intro-mode .about-slide-right {
+  animation-name: about-slide-right;
+}
+
+.about-shell-intro .about-slide-d1,
+.about-intro-mode .about-slide-d1 { animation-delay: 120ms; }
+.about-shell-intro .about-slide-d2,
+.about-intro-mode .about-slide-d2 { animation-delay: 170ms; }
+.about-shell-intro .about-slide-d3,
+.about-intro-mode .about-slide-d3 { animation-delay: 220ms; }
+.about-shell-intro .about-slide-d4,
+.about-intro-mode .about-slide-d4 { animation-delay: 300ms; }
+.about-shell-intro .about-slide-d5,
+.about-intro-mode .about-slide-d5 { animation-delay: 350ms; }
+.about-shell-intro .about-slide-d6,
+.about-intro-mode .about-slide-d6 { animation-delay: 420ms; }
+.about-shell-intro .about-slide-d7,
+.about-intro-mode .about-slide-d7 { animation-delay: 470ms; }
+.about-shell-intro .about-slide-d8,
+.about-intro-mode .about-slide-d8 { animation-delay: 520ms; }
+.about-shell-intro .about-slide-d9,
+.about-intro-mode .about-slide-d9 { animation-delay: 570ms; }
