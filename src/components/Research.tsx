@@ -79,12 +79,15 @@ const awards = [
 
 export const Research = () => {
   return (
-    <section id="research" className="py-20 bg-secondary/30">
+    <section id="research" className="py-20 border-y border-border bg-secondary/15">
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-foreground mb-12 text-center">
-            Research & Publications
-          </h2>
+          <div className="mb-10">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Research</h2>
+            <p className="mt-2 text-muted-foreground max-w-2xl">
+              Publications, manuscripts, presentations, and selected honors.
+            </p>
+          </div>
           
           {/* Publications */}
           <div className="mb-12">
@@ -96,7 +99,7 @@ export const Research = () => {
               {publications.map((pub, idx) => (
                 <Card 
                   key={idx} 
-                  className="p-6 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300"
+                  className="p-6 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-1">
@@ -112,11 +115,13 @@ export const Research = () => {
                         </p>
                       )}
                       <div className="flex items-center gap-3">
-                        <span className={`text-sm px-3 py-1 rounded-full ${
-                          pub.status === 'Published' 
-                            ? 'bg-primary/10 text-primary' 
-                            : 'bg-accent/10 text-accent'
-                        }`}>
+                        <span
+                          className={`text-sm px-3 py-1 rounded-full border ${
+                            pub.status === "Published"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : "bg-accent/20 text-foreground/90 border-border"
+                          }`}
+                        >
                           {pub.status}
                         </span>
                         {pub.link && (
@@ -142,7 +147,7 @@ export const Research = () => {
             <h3 className="text-2xl font-semibold text-foreground mb-6">
               Presentations
             </h3>
-            <Card className="p-6 bg-card border-border">
+            <Card className="p-6 bg-card border-border shadow-[var(--shadow-card)]">
               <h4 className="text-lg font-medium text-foreground mb-2">
                 "{presentation.title}"
               </h4>
@@ -165,7 +170,7 @@ export const Research = () => {
               {awards.map((award, idx) => (
                 <Card 
                   key={idx} 
-                  className="p-6 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300"
+                  className="p-6 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">🏆</span>

@@ -45,9 +45,12 @@ export const Skills = () => {
     <section id="skills" className="py-20">
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-foreground mb-12 text-center">
-            Skills & Technologies
-          </h2>
+          <div className="mb-10">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Skills</h2>
+            <p className="mt-2 text-muted-foreground max-w-2xl">
+              Tools, methods, and research techniques I’m comfortable with.
+            </p>
+          </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {skillCategories.map((category, idx) => {
@@ -55,14 +58,13 @@ export const Skills = () => {
               return (
                 <Card 
                   key={idx} 
-                  className="p-8 bg-card border-border hover:shadow-[var(--shadow-elegant)] transition-all duration-300 animate-fade-in hover:-translate-y-1"
-                  style={{ animationDelay: `${idx * 100}ms` }}
+                  className="p-7 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
                 >
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-primary/10 rounded-lg">
+                    <div className="p-3 bg-accent/40 rounded-lg border border-border">
                       <Icon className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-semibold text-foreground">
+                    <h3 className="text-lg font-semibold text-foreground">
                       {category.category}
                     </h3>
                   </div>
@@ -71,7 +73,7 @@ export const Skills = () => {
                     {category.skills.map((skill, skillIdx) => (
                       <span
                         key={skillIdx}
-                        className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-full text-sm hover:bg-primary/10 transition-all hover:scale-105 cursor-default"
+                        className="px-3 py-1.5 bg-accent/30 text-foreground rounded-full text-sm border border-border cursor-default"
                       >
                         {skill}
                       </span>
