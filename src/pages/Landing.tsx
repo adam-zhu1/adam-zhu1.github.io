@@ -34,7 +34,7 @@ export default function Landing() {
         <div className="container mx-auto px-6">
           <div className="max-w-6xl mx-auto">
             <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-              <div>
+              <div className="animate-landing-fade-up opacity-0" style={{ animationDelay: "0ms" }}>
                 <div className="inline-flex items-center gap-2 rounded-full border border-border bg-accent/30 px-3 py-1 text-xs text-muted-foreground">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
                   Welcome
@@ -63,7 +63,7 @@ export default function Landing() {
                 </div>
               </div>
 
-              <div className="lg:pt-2">
+              <div className="lg:pt-2 animate-landing-scale-in opacity-0" style={{ animationDelay: "80ms" }}>
                 <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
                   <img
                     src={portrait}
@@ -76,30 +76,32 @@ export default function Landing() {
             </div>
 
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {tiles.map((t) => {
+              {tiles.map((t, i) => {
                 const Icon = t.icon;
                 return (
-                  <Card
+                  <NavLink
                     key={t.to}
-                    className="p-5 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
+                    to={t.to}
+                    className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="p-2 bg-accent/40 rounded-lg border border-border">
-                            <Icon className="h-4 w-4 text-primary" />
+                    <Card
+                      className="p-5 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-all duration-300 hover:border-primary/30 cursor-pointer animate-landing-fade-up opacity-0"
+                      style={{ animationDelay: `${120 + i * 60}ms` }}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-accent/40 rounded-lg border border-border">
+                              <Icon className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="font-semibold">{t.title}</div>
                           </div>
-                          <div className="font-semibold">{t.title}</div>
+                          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
                         </div>
-                        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{t.desc}</p>
                       </div>
-                    </div>
-                    <div className="mt-4">
-                      <Button asChild variant="outline" className="w-full">
-                        <NavLink to={t.to}>Open</NavLink>
-                      </Button>
-                    </div>
-                  </Card>
+                      <p className="mt-4 text-sm text-primary font-medium">View →</p>
+                    </Card>
+                  </NavLink>
                 );
               })}
             </div>
