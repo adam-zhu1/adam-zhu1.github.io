@@ -9,9 +9,8 @@ function randomChar() {
 }
 
 /**
- * First visit: rapid random jumble that slows down and resolves letter-by-letter into "Adam Zhu".
- * Later visits (same session): show name static.
- * When startDecoding is false (e.g. during landing intro), show name static until it becomes true.
+ * Legacy: random jumble resolving letter-by-letter into "Adam Zhu".
+ * Replaced on landing by LandingHeroGreeting; kept for reference.
  */
 function getInitialState(startDecoding: boolean) {
   const seen =
@@ -26,12 +25,11 @@ function getInitialState(startDecoding: boolean) {
   };
 }
 
-type DecodingNameProps = {
-  /** When false, show "Adam Zhu" static and do not run the decode animation. Use to delay until after landing intro. */
+type DecodingNameLegacyProps = {
   startDecoding?: boolean;
 };
 
-export function DecodingName({ startDecoding = true }: DecodingNameProps) {
+export function DecodingNameLegacy({ startDecoding = true }: DecodingNameLegacyProps) {
   const [state, setState] = useState(() => getInitialState(startDecoding));
   const { text, lockedCount } = state;
   const lockedRef = useRef(lockedCount);
@@ -46,13 +44,11 @@ export function DecodingName({ startDecoding = true }: DecodingNameProps) {
 
     if (hasSeen) return;
 
-    // Start from jumble if we were showing static (e.g. after landing intro)
     setState({
       text: TARGET.split("").map(() => randomChar()).join(""),
       lockedCount: 0,
     });
 
-    // Fast jumble: every 35ms, randomize all unlocked positions
     const jumbleInterval = setInterval(() => {
       setState((prev) => {
         const arr = prev.text.split("");
@@ -63,7 +59,6 @@ export function DecodingName({ startDecoding = true }: DecodingNameProps) {
       });
     }, 35);
 
-    // Lock letters one by one with slowing delays (fast → slow)
     const lockDelays = [0, 80, 200, 380, 620, 920, 1280, 1720];
     const timeouts = lockDelays.map((delay, index) =>
       setTimeout(() => {
