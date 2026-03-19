@@ -38,56 +38,42 @@ const educationData = [
 
 export const Education = () => {
   return (
-    <section id="education" className="py-20 border-y border-border bg-secondary/15">
-      <div className="container mx-auto px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Education</h2>
-            <p className="mt-2 text-muted-foreground max-w-2xl">
-              Academic background and programs.
-            </p>
-          </div>
-          
-          <div className="space-y-6">
-            {educationData.map((edu, idx) => (
-              <Card 
-                key={idx} 
-                className="p-7 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-accent/40 rounded-lg border border-border">
-                    <GraduationCap className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg md:text-xl font-semibold text-foreground">
-                      {edu.degree}
-                    </h3>
-                    <div className="flex flex-wrap gap-2 items-center mb-4">
-                      <p className="text-sm md:text-base text-foreground font-medium">
-                        {edu.institution}
-                      </p>
-                      <span className="text-muted-foreground">•</span>
-                      <p className="text-sm md:text-base text-muted-foreground">
-                        {edu.location}
-                      </p>
-                      <span className="text-muted-foreground">•</span>
-                      <p className="text-sm md:text-base text-muted-foreground">
-                        {edu.period}
-                      </p>
-                    </div>
-                    <ul className="space-y-2">
-                      {edu.details.map((detail, detailIdx) => (
-                        <li key={detailIdx} className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed">
-                          <span className="text-primary mt-1.5">•</span>
-                          <span className="flex-1">{detail}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+    <section id="education" className="mt-2">
+      <div className="max-w-4xl mx-auto">
+        <div className="space-y-6">
+          {educationData.map((edu, idx) => (
+            <Card
+              key={idx}
+              className="p-7 bg-card border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-elegant)] transition-shadow"
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-accent/40 rounded-lg border border-border">
+                  <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
-              </Card>
-            ))}
-          </div>
+                <div className="flex-1">
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">{edu.degree}</h3>
+                  <div className="flex flex-wrap gap-2 items-center mb-4">
+                    <p className="text-sm md:text-base text-foreground font-medium">{edu.institution}</p>
+                    <span className="text-muted-foreground">•</span>
+                    <p className="text-sm md:text-base text-muted-foreground">{edu.location}</p>
+                    <span className="text-muted-foreground">•</span>
+                    <p className="text-sm md:text-base text-muted-foreground">{edu.period}</p>
+                  </div>
+                  <ul className="space-y-2">
+                    {edu.details.map((detail, detailIdx) => (
+                      <li
+                        key={detailIdx}
+                        className="text-muted-foreground flex items-start gap-2 text-sm leading-relaxed"
+                      >
+                        <span className="text-primary mt-1.5">•</span>
+                        <span className="flex-1">{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
     </section>
