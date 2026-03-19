@@ -15,7 +15,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import portrait from "@/assets/adam-portrait-1.jpg";
-import { DecodingName } from "@/components/DecodingName";
+import { LandingHeroGreeting } from "@/components/LandingHeroGreeting";
 import { useLandingIntro, WaveOverlay } from "@/components/LandingIntroOverlay";
 import { useState } from "react";
 import type { MouseEvent } from "react";
@@ -98,7 +98,7 @@ export default function Landing() {
                   </div>
 
                   <h1 className="mt-6 text-4xl md:text-6xl font-semibold tracking-tight leading-[1.05]">
-                    <DecodingName startDecoding={introComplete} />
+                    <LandingHeroGreeting startWhen={introComplete} />
                 </h1>
                 <p className="mt-4 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed">
                   Statistics &amp; Machine Learning student at CMU. Choose a section below to explore.
