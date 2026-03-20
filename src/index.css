@@ -2,18 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  Restart palette: warm paper, deep ink, single accent.
-  Tweak HSL here — everything else follows these tokens.
-*/
 @layer base {
   :root {
-    --paper: 42 35% 97%;
-    --ink: 215 32% 12%;
-    --muted: 215 12% 38%;
-    --accent: 168 55% 36%;
-    --line: 42 18% 88%;
-    color-scheme: light;
+    --paper: 0 0% 4%;
+    --ink: 0 0% 95%;
+    --muted: 0 0% 78%;
+    --accent: 216 53% 44%;
+    --line: 0 0% 14%;
+    color-scheme: dark;
   }
 
   html {
