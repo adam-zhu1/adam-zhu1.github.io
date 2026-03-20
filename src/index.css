@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    --paper: 0 0% 4%;
-    --ink: 0 0% 95%;
-    --muted: 0 0% 78%;
-    --accent: 216 53% 44%;
-    --line: 0 0% 14%;
+    --paper: 0 0% 0%;
+    --ink: 0 0% 100%;
+    --muted: 0 0% 100%;
+    --accent: 355 78% 56%;
+    --line: 0 0% 100%;
     color-scheme: dark;
   }
 
@@ -17,11 +17,11 @@
   }
 
   body {
-    @apply bg-paper text-ink font-sans;
+    @apply bg-black text-white font-sans;
     font-feature-settings: "kern" 1, "liga" 1;
   }
 
   ::selection {
-    @apply bg-accent/20 text-ink;
+    @apply bg-brand text-white;
   }
 }

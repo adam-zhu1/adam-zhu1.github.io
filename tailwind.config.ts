@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ["Fraunces", "ui-serif", "Georgia", "serif"],
+        display: ['"Bebas Neue"', "Impact", "ui-sans-serif", "system-ui", "sans-serif"],
         sans: ["IBM Plex Sans", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
@@ -14,6 +14,7 @@ export default {
         muted: "hsl(var(--muted) / <alpha-value>)",
         accent: "hsl(var(--accent) / <alpha-value>)",
         line: "hsl(var(--line) / <alpha-value>)",
+        brand: "#E63946",
       },
       maxWidth: {
         measure: "42rem",
