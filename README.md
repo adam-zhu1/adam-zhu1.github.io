@@ -1,44 +1,31 @@
-# Adam Zhu Portfolio
+# adam-zhu1.github.io
 
-Personal portfolio site built with React + Vite, styled with Tailwind CSS and shadcn-ui components. Routes are handled client-side using `HashRouter` so the site works well when hosted on GitHub Pages.
+Personal site built with **Vite**, **React**, **TypeScript**, and **Tailwind CSS**.
 
-## Tech Stack
+## Branches
 
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS + shadcn-ui components
-- `react-router-dom` (`HashRouter`)
-- CSS-based animations (see `src/index.css`)
+- **`main`** — what GitHub Pages deploys today.
+- **`restart`** — clean rebuild: minimal dependencies, custom typography, no UI kit. Merge to `main` when you’re ready to go live.
 
-## Local Development
+## Development
 
-Requirements: Node.js + npm
-
-```sh
-npm i
+```bash
+npm install
 npm run dev
 ```
 
-By default the dev server runs on `http://localhost:8080` (see `vite.config.ts`).
+App runs at [http://localhost:8080](http://localhost:8080) (see `vite.config.ts`).
 
-## Build & Preview
+## Build
 
-```sh
+```bash
 npm run build
-npm run preview
 ```
 
-## Deployment (GitHub Pages / static hosting)
+Output: `dist/`. CI copies `index.html` to `404.html` for client-side routing on GitHub Pages.
 
-1. Run `npm run build`
-2. Deploy the contents of `dist/` to your static hosting provider (for example, GitHub Pages).
+## Deploy
 
-Note: `vite.config.ts` uses `base: "./"` in production to reduce issues when the site is served from a subpath/static host.
+GitHub Actions (`.github/workflows/deploy.yml`) deploys on pushes to **`main`** only.
 
-## Useful Files
-
-- `src/App.tsx`: router + route wiring
-- `src/pages/*`: page entry components (About, Projects, etc.)
-- `src/components/PageShell.tsx`: shared page layout (title/subtitle + back button)
-- `src/index.css`: global styles + animation keyframes
-
+To preview the restart work **without** switching production: push the `restart` branch and use GitHub’s branch preview / open locally. When satisfied, merge `restart` → `main`.
