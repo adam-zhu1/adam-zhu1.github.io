@@ -1,45 +1,14 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
-import { PageTransition } from "@/components/PageTransition";
-import Landing from "./pages/Landing";
+import { HashRouter, Route, Routes } from "react-router-dom";
+import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
-import AboutPage from "./pages/AboutPage";
-import EducationPage from "./pages/EducationPage";
-import SkillsPage from "./pages/SkillsPage";
-import ProjectsPage from "./pages/ProjectsPage";
-import ExperiencePage from "./pages/ExperiencePage";
-import ResearchPage from "./pages/ResearchPage";
-import PersonalPage from "./pages/PersonalPage";
-import ContactPage from "./pages/ContactPage";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <HashRouter>
-        <Routes>
-          <Route element={<PageTransition />}>
-            <Route path="/" element={<Landing />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/education" element={<EducationPage />} />
-            <Route path="/skills" element={<SkillsPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/experience" element={<ExperiencePage />} />
-            <Route path="/research" element={<ResearchPage />} />
-            <Route path="/personal" element={<PersonalPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </HashRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
+export default function App() {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </HashRouter>
+  );
+}
