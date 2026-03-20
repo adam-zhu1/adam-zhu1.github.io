@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -28,8 +29,8 @@ function HoverLetter({
         if (reducedMotion) {
           return;
         }
-        /** Max ~±3px per axis — very subtle drift */
-        const n = 3;
+        /** Max ~±4px per axis — very subtle drift */
+        const n = 4;
         setJitter({
           x: (Math.random() - 0.5) * 2 * n,
           y: (Math.random() - 0.5) * 2 * n,
@@ -64,8 +65,16 @@ const LINE_STAGGER_S = 0.09;
 const TEXT_AFTER_LINES_S =
   LINE_STAGGER_S * 3 + LINE_DURATION_MS / 1000 + 0.08;
 
+/**
+ * Scroll-scrubbed animations (e.g. About) hit full progress in this fraction of the
+ * section’s scroll span; the rest is “cushion” before the next section enters view.
+ */
+const SECTION_SCROLL_ANIM_COMPLETE = 0.62;
+
 /** Bump if you need everyone to see the cue again after changing placement */
 const SCROLL_CUE_SESSION_KEY = "landingScrollCueDismissed_v2";
+/** Cue only shows when scroll is within this many px of the top (“all the way up”). */
+const SCROLL_CUE_AT_TOP_MAX_PX = 72;
 
 function IconGitHub({ className }: { className?: string }) {
   return (
@@ -105,15 +114,48 @@ function getInitialIntroStep(): IntroStep {
   return getInitialReducedMotion() ? 2 : 0;
 }
 
+function clamp01(n: number): number {
+  return Math.min(Math.max(n, 0), 1);
+}
+
+/** About sticky scrub: item `index` animates in top-to-bottom (slide up + fade); last step = corner 02/About. */
+const ABOUT_STAGGER_STEPS = 8;
+
+function aboutStaggerStyle(
+  index: number,
+  progress: number,
+  reducedMotion: boolean,
+  slidePx = 34,
+): CSSProperties | undefined {
+  if (reducedMotion) {
+    return undefined;
+  }
+  const slot = 1 / ABOUT_STAGGER_STEPS;
+  /** Fraction of each slot used for the in-animation (rest is hold / next item starts). */
+  const soft = 0.52;
+  const t = clamp01((progress - index * slot) / (slot * soft));
+  return {
+    opacity: t,
+    transform: `translateY(${(1 - t) * slidePx}px)`,
+  };
+}
+
 export default function Home() {
   const heroRef = useRef<HTMLElement | null>(null);
+  const aboutRef = useRef<HTMLElement | null>(null);
   const [progress, setProgress] = useState(0);
+  /** 0 = Home / “01”; 1 = About handoff — drives big index, lines, backing morph. */
+  const [sectionBridge, setSectionBridge] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(getInitialReducedMotion);
   const [introStep, setIntroStep] = useState<IntroStep>(getInitialIntroStep);
   const [viewportW, setViewportW] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth : 1024,
   );
   const [activeSection, setActiveSection] = useState<string>("home");
+  /** About: 0 = black / hidden, 1 = full reveal (scroll-driven; 1 if reduced motion). */
+  const [aboutRevealProgress, setAboutRevealProgress] = useState(() =>
+    getInitialReducedMotion() ? 1 : 0,
+  );
   const [showScrollCue, setShowScrollCue] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -124,6 +166,50 @@ export default function Home() {
       return true;
     }
   });
+
+  /** Eased 0→1: letters move slower early, still reach full split at raw progress 1. */
+  const HERO_NAME_SCROLL_EASE = 1.72;
+  const scrollMotionEased = useMemo(
+    () => (reducedMotion ? 0 : Math.pow(progress, HERO_NAME_SCROLL_EASE)),
+    [progress, reducedMotion],
+  );
+
+  /**
+   * Brand panel behind the hero name: scroll 0→1 drifts gently and morphs from a
+   * tight frame toward a softer “pill” — keeps motion subtle so type stays focal.
+   */
+  const nameBackingStyle: CSSProperties = useMemo(() => {
+    if (reducedMotion) {
+      return { transform: "translate3d(0, 0, 0)", borderRadius: "0.25rem", opacity: 1 };
+    }
+    const p = scrollMotionEased;
+    const b = sectionBridge;
+    const tx = (p - 0.5) * 20;
+    const ty = p * 14;
+    const rot = (p - 0.5) * 1.4;
+    const s = 1 + p * 0.015;
+    const borderRadius = `${0.125 + p * 2}rem`;
+    const bridgeLift = -b * 52;
+    const bridgeScale = 1 - b * 0.14;
+    return {
+      transform: `translate3d(${tx}px, ${ty + bridgeLift}px, 0) rotate(${rot * (1 - b * 0.35)}deg) scale(${s * bridgeScale})`,
+      borderRadius,
+      opacity: 1 - b * 0.94,
+      willChange: "transform, opacity",
+    };
+  }, [scrollMotionEased, reducedMotion, sectionBridge]);
+
+  /** Whole name + panel scales down slightly as you move through the hero (stays on-screen). */
+  const nameGroupScaleStyle: CSSProperties = useMemo(
+    () =>
+      reducedMotion
+        ? {}
+        : {
+            transform: `scale(${1 - scrollMotionEased * 0.045})`,
+            transformOrigin: "center center",
+          },
+    [scrollMotionEased, reducedMotion],
+  );
 
   const dismissScrollCue = useCallback(() => {
     setShowScrollCue((prev) => {
@@ -148,34 +234,70 @@ export default function Home() {
       if (id !== "home") {
         dismissScrollCue();
       }
-      const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const smooth = !reduced;
+
+      /** About: landing at block-start is black (reveal=0). Jump to where scrub is finished. */
+      if (id === "about") {
+        const aboutEl = aboutRef.current ?? el;
+        const vh = window.innerHeight;
+        const aboutTop = aboutEl.offsetTop;
+        const aboutH = aboutEl.offsetHeight;
+        const stickyScrollRange = Math.max(aboutH - vh, 1);
+        const maxY = Math.max(0, document.documentElement.scrollHeight - vh);
+        const targetY = Math.min(
+          aboutTop + stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE + 12,
+          maxY,
+        );
+        const run = () => window.scrollTo({ top: targetY, behavior: "auto" });
+        run();
+        window.requestAnimationFrame(run);
+        setAboutRevealProgress(1);
+        return;
+      }
+
       el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
     },
     [dismissScrollCue],
   );
 
-  /** Hide scroll hint after user scrolls or leaves the landing section */
+  /**
+   * Scroll cue: hide after scrolling down into the page; show again only when
+   * scrolled back to the very top of Home (same session). Leaving Home hides it.
+   */
   useEffect(() => {
-    if (!showScrollCue) {
-      return;
-    }
     const check = () => {
       const y = window.scrollY;
       const vh = window.innerHeight;
-      /* Enough movement that they’ve engaged; still dismiss if they jump via TOC */
-      if (y > Math.min(200, vh * 0.22)) {
+      const dismissThreshold = Math.min(200, vh * 0.22);
+
+      if (activeSection !== "home") {
+        dismissScrollCue();
+        return;
+      }
+
+      if (y <= SCROLL_CUE_AT_TOP_MAX_PX) {
+        setShowScrollCue(true);
+        try {
+          sessionStorage.removeItem(SCROLL_CUE_SESSION_KEY);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+
+      if (y > dismissThreshold) {
         dismissScrollCue();
       }
     };
+
     check();
     window.addEventListener("scroll", check, { passive: true });
-    return () => window.removeEventListener("scroll", check);
-  }, [showScrollCue, dismissScrollCue]);
-
-  useEffect(() => {
-    if (activeSection !== "home") {
-      dismissScrollCue();
-    }
+    window.addEventListener("resize", check, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
   }, [activeSection, dismissScrollCue]);
 
   useEffect(() => {
@@ -235,17 +357,47 @@ export default function Home() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  /** Hero progress + Home→About bridge (01→02, backing morph, line parallax). */
   useEffect(() => {
     const update = () => {
       const el = heroRef.current;
-      if (!el) {
+      const vh = window.innerHeight;
+      if (el) {
+        const top = el.getBoundingClientRect().top;
+        const raw = (0 - top) / vh;
+        const p = clamp01(raw);
+        setProgress(reducedMotion ? 0 : p);
+      }
+
+      const aboutEl = aboutRef.current ?? document.getElementById("about");
+      if (!aboutEl) {
+        setSectionBridge(0);
+        setAboutRevealProgress(0);
         return;
       }
-      const vh = window.innerHeight;
-      const top = el.getBoundingClientRect().top;
-      const raw = (0 - top) / vh;
-      const p = Math.min(Math.max(raw, 0), 1);
-      setProgress(reducedMotion ? 0 : p);
+
+      const scrollY = window.scrollY;
+      const aboutTop = aboutEl.offsetTop;
+      const aboutH = aboutEl.offsetHeight;
+
+      if (reducedMotion) {
+        const marker = scrollY + vh * 0.38;
+        setSectionBridge(marker >= aboutTop ? 1 : 0);
+        setAboutRevealProgress(1);
+        return;
+      }
+
+      const start = aboutTop - vh * 1.38;
+      const end = aboutTop - vh * 0.06;
+      const range = Math.max(end - start, 1);
+      const br = clamp01((scrollY - start) / range);
+      setSectionBridge(br);
+
+      /** Sticky About: 0→1 in the first part of the section scroll; then cushion before Work. */
+      const stickyScrollRange = Math.max(aboutH - vh, 1);
+      const revealRaw =
+        (scrollY - aboutTop) / Math.max(stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE, 1);
+      setAboutRevealProgress(clamp01(revealRaw));
     };
 
     update();
@@ -258,13 +410,13 @@ export default function Home() {
   }, [reducedMotion]);
 
   /**
-   * TOC highlight: use scroll position, not IntersectionObserver (home is ~220vh tall,
+   * TOC highlight: use scroll position, not IntersectionObserver (home is tall,
    * so observers often picked the wrong section, e.g. About always “active”).
    */
   useEffect(() => {
     const updateActive = () => {
       const marker = window.scrollY + window.innerHeight * 0.35;
-      let current = SECTIONS[0].id;
+      let current: (typeof SECTIONS)[number]["id"] = SECTIONS[0].id;
       for (const s of SECTIONS) {
         const el = document.getElementById(s.id);
         if (!el) {
@@ -287,7 +439,14 @@ export default function Home() {
     };
   }, []);
 
-  const splitPx = progress * Math.min(viewportW * 0.12, 140);
+  /** Same max spread as pre–full-section edit; driven by eased scroll (see scrollMotionEased). */
+  const splitPx = scrollMotionEased * Math.min(viewportW * 0.12, 140);
+
+  /** Inline bridge parallax only after intro lines + text are allowed (avoids fighting landing-rise). */
+  const bridgeOn = introStep >= 2 && sectionBridge > 0;
+
+  /** About: background layers still follow overall scroll progress. */
+  const aboutDecorOpacity = reducedMotion ? 1 : aboutRevealProgress;
 
   const onIntroOverlayEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== "opacity") {
@@ -301,12 +460,13 @@ export default function Home() {
     "group inline-flex items-center gap-2 border border-white bg-black px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white transition-colors hover:border-brand hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
   const tocLinkClass = (id: string) =>
-    `block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+    `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
       activeSection === id ? "text-white" : "text-brand hover:text-white"
     }`;
 
+  /** Index span must match label hover — explicit brand was blocking inherited hover. */
   const tocIndexClass = (id: string) =>
-    activeSection === id ? "text-white" : "text-brand";
+    activeSection === id ? "text-white" : "text-brand group-hover:text-white";
 
   const showOverlay = introStep < 2 && !reducedMotion;
 
@@ -336,7 +496,7 @@ export default function Home() {
       )}
 
       {/* ─── Home (hero + sticky name split) ─── */}
-      <section id="home" ref={heroRef} className="min-h-[220vh] scroll-mt-0">
+      <section id="home" ref={heroRef} className="min-h-[125vh] scroll-mt-0">
         <div className="sticky top-0 flex min-h-dvh flex-col">
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-brand sm:text-[11px]">
@@ -352,7 +512,16 @@ export default function Home() {
               </a>
               <span>CMU · STAT / ML</span>
             </div>
-            <div className="intro-line intro-line-top mt-6 h-px w-full overflow-hidden sm:mt-7">
+            <div
+              className="intro-line intro-line-top mt-6 h-px w-full overflow-hidden sm:mt-7"
+              style={
+                reducedMotion
+                  ? undefined
+                  : bridgeOn
+                    ? { transform: `translateX(${sectionBridge * 18}px)` }
+                    : undefined
+              }
+            >
               <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-brand" />
             </div>
           </div>
@@ -361,36 +530,51 @@ export default function Home() {
           <div className="flex min-h-0 flex-1 flex-col justify-center px-5 pb-12 sm:px-10 lg:pb-16">
             <div className="mx-auto w-full max-w-[1600px] pb-10 pt-4 sm:pb-12 sm:pt-5">
               <div className="grid grid-cols-1 gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)_minmax(0,1fr)] lg:gap-x-10 xl:gap-x-16">
-                <div className="landing-el landing-name flex flex-col justify-center lg:min-h-0">
-                  <div
-                    className="select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]"
-                    style={{ willChange: "transform" }}
-                  >
-                    <div
-                      className="block w-max text-white"
-                      style={{
-                        transform: reducedMotion ? undefined : `translateX(${-splitPx}px)`,
-                      }}
-                    >
-                      {"Adam".split("").map((ch, i) => (
-                        <HoverLetter key={`adam-${i}`} char={ch} reducedMotion={reducedMotion} />
-                      ))}
-                    </div>
-                    <div
-                      className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)] text-brand"
-                      style={{
-                        transform: reducedMotion ? undefined : `translateX(${splitPx}px)`,
-                      }}
-                    >
-                      {"Zhu".split("").map((ch, i) => (
-                        <HoverLetter key={`zhu-${i}`} char={ch} reducedMotion={reducedMotion} />
-                      ))}
+                <div className="landing-el landing-name flex min-w-0 flex-col justify-center lg:min-h-0">
+                  <div className="mx-auto w-fit max-w-full" style={nameGroupScaleStyle}>
+                    <div className="relative isolate inline-block w-fit max-w-full select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]">
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute left-[0.35rem] right-[0.35rem] -top-[0.65rem] -bottom-[0.65rem] z-0 bg-brand/[0.07] ring-1 ring-inset ring-brand/[0.14] sm:left-[0.45rem] sm:right-[0.45rem] sm:-top-[0.8rem] sm:-bottom-[0.8rem]"
+                        style={nameBackingStyle}
+                      />
+                      <div className="relative z-10 w-fit min-w-0">
+                        <div
+                          className="block w-max text-white"
+                          style={{
+                            transform: reducedMotion ? undefined : `translateY(${-splitPx}px)`,
+                          }}
+                        >
+                          {"Adam".split("").map((ch, i) => (
+                            <HoverLetter key={`adam-${i}`} char={ch} reducedMotion={reducedMotion} />
+                          ))}
+                        </div>
+                        <div
+                          className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)] text-brand"
+                          style={{
+                            transform: reducedMotion ? undefined : `translateX(${splitPx}px)`,
+                          }}
+                        >
+                          {"Zhu".split("").map((ch, i) => (
+                            <HoverLetter key={`zhu-${i}`} char={ch} reducedMotion={reducedMotion} />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Vertical rule + scroll: min column height + min line length so both extend lower; cue sits lower */}
-                <div className="hidden h-full min-h-0 flex-col items-center self-stretch lg:flex lg:min-h-[min(88vh,60rem)]">
+                <div
+                  className="hidden h-full min-h-0 flex-col items-center self-stretch lg:flex lg:min-h-[min(88vh,60rem)]"
+                  style={
+                    reducedMotion
+                      ? undefined
+                      : bridgeOn
+                        ? { transform: `translateY(${sectionBridge * -22}px)` }
+                        : undefined
+                  }
+                >
                   <div
                     className="intro-line intro-line-v pointer-events-none relative flex min-h-0 w-full flex-1 flex-col items-center overflow-hidden"
                     aria-hidden
@@ -418,7 +602,7 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="landing-rail flex min-h-[min(52vh,520px)] flex-col justify-between gap-12 pt-6 lg:min-h-0 lg:pt-8">
+                <div className="landing-rail flex min-h-[min(52vh,520px)] flex-col gap-12 pt-6 lg:min-h-0 lg:flex-1 lg:self-stretch lg:pt-8">
                   <div className="landing-el landing-index flex">
                     <nav
                       className="flex w-full flex-col gap-4 border border-brand p-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white"
@@ -446,11 +630,44 @@ export default function Home() {
                     </nav>
                   </div>
 
-                  <div className="landing-el landing-copy space-y-10">
-                    <div className="intro-line intro-line-mid h-px w-full overflow-hidden">
+                  <div
+                    className="landing-el landing-copy space-y-10"
+                    style={
+                      reducedMotion
+                        ? undefined
+                        : bridgeOn
+                          ? {
+                              opacity: clamp01(1 - sectionBridge * 0.92),
+                              transform: `translate3d(${sectionBridge * 8}px, ${sectionBridge * 28}px, 0)`,
+                            }
+                          : undefined
+                    }
+                  >
+                    <div
+                      className="intro-line intro-line-mid h-px w-full overflow-hidden"
+                      style={
+                        reducedMotion
+                          ? undefined
+                          : bridgeOn
+                            ? { transform: `translateX(${-sectionBridge * 22}px)` }
+                            : undefined
+                      }
+                    >
                       <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-brand" />
                     </div>
-                    <div className="space-y-3">
+                    <div
+                      className="space-y-3"
+                      style={
+                        reducedMotion
+                          ? undefined
+                          : bridgeOn
+                            ? {
+                                transform: `translateY(${sectionBridge * 12}px)`,
+                                opacity: clamp01(1 - sectionBridge * 0.55),
+                              }
+                            : undefined
+                      }
+                    >
                       <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-white sm:text-[13px]">
                         Carnegie Mellon University
                       </p>
@@ -459,7 +676,21 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <nav className="flex flex-wrap gap-3 sm:gap-4" aria-label="Social links">
+                    <nav
+                      className="flex flex-wrap gap-3 sm:gap-4"
+                      aria-label="Social links"
+                      style={
+                        reducedMotion
+                          ? undefined
+                          : bridgeOn
+                            ? {
+                                opacity: clamp01(1 - sectionBridge * 0.75),
+                                transform: `translateY(${sectionBridge * 18}px) scale(${1 - sectionBridge * 0.04})`,
+                                transformOrigin: "left center",
+                              }
+                            : undefined
+                      }
+                    >
                       <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
                         <IconGitHub className="h-4 w-4" />
                         GitHub
@@ -475,9 +706,15 @@ export default function Home() {
                     </nav>
                   </div>
 
-                  <p className="landing-el landing-deco font-display text-[clamp(4rem,14vw,9rem)] font-bold leading-none text-brand lg:text-right">
-                    01
-                  </p>
+                  <div
+                    aria-hidden
+                    className="landing-el landing-corner-index mt-auto flex w-full flex-col items-end gap-2 self-end pt-4 text-right font-display font-bold leading-none text-brand pointer-events-none lg:pt-6"
+                  >
+                    <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">01</span>
+                    <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-brand/90">
+                      Home
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -505,7 +742,16 @@ export default function Home() {
           </div>
 
           <div className="px-5 pb-8 sm:px-10 sm:pb-10">
-            <div className="intro-line intro-line-foot h-px w-full overflow-hidden">
+            <div
+              className="intro-line intro-line-foot h-px w-full overflow-hidden"
+              style={
+                reducedMotion
+                  ? undefined
+                  : bridgeOn
+                    ? { transform: `translateX(${sectionBridge * 14}px)` }
+                    : undefined
+              }
+            >
               <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-brand" />
             </div>
             <div className="landing-el landing-footer-meta flex justify-between pt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-brand sm:text-[11px]">
@@ -520,23 +766,112 @@ export default function Home() {
             </div>
           </div>
         </div>
+        {/* Extra scroll after hero before About (animations feel “done” before the next screen). */}
+        <div aria-hidden className="pointer-events-none min-h-[min(48vh,520px)] w-full shrink-0" />
       </section>
 
-      {/* ─── About ─── */}
+      {/* ─── About: tall track + sticky full-viewport panel (scrub reveal while pinned) ─── */}
       <section
         id="about"
-        className="scroll-mt-2 border-t border-brand px-5 py-24 sm:px-10 sm:py-28"
+        ref={aboutRef}
+        className="relative scroll-mt-0 border-t border-brand/50 bg-black min-h-[260vh]"
         aria-labelledby="about-heading"
       >
-        <div className="mx-auto max-w-[1600px]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand">02 · About</p>
-          <h2 id="about-heading" className="mt-6 font-display text-5xl font-bold uppercase tracking-[0.02em] text-white sm:text-6xl md:text-7xl">
-            About
-          </h2>
-          <p className="mt-8 max-w-2xl font-mono text-sm uppercase leading-relaxed tracking-[0.12em] text-white sm:text-base">
-            I&apos;m a statistics and machine learning student at Carnegie Mellon. This section is a
-            placeholder — swap in your story, interests, and what you&apos;re looking for next.
-          </p>
+        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-hidden bg-black">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-30%,rgba(230,57,70,0.14),transparent_55%),linear-gradient(180deg,rgba(12,12,12,0.95)_0%,#000_45%,#030303_100%)]"
+            style={{ opacity: aboutDecorOpacity }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(230,57,70,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(230,57,70,0.45)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
+            style={{ opacity: 0.07 * aboutDecorOpacity }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent"
+            style={{ opacity: aboutDecorOpacity }}
+          />
+
+          <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col justify-center px-5 pb-20 pt-28 sm:px-10 sm:pb-28 sm:pt-32">
+            <div className="grid gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
+              <div className="flex flex-col gap-0 lg:col-span-7">
+                <div style={aboutStaggerStyle(0, aboutRevealProgress, reducedMotion)}>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/90 sm:text-[11px]">
+                    02 · About
+                  </p>
+                </div>
+                <div className="mt-5 sm:mt-6" style={aboutStaggerStyle(1, aboutRevealProgress, reducedMotion)}>
+                  <h2
+                    id="about-heading"
+                    className="font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
+                  >
+                    Curiosity
+                    <span className="block text-brand">driven by data</span>
+                  </h2>
+                </div>
+                <div className="mt-10" style={aboutStaggerStyle(2, aboutRevealProgress, reducedMotion)}>
+                  <p className="max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
+                    I&apos;m a statistics &amp; machine learning student at{" "}
+                    <span className="text-white">Carnegie Mellon</span> — interested in rigorous methods,
+                    clear communication, and tools that actually help people decide under uncertainty.
+                  </p>
+                </div>
+                <div className="mt-6" style={aboutStaggerStyle(3, aboutRevealProgress, reducedMotion)}>
+                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-brand/90 sm:text-[13px]">
+                    This space is yours to shape: research threads, coursework highlights, side projects,
+                    and what you want to explore next.
+                  </p>
+                </div>
+              </div>
+
+              <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
+                <div
+                  className="border border-brand/45 bg-brand/[0.04] p-6 backdrop-blur-sm"
+                  style={aboutStaggerStyle(4, aboutRevealProgress, reducedMotion)}>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-brand">Now</p>
+                  <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
+                    CMU · Statistics &amp; ML — coursework, research, and experiments in inference &
+                    learning.
+                  </p>
+                </div>
+                <div style={aboutStaggerStyle(5, aboutRevealProgress, reducedMotion, 28)}>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="border border-white/15 bg-white/[0.03] p-4 sm:p-5">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-brand">Focus</p>
+                      <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
+                        Modeling, evaluation, and honest uncertainty.
+                      </p>
+                    </div>
+                    <div className="border border-white/15 bg-white/[0.03] p-4 sm:p-5">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-brand">Based</p>
+                      <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
+                        Pittsburgh — on campus &amp; remote-friendly collabs.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div style={aboutStaggerStyle(6, aboutRevealProgress, reducedMotion, 24)}>
+                  <div className="h-px w-full bg-gradient-to-r from-brand/50 via-brand/20 to-transparent" aria-hidden />
+                  <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
+                    Scroll for work &amp; connect — or jump from the contents rail.
+                  </p>
+                </div>
+              </aside>
+            </div>
+
+            <div
+              aria-hidden
+              className="pointer-events-none absolute bottom-6 right-5 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-brand sm:bottom-8 sm:right-10"
+              style={aboutStaggerStyle(7, aboutRevealProgress, reducedMotion, 32)}
+            >
+              <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">02</span>
+              <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-brand/90">
+                About
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -555,6 +890,7 @@ export default function Home() {
             Projects, research, and builds will go here — cards, links to write-ups, or case studies.
           </p>
         </div>
+        <div aria-hidden className="pointer-events-none min-h-[min(32vh,360px)] w-full" />
       </section>
 
       {/* ─── Connect ─── */}
@@ -649,14 +985,21 @@ export default function Home() {
           opacity: 0;
           transform: translateY(18px);
         }
+        /* Hero name uses gradient + background-clip:text — ancestor transform hides it in WebKit */
+        .landing-motion .landing-name {
+          transform: none;
+        }
         .landing-motion[data-intro-step="2"] .landing-el {
           animation: landing-rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation-fill-mode: both;
         }
         .landing-motion[data-intro-step="2"] .landing-meta {
           animation-delay: calc(var(--text-after-lines) + 0s);
         }
         .landing-motion[data-intro-step="2"] .landing-name {
+          animation: landing-name-rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
           animation-delay: calc(var(--text-after-lines) + 0.06s);
+          animation-fill-mode: both;
         }
         .landing-motion[data-intro-step="2"] .landing-index {
           animation-delay: calc(var(--text-after-lines) + 0.12s);
@@ -664,8 +1007,8 @@ export default function Home() {
         .landing-motion[data-intro-step="2"] .landing-copy {
           animation-delay: calc(var(--text-after-lines) + 0.18s);
         }
-        .landing-motion[data-intro-step="2"] .landing-deco {
-          animation-delay: calc(var(--text-after-lines) + 0.24s);
+        .landing-motion[data-intro-step="2"] .landing-corner-index {
+          animation-delay: calc(var(--text-after-lines) + 0.18s);
         }
         .landing-motion[data-intro-step="2"] .landing-scroll-cue-under {
           animation-delay: calc(var(--text-after-lines) + 0.28s);
@@ -709,6 +1052,14 @@ export default function Home() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        @keyframes landing-name-rise {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
           }
         }
       `}</style>
