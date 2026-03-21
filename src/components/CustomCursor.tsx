@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const BRAND = "#E63946";
+const BRAND = "#ffffff";
 
 /**
  * Custom cursor: crosshair “axes” with a red sample point — distinct from a ring+dot,

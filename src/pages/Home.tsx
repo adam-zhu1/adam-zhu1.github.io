@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -43,6 +44,8 @@ function HoverLetter({
   );
 }
 import { CustomCursor } from "../components/CustomCursor";
+import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
+import { WORK_PROJECTS } from "../data/workProjects";
 
 const GITHUB_URL = "https://github.com/adam-zhu1";
 const LINKEDIN_URL = "https://www.linkedin.com/in/adamzhu";
@@ -64,12 +67,21 @@ const LINE_STAGGER_S = 0.09;
 /** After last line finishes, text begins (seconds) */
 const TEXT_AFTER_LINES_S =
   LINE_STAGGER_S * 3 + LINE_DURATION_MS / 1000 + 0.08;
+/** Vertical line intro ends at this delay (stagger + duration); small buffer so we don’t cut the animation. */
+const VERTICAL_LINE_INTRO_MS = (LINE_STAGGER_S + LINE_DURATION_MS / 1000) * 1000 + 50;
+/** After scroll cue dismisses, shorten over this much additional scroll (viewport heights). */
+const LINE_SCROLL_SPAN_VH = 0.88;
+/** Line never shorter than this (0 = fully gone; ~0.28 = subtle stub). */
+const LINE_SCALE_MIN = 0.28;
+/** Per-frame lerp toward target (higher = snappier). */
+const LINE_SMOOTH_ALPHA = 0.09;
 
 /**
  * Scroll-scrubbed animations (e.g. About) hit full progress in this fraction of the
  * section’s scroll span; the rest is “cushion” before the next section enters view.
  */
-const SECTION_SCROLL_ANIM_COMPLETE = 0.62;
+/** Fraction of sticky scroll range over which section reveal 0→1 runs (larger = longer transition distance). */
+const SECTION_SCROLL_ANIM_COMPLETE = 1.92;
 
 /** Bump if you need everyone to see the cue again after changing placement */
 const SCROLL_CUE_SESSION_KEY = "landingScrollCueDismissed_v2";
@@ -118,32 +130,61 @@ function clamp01(n: number): number {
   return Math.min(Math.max(n, 0), 1);
 }
 
-/** About sticky scrub: item `index` animates in top-to-bottom (slide up + fade); last step = corner 02/About. */
-const ABOUT_STAGGER_STEPS = 8;
+/** Same px threshold as the scroll-cue dismiss effect — line stays full until then. */
+function scrollCueDismissScrollY(vh: number): number {
+  return Math.min(200, vh * 0.22);
+}
 
-function aboutStaggerStyle(
+function computeVerticalLineTarget(scrollY: number, vh: number): number {
+  const startY = scrollCueDismissScrollY(vh);
+  if (scrollY <= startY) {
+    return 1;
+  }
+  const spanPx = vh * LINE_SCROLL_SPAN_VH;
+  const raw = 1 - (scrollY - startY) / spanPx;
+  return Math.max(LINE_SCALE_MIN, clamp01(raw));
+}
+
+/** Sticky scrub: item animates in (fade + slide up); one after another. */
+const ABOUT_STAGGER_STEPS = 8;
+const CONNECT_STAGGER_STEPS = 8;
+/** Progress between one item starting and the next (smaller = closer together). */
+const STAGGER_START_INTERVAL = 0.065;
+/** Each item’s in-animation spans this much progress (unchanged = not quicker). */
+const STAGGER_ANIM_SPAN = 0.28;
+/** Quartic ease-out: super smooth, cushioned deceleration into the stop. */
+function easeOutQuart(t: number): number {
+  return 1 - (1 - t) * (1 - t) * (1 - t) * (1 - t);
+}
+
+function sectionStaggerStyle(
+  totalSteps: number,
   index: number,
   progress: number,
   reducedMotion: boolean,
-  slidePx = 34,
+  slidePx = 28,
 ): CSSProperties | undefined {
   if (reducedMotion) {
     return undefined;
   }
-  const slot = 1 / ABOUT_STAGGER_STEPS;
-  /** Fraction of each slot used for the in-animation (rest is hold / next item starts). */
-  const soft = 0.52;
-  const t = clamp01((progress - index * slot) / (slot * soft));
+  const tLinear = clamp01((progress - index * STAGGER_START_INTERVAL) / STAGGER_ANIM_SPAN);
+  const tMove = easeOutQuart(tLinear);
+  /** Opacity lags motion so the fade stays readable over more scroll. */
+  const tFade = Math.pow(tMove, 1.48);
   return {
-    opacity: t,
-    transform: `translateY(${(1 - t) * slidePx}px)`,
+    opacity: tFade,
+    transform: `translateY(${(1 - tMove) * slidePx}px)`,
   };
 }
 
 export default function Home() {
   const heroRef = useRef<HTMLElement | null>(null);
   const aboutRef = useRef<HTMLElement | null>(null);
+  const workRef = useRef<HTMLElement | null>(null);
+  const connectRef = useRef<HTMLElement | null>(null);
   const [progress, setProgress] = useState(0);
+  /** Name split 0→2 so Zhu/Adam keep moving past first viewport. */
+  const [heroNameProgress, setHeroNameProgress] = useState(0);
   /** 0 = Home / “01”; 1 = About handoff — drives big index, lines, backing morph. */
   const [sectionBridge, setSectionBridge] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(getInitialReducedMotion);
@@ -156,6 +197,19 @@ export default function Home() {
   const [aboutRevealProgress, setAboutRevealProgress] = useState(() =>
     getInitialReducedMotion() ? 1 : 0,
   );
+  const [workRevealProgress, setWorkRevealProgress] = useState(() =>
+    getInitialReducedMotion() ? 1 : 0,
+  );
+  const [connectRevealProgress, setConnectRevealProgress] = useState(() =>
+    getInitialReducedMotion() ? 1 : 0,
+  );
+  /** Only apply scroll-driven shorten after the vertical line’s intro animation has finished. */
+  const [verticalLineIntroDone, setVerticalLineIntroDone] = useState(false);
+  const verticalLineInnerRef = useRef<HTMLDivElement | null>(null);
+  const lineSmoothRef = useRef(1);
+  const lineTargetRef = useRef(1);
+  /** 0 = idle; non-zero = rAF loop is running (don’t cancel on every scroll). */
+  const lineAnimRafRef = useRef(0);
   const [showScrollCue, setShowScrollCue] = useState(() => {
     if (typeof window === "undefined") {
       return true;
@@ -166,6 +220,9 @@ export default function Home() {
       return true;
     }
   });
+  /** Same frame as vertical-line shorten — avoids cue vs line desync from async React state. */
+  const [scrollPastCueDismiss, setScrollPastCueDismiss] = useState(false);
+  const scrollPastCueDismissRef = useRef(false);
 
   /** Eased 0→1: letters move slower early, still reach full split at raw progress 1. */
   const HERO_NAME_SCROLL_EASE = 1.72;
@@ -237,22 +294,33 @@ export default function Home() {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const smooth = !reduced;
 
-      /** About: landing at block-start is black (reveal=0). Jump to where scrub is finished. */
-      if (id === "about") {
-        const aboutEl = aboutRef.current ?? el;
+      /** Sticky reveals: block-start is black (reveal=0). Jump to where scrub is finished. */
+      if (id === "about" || id === "work" || id === "connect") {
+        const sectionEl =
+          id === "about"
+            ? aboutRef.current ?? el
+            : id === "work"
+              ? workRef.current ?? el
+              : connectRef.current ?? el;
         const vh = window.innerHeight;
-        const aboutTop = aboutEl.offsetTop;
-        const aboutH = aboutEl.offsetHeight;
-        const stickyScrollRange = Math.max(aboutH - vh, 1);
+        const top = sectionEl.offsetTop;
+        const h = sectionEl.offsetHeight;
+        const stickyScrollRange = Math.max(h - vh, 1);
         const maxY = Math.max(0, document.documentElement.scrollHeight - vh);
         const targetY = Math.min(
-          aboutTop + stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE + 12,
+          top + stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE + 12,
           maxY,
         );
         const run = () => window.scrollTo({ top: targetY, behavior: "auto" });
         run();
         window.requestAnimationFrame(run);
-        setAboutRevealProgress(1);
+        if (id === "about") {
+          setAboutRevealProgress(1);
+        } else if (id === "work") {
+          setWorkRevealProgress(1);
+        } else {
+          setConnectRevealProgress(1);
+        }
         return;
       }
 
@@ -269,7 +337,7 @@ export default function Home() {
     const check = () => {
       const y = window.scrollY;
       const vh = window.innerHeight;
-      const dismissThreshold = Math.min(200, vh * 0.22);
+      const dismissThreshold = scrollCueDismissScrollY(vh);
 
       if (activeSection !== "home") {
         dismissScrollCue();
@@ -339,6 +407,76 @@ export default function Home() {
 
   useEffect(() => {
     if (reducedMotion) {
+      setVerticalLineIntroDone(true);
+      return;
+    }
+    if (introStep < 2) {
+      return;
+    }
+    const t = window.setTimeout(() => setVerticalLineIntroDone(true), VERTICAL_LINE_INTRO_MS);
+    return () => window.clearTimeout(t);
+  }, [introStep, reducedMotion]);
+
+  const applyVerticalLineTransform = useCallback((scale: number) => {
+    const el = verticalLineInnerRef.current;
+    if (!el) {
+      return;
+    }
+    el.style.setProperty("transform-origin", "top");
+    el.style.setProperty("transform", `scaleY(${scale})`);
+  }, []);
+
+  /** Hand off from CSS keyframes to JS so our transform can apply. */
+  useLayoutEffect(() => {
+    if (reducedMotion || !verticalLineIntroDone) {
+      return;
+    }
+    lineSmoothRef.current = 1;
+    lineTargetRef.current = computeVerticalLineTarget(window.scrollY, window.innerHeight);
+    applyVerticalLineTransform(1);
+  }, [verticalLineIntroDone, reducedMotion, applyVerticalLineTransform]);
+
+  /** One continuous rAF loop — no stop/start on scroll, so no back‑and‑forth glitch. */
+  useEffect(() => {
+    if (reducedMotion || !verticalLineIntroDone) {
+      if (lineAnimRafRef.current !== 0) {
+        cancelAnimationFrame(lineAnimRafRef.current);
+        lineAnimRafRef.current = 0;
+      }
+      return;
+    }
+    const vh = window.innerHeight;
+    lineSmoothRef.current = 1;
+    lineTargetRef.current = computeVerticalLineTarget(window.scrollY, vh);
+    applyVerticalLineTransform(1);
+
+    const tick = () => {
+      const y = window.scrollY;
+      const vh = window.innerHeight;
+      const past =
+        activeSection === "home" && y > scrollCueDismissScrollY(vh);
+      if (past !== scrollPastCueDismissRef.current) {
+        scrollPastCueDismissRef.current = past;
+        setScrollPastCueDismiss(past);
+      }
+
+      const t = computeVerticalLineTarget(y, vh);
+      lineTargetRef.current = t;
+      const s = lineSmoothRef.current;
+      const next = s + (t - s) * LINE_SMOOTH_ALPHA;
+      lineSmoothRef.current = next;
+      applyVerticalLineTransform(next);
+      lineAnimRafRef.current = requestAnimationFrame(tick);
+    };
+    lineAnimRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(lineAnimRafRef.current);
+      lineAnimRafRef.current = 0;
+    };
+  }, [verticalLineIntroDone, reducedMotion, applyVerticalLineTransform, activeSection]);
+
+  useEffect(() => {
+    if (reducedMotion) {
       return;
     }
     const root = document.documentElement;
@@ -367,37 +505,63 @@ export default function Home() {
         const raw = (0 - top) / vh;
         const p = clamp01(raw);
         setProgress(reducedMotion ? 0 : p);
+        setHeroNameProgress(reducedMotion ? 0 : Math.min(2, Math.max(0, raw)));
       }
+
+      const scrollY = window.scrollY;
 
       const aboutEl = aboutRef.current ?? document.getElementById("about");
       if (!aboutEl) {
         setSectionBridge(0);
         setAboutRevealProgress(0);
-        return;
+      } else {
+        const aboutTop = aboutEl.offsetTop;
+        const aboutH = aboutEl.offsetHeight;
+
+        if (reducedMotion) {
+          const marker = scrollY + vh * 0.38;
+          setSectionBridge(marker >= aboutTop ? 1 : 0);
+          setAboutRevealProgress(1);
+        } else {
+          const start = aboutTop - vh * 1.38;
+          const end = aboutTop - vh * 0.06;
+          const range = Math.max(end - start, 1);
+          const br = clamp01((scrollY - start) / range);
+          setSectionBridge(br);
+
+          /** Sticky About: 0→1 in the first part of the section scroll; then cushion before Work. */
+          const stickyScrollRange = Math.max(aboutH - vh, 1);
+          const revealRaw =
+            (scrollY - aboutTop) / Math.max(stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE, 1);
+          setAboutRevealProgress(clamp01(revealRaw));
+        }
       }
 
-      const scrollY = window.scrollY;
-      const aboutTop = aboutEl.offsetTop;
-      const aboutH = aboutEl.offsetHeight;
+      const applyStickyReveal = (
+        sectionEl: HTMLElement | null,
+        setReveal: (n: number) => void,
+      ) => {
+        if (!sectionEl) {
+          setReveal(0);
+          return;
+        }
+        if (reducedMotion) {
+          setReveal(1);
+          return;
+        }
+        const top = sectionEl.offsetTop;
+        const h = sectionEl.offsetHeight;
+        const stickyScrollRange = Math.max(h - vh, 1);
+        const revealRaw =
+          (scrollY - top) / Math.max(stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE, 1);
+        setReveal(clamp01(revealRaw));
+      };
 
-      if (reducedMotion) {
-        const marker = scrollY + vh * 0.38;
-        setSectionBridge(marker >= aboutTop ? 1 : 0);
-        setAboutRevealProgress(1);
-        return;
-      }
-
-      const start = aboutTop - vh * 1.38;
-      const end = aboutTop - vh * 0.06;
-      const range = Math.max(end - start, 1);
-      const br = clamp01((scrollY - start) / range);
-      setSectionBridge(br);
-
-      /** Sticky About: 0→1 in the first part of the section scroll; then cushion before Work. */
-      const stickyScrollRange = Math.max(aboutH - vh, 1);
-      const revealRaw =
-        (scrollY - aboutTop) / Math.max(stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE, 1);
-      setAboutRevealProgress(clamp01(revealRaw));
+      applyStickyReveal(workRef.current ?? document.getElementById("work"), setWorkRevealProgress);
+      applyStickyReveal(
+        connectRef.current ?? document.getElementById("connect"),
+        setConnectRevealProgress,
+      );
     };
 
     update();
@@ -439,14 +603,22 @@ export default function Home() {
     };
   }, []);
 
-  /** Same max spread as pre–full-section edit; driven by eased scroll (see scrollMotionEased). */
-  const splitPx = scrollMotionEased * Math.min(viewportW * 0.12, 140);
+  /** Name split: 0→1 eases like before; 1→2 continues so Zhu/Adam keep moving. */
+  const maxSplitPx = Math.min(viewportW * 0.12, 140);
+  const splitPx =
+    reducedMotion
+      ? 0
+      : heroNameProgress <= 1
+        ? Math.pow(heroNameProgress, HERO_NAME_SCROLL_EASE) * maxSplitPx
+        : maxSplitPx + (heroNameProgress - 1) * 72;
 
   /** Inline bridge parallax only after intro lines + text are allowed (avoids fighting landing-rise). */
   const bridgeOn = introStep >= 2 && sectionBridge > 0;
 
-  /** About: background layers still follow overall scroll progress. */
+  /** Background layers follow overall scroll progress per sticky section. */
   const aboutDecorOpacity = reducedMotion ? 1 : aboutRevealProgress;
+  const workDecorOpacity = reducedMotion ? 1 : workRevealProgress;
+  const connectDecorOpacity = reducedMotion ? 1 : connectRevealProgress;
 
   const onIntroOverlayEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== "opacity") {
@@ -457,16 +629,16 @@ export default function Home() {
 
   const motionClass = reducedMotion ? "landing-no-motion" : "landing-motion";
   const linkClass =
-    "group inline-flex items-center gap-2 border border-white bg-black px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white transition-colors hover:border-brand hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+    "group inline-flex items-center gap-2 border border-white/25 bg-black/60 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-white/55 hover:bg-white/[0.06] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
   const tocLinkClass = (id: string) =>
-    `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-      activeSection === id ? "text-white" : "text-brand hover:text-white"
+    `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+      activeSection === id ? "text-white" : "text-white/45 hover:text-white"
     }`;
 
-  /** Index span must match label hover — explicit brand was blocking inherited hover. */
+  /** Index span must match label hover. */
   const tocIndexClass = (id: string) =>
-    activeSection === id ? "text-white" : "text-brand group-hover:text-white";
+    activeSection === id ? "text-white" : "text-white/45 group-hover:text-white";
 
   const showOverlay = introStep < 2 && !reducedMotion;
 
@@ -499,10 +671,10 @@ export default function Home() {
       <section id="home" ref={heroRef} className="min-h-[125vh] scroll-mt-0">
         <div className="sticky top-0 flex min-h-dvh flex-col">
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
-            <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-brand sm:text-[11px]">
+            <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
                 href="#home"
-                className="text-brand transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
                   e.preventDefault();
                   scrollToSection("home");
@@ -522,7 +694,7 @@ export default function Home() {
                     : undefined
               }
             >
-              <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-brand" />
+              <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-white" />
             </div>
           </div>
 
@@ -535,7 +707,7 @@ export default function Home() {
                     <div className="relative isolate inline-block w-fit max-w-full select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]">
                       <div
                         aria-hidden
-                        className="pointer-events-none absolute left-[0.35rem] right-[0.35rem] -top-[0.65rem] -bottom-[0.65rem] z-0 bg-brand/[0.07] ring-1 ring-inset ring-brand/[0.14] sm:left-[0.45rem] sm:right-[0.45rem] sm:-top-[0.8rem] sm:-bottom-[0.8rem]"
+                        className="pointer-events-none absolute left-[0.35rem] right-[0.35rem] -top-[0.65rem] -bottom-[0.65rem] z-0 bg-white/[0.06] ring-1 ring-inset ring-white/[0.12] sm:left-[0.45rem] sm:right-[0.45rem] sm:-top-[0.8rem] sm:-bottom-[0.8rem]"
                         style={nameBackingStyle}
                       />
                       <div className="relative z-10 w-fit min-w-0">
@@ -550,7 +722,7 @@ export default function Home() {
                           ))}
                         </div>
                         <div
-                          className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)] text-brand"
+                          className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)] text-white"
                           style={{
                             transform: reducedMotion ? undefined : `translateX(${splitPx}px)`,
                           }}
@@ -571,7 +743,7 @@ export default function Home() {
                     reducedMotion
                       ? undefined
                       : bridgeOn
-                        ? { transform: `translateY(${sectionBridge * -22}px)` }
+                        ? { transform: `translateY(${sectionBridge * -10}px)` }
                         : undefined
                   }
                 >
@@ -579,12 +751,29 @@ export default function Home() {
                     className="intro-line intro-line-v pointer-events-none relative flex min-h-0 w-full flex-1 flex-col items-center overflow-hidden"
                     aria-hidden
                   >
-                    <div className="intro-line-inner intro-line-inner-v min-h-[min(44vh,28rem)] w-px min-w-px flex-1 origin-top bg-brand" />
+                    <div
+                      ref={verticalLineInnerRef}
+                      className={`intro-line-inner intro-line-inner-v min-h-[min(44vh,28rem)] w-px min-w-px flex-1 origin-top bg-white${
+                        verticalLineIntroDone && !reducedMotion ? " intro-line-v-driven" : ""
+                      }`}
+                    />
                   </div>
-                  {showScrollCue && activeSection === "home" && (
-                    <div className="landing-el landing-scroll-cue-under mt-auto flex shrink-0 flex-col items-center gap-0 pt-5 pb-2 sm:pt-6 sm:pb-3">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-brand">Scroll</span>
-                      <span className="scroll-cue-arrow inline-flex text-brand">
+                  {/* Fixed slot so hiding the cue doesn’t collapse flex / jump the line */}
+                  <div
+                    className="landing-el landing-scroll-cue-under mt-auto flex min-h-[5.25rem] shrink-0 flex-col items-center justify-end gap-0 pt-5 pb-2 sm:min-h-[5.75rem] sm:pt-6 sm:pb-3"
+                    aria-hidden={
+                      !(showScrollCue && activeSection === "home" && !scrollPastCueDismiss)
+                    }
+                  >
+                    <div
+                      className={`flex flex-col items-center gap-0 transition-opacity duration-300 ease-out ${
+                        showScrollCue && activeSection === "home" && !scrollPastCueDismiss
+                          ? "opacity-100"
+                          : "pointer-events-none opacity-0"
+                      }`}
+                    >
+                      <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/50">Scroll</span>
+                      <span className="scroll-cue-arrow inline-flex text-white/50">
                         <svg
                           width="28"
                           height="28"
@@ -599,16 +788,16 @@ export default function Home() {
                         </svg>
                       </span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="landing-rail flex min-h-[min(52vh,520px)] flex-col gap-12 pt-6 lg:min-h-0 lg:flex-1 lg:self-stretch lg:pt-8">
                   <div className="landing-el landing-index flex">
                     <nav
-                      className="flex w-full flex-col gap-4 border border-brand p-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white"
+                      className="flex w-full flex-col gap-4 border border-white/20 bg-white/[0.02] p-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white"
                       aria-label="On this page"
                     >
-                      <span className="text-brand">Contents</span>
+                      <span className="text-white/50">Contents</span>
                       <ul className="flex flex-col gap-2.5">
                         {SECTIONS.map((s, i) => (
                           <li key={s.id}>
@@ -653,7 +842,7 @@ export default function Home() {
                             : undefined
                       }
                     >
-                      <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-brand" />
+                      <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-white" />
                     </div>
                     <div
                       className="space-y-3"
@@ -671,7 +860,7 @@ export default function Home() {
                       <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-white sm:text-[13px]">
                         Carnegie Mellon University
                       </p>
-                      <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-brand sm:text-[13px]">
+                      <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-white/55 sm:text-[13px]">
                         Statistics &amp; machine learning
                       </p>
                     </div>
@@ -708,21 +897,32 @@ export default function Home() {
 
                   <div
                     aria-hidden
-                    className="landing-el landing-corner-index mt-auto flex w-full flex-col items-end gap-2 self-end pt-4 text-right font-display font-bold leading-none text-brand pointer-events-none lg:pt-6"
+                    className="landing-el landing-corner-index mt-auto flex w-full flex-col items-end gap-2 self-end pt-4 text-right font-display font-bold leading-none text-white pointer-events-none lg:pt-6"
                   >
                     <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">01</span>
-                    <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-brand/90">
+                    <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
                       Home
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* No vertical line on small screens — single cue under grid (desktop uses column above) */}
-              {showScrollCue && activeSection === "home" && (
-                <div className="landing-el landing-scroll-cue-under mt-40 flex flex-col items-center gap-0 lg:hidden">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-brand">Scroll</span>
-                  <span className="scroll-cue-arrow inline-flex text-brand">
+              {/* Mobile cue: same reserved height so layout doesn’t jump when it fades */}
+              <div
+                className="landing-el landing-scroll-cue-under mt-40 flex min-h-[3.5rem] flex-col items-center justify-center gap-0 lg:hidden"
+                aria-hidden={
+                  !(showScrollCue && activeSection === "home" && !scrollPastCueDismiss)
+                }
+              >
+                <div
+                  className={`flex flex-col items-center gap-0 transition-opacity duration-300 ease-out ${
+                    showScrollCue && activeSection === "home" && !scrollPastCueDismiss
+                      ? "opacity-100"
+                      : "pointer-events-none opacity-0"
+                  }`}
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/50">Scroll</span>
+                  <span className="scroll-cue-arrow inline-flex text-white/50">
                     <svg
                       width="28"
                       height="28"
@@ -737,34 +937,10 @@ export default function Home() {
                     </svg>
                   </span>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
-          <div className="px-5 pb-8 sm:px-10 sm:pb-10">
-            <div
-              className="intro-line intro-line-foot h-px w-full overflow-hidden"
-              style={
-                reducedMotion
-                  ? undefined
-                  : bridgeOn
-                    ? { transform: `translateX(${sectionBridge * 14}px)` }
-                    : undefined
-              }
-            >
-              <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-brand" />
-            </div>
-            <div className="landing-el landing-footer-meta flex justify-between pt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-brand sm:text-[11px]">
-              <span>P. 001</span>
-              <button
-                type="button"
-                className="text-right text-brand transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                onClick={() => scrollToSection("about")}
-              >
-                <span className="block">Next · About</span>
-              </button>
-            </div>
-          </div>
         </div>
         {/* Extra scroll after hero before About (animations feel “done” before the next screen). */}
         <div aria-hidden className="pointer-events-none min-h-[min(48vh,520px)] w-full shrink-0" />
@@ -774,52 +950,52 @@ export default function Home() {
       <section
         id="about"
         ref={aboutRef}
-        className="relative scroll-mt-0 border-t border-brand/50 bg-black min-h-[260vh]"
+        className="relative scroll-mt-0 bg-black min-h-[260vh]"
         aria-labelledby="about-heading"
       >
         <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-hidden bg-black">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-30%,rgba(230,57,70,0.14),transparent_55%),linear-gradient(180deg,rgba(12,12,12,0.95)_0%,#000_45%,#030303_100%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-30%,rgba(255,255,255,0.055),transparent_55%),linear-gradient(180deg,rgba(6,6,6,0.98)_0%,#000_45%,#080808_100%)]"
             style={{ opacity: aboutDecorOpacity }}
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(230,57,70,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(230,57,70,0.45)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
-            style={{ opacity: 0.07 * aboutDecorOpacity }}
+            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.11)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
+            style={{ opacity: 0.055 * aboutDecorOpacity }}
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent"
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
             style={{ opacity: aboutDecorOpacity }}
           />
 
           <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col justify-center px-5 pb-20 pt-28 sm:px-10 sm:pb-28 sm:pt-32">
             <div className="grid gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
               <div className="flex flex-col gap-0 lg:col-span-7">
-                <div style={aboutStaggerStyle(0, aboutRevealProgress, reducedMotion)}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-brand/90 sm:text-[11px]">
+                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,0, aboutRevealProgress, reducedMotion)}>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">
                     02 · About
                   </p>
                 </div>
-                <div className="mt-5 sm:mt-6" style={aboutStaggerStyle(1, aboutRevealProgress, reducedMotion)}>
+                <div className="mt-5 sm:mt-6" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,1, aboutRevealProgress, reducedMotion)}>
                   <h2
                     id="about-heading"
                     className="font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
                   >
                     Curiosity
-                    <span className="block text-brand">driven by data</span>
+                    <span className="block text-white">driven by data</span>
                   </h2>
                 </div>
-                <div className="mt-10" style={aboutStaggerStyle(2, aboutRevealProgress, reducedMotion)}>
+                <div className="mt-10" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,2, aboutRevealProgress, reducedMotion)}>
                   <p className="max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
                     I&apos;m a statistics &amp; machine learning student at{" "}
                     <span className="text-white">Carnegie Mellon</span> — interested in rigorous methods,
                     clear communication, and tools that actually help people decide under uncertainty.
                   </p>
                 </div>
-                <div className="mt-6" style={aboutStaggerStyle(3, aboutRevealProgress, reducedMotion)}>
-                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-brand/90 sm:text-[13px]">
+                <div className="mt-6" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,3, aboutRevealProgress, reducedMotion)}>
+                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/50 sm:text-[13px]">
                     This space is yours to shape: research threads, coursework highlights, side projects,
                     and what you want to explore next.
                   </p>
@@ -828,32 +1004,32 @@ export default function Home() {
 
               <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
                 <div
-                  className="border border-brand/45 bg-brand/[0.04] p-6 backdrop-blur-sm"
-                  style={aboutStaggerStyle(4, aboutRevealProgress, reducedMotion)}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-brand">Now</p>
+                  className="border border-white/20 bg-white/[0.04] p-6 backdrop-blur-sm"
+                  style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,4, aboutRevealProgress, reducedMotion)}>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Now</p>
                   <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
                     CMU · Statistics &amp; ML — coursework, research, and experiments in inference &
                     learning.
                   </p>
                 </div>
-                <div style={aboutStaggerStyle(5, aboutRevealProgress, reducedMotion, 28)}>
+                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,5, aboutRevealProgress, reducedMotion, 28)}>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div className="border border-white/15 bg-white/[0.03] p-4 sm:p-5">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-brand">Focus</p>
+                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Focus</p>
                       <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
                         Modeling, evaluation, and honest uncertainty.
                       </p>
                     </div>
                     <div className="border border-white/15 bg-white/[0.03] p-4 sm:p-5">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-brand">Based</p>
+                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
                       <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
                         Pittsburgh — on campus &amp; remote-friendly collabs.
                       </p>
                     </div>
                   </div>
                 </div>
-                <div style={aboutStaggerStyle(6, aboutRevealProgress, reducedMotion, 24)}>
-                  <div className="h-px w-full bg-gradient-to-r from-brand/50 via-brand/20 to-transparent" aria-hidden />
+                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,6, aboutRevealProgress, reducedMotion, 24)}>
+                  <div className="h-px w-full bg-gradient-to-r from-white/40 via-white/10 to-transparent" aria-hidden />
                   <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
                     Scroll for work &amp; connect — or jump from the contents rail.
                   </p>
@@ -863,11 +1039,11 @@ export default function Home() {
 
             <div
               aria-hidden
-              className="pointer-events-none absolute bottom-6 right-5 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-brand sm:bottom-8 sm:right-10"
-              style={aboutStaggerStyle(7, aboutRevealProgress, reducedMotion, 32)}
+              className="pointer-events-none absolute bottom-6 right-5 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-8 sm:right-10"
+              style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,7, aboutRevealProgress, reducedMotion, 32)}
             >
               <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">02</span>
-              <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-brand/90">
+              <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
                 About
               </span>
             </div>
@@ -875,51 +1051,143 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Work ─── */}
+      {/* ─── Work: tall track + sticky — horizontal project rail, then handoff to Connect ─── */}
       <section
         id="work"
-        className="scroll-mt-2 border-t border-brand px-5 py-24 sm:px-10 sm:py-28"
+        ref={workRef}
+        className="relative scroll-mt-0 bg-black"
+        style={{ minHeight: `${workSectionMinHeightVh(WORK_PROJECTS.length)}vh` }}
         aria-labelledby="work-heading"
       >
-        <div className="mx-auto max-w-[1600px]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand">03 · Work</p>
-          <h2 id="work-heading" className="mt-6 font-display text-5xl font-bold uppercase tracking-[0.02em] text-white sm:text-6xl md:text-7xl">
-            Work
-          </h2>
-          <p className="mt-8 max-w-2xl font-mono text-sm uppercase leading-relaxed tracking-[0.12em] text-white sm:text-base">
-            Projects, research, and builds will go here — cards, links to write-ups, or case studies.
-          </p>
+        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-hidden bg-black">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_85%_-25%,rgba(255,255,255,0.05),transparent_52%),linear-gradient(200deg,rgba(6,6,6,0.98)_0%,#000_48%,#070707_100%)]"
+            style={{ opacity: workDecorOpacity }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.11)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
+            style={{ opacity: 0.055 * workDecorOpacity }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-white/32 to-transparent"
+            style={{ opacity: workDecorOpacity }}
+          />
+
+          <WorkProjectsExperience
+            workRevealProgress={workRevealProgress}
+            reducedMotion={reducedMotion}
+            viewportW={viewportW}
+          />
         </div>
-        <div aria-hidden className="pointer-events-none min-h-[min(32vh,360px)] w-full" />
       </section>
 
-      {/* ─── Connect ─── */}
+      {/* ─── Connect: tall track + sticky panel (scrub reveal) ─── */}
       <section
         id="connect"
-        className="scroll-mt-2 border-t border-brand px-5 py-24 sm:px-10 sm:py-28"
+        ref={connectRef}
+        className="relative scroll-mt-0 bg-black min-h-[260vh]"
         aria-labelledby="connect-heading"
       >
-        <div className="mx-auto max-w-[1600px]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand">04 · Connect</p>
-          <h2 id="connect-heading" className="mt-6 font-display text-5xl font-bold uppercase tracking-[0.02em] text-white sm:text-6xl md:text-7xl">
-            Connect
-          </h2>
-          <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.12em] text-white sm:text-base">
-            Reach out for collaborations, questions, or opportunities.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
-              <IconGitHub className="h-4 w-4" />
-              GitHub
-            </a>
-            <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" className={linkClass}>
-              <IconLinkedIn className="h-4 w-4" />
-              LinkedIn
-            </a>
-            <a href={EMAIL_MAILTO} className={linkClass}>
-              <IconMail className="h-4 w-4" />
-              {EMAIL}
-            </a>
+        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-hidden bg-black">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_15%_0%,rgba(255,255,255,0.045),transparent_55%),linear-gradient(165deg,rgba(5,5,5,0.98)_0%,#000_52%,#080808_100%)]"
+            style={{ opacity: connectDecorOpacity }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.11)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
+            style={{ opacity: 0.055 * connectDecorOpacity }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
+            style={{ opacity: connectDecorOpacity }}
+          />
+
+          <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col justify-center px-5 pb-28 pt-28 sm:px-10 sm:pb-32 sm:pt-32">
+            <div className="grid gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
+              <div className="flex flex-col gap-0 lg:col-span-7">
+                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 0, connectRevealProgress, reducedMotion)}>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">
+                    04 · Connect
+                  </p>
+                </div>
+                <div className="mt-5 sm:mt-6" style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 1, connectRevealProgress, reducedMotion)}>
+                  <h2
+                    id="connect-heading"
+                    className="font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
+                  >
+                    Let&apos;s
+                    <span className="block text-white">talk</span>
+                  </h2>
+                </div>
+                <div className="mt-10" style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 2, connectRevealProgress, reducedMotion)}>
+                  <p className="max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
+                    Reach out for collaborations, research questions, coursework, or opportunities. I read
+                    everything — concise subject lines and a clear ask get a faster reply.
+                  </p>
+                </div>
+                <div
+                  className="mt-10 flex flex-wrap gap-4"
+                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 3, connectRevealProgress, reducedMotion, 26)}
+                >
+                  <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
+                    <IconGitHub className="h-4 w-4" />
+                    GitHub
+                  </a>
+                  <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" className={linkClass}>
+                    <IconLinkedIn className="h-4 w-4" />
+                    LinkedIn
+                  </a>
+                  <a href={EMAIL_MAILTO} className={linkClass}>
+                    <IconMail className="h-4 w-4" />
+                    {EMAIL}
+                  </a>
+                </div>
+              </div>
+
+              <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
+                <div
+                  className="border border-white/20 bg-white/[0.04] p-6 backdrop-blur-sm"
+                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 4, connectRevealProgress, reducedMotion)}
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Open to</p>
+                  <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
+                    Research chats, stats/ML tooling feedback, and thoughtful internships — especially where
+                    rigor and communication both matter.
+                  </p>
+                </div>
+                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 5, connectRevealProgress, reducedMotion, 28)}>
+                  <div className="border border-white/15 bg-white/[0.03] p-5 sm:p-6">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
+                    <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
+                      Pittsburgh &amp; CMU — hybrid-friendly; time zone US Eastern.
+                    </p>
+                  </div>
+                </div>
+                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 6, connectRevealProgress, reducedMotion, 24)}>
+                  <div className="h-px w-full bg-gradient-to-r from-white/40 via-white/10 to-transparent" aria-hidden />
+                  <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
+                    Prefer email for longer threads — links above for code &amp; professional context.
+                  </p>
+                </div>
+              </aside>
+            </div>
+
+            <div
+              aria-hidden
+              className="pointer-events-none absolute bottom-6 right-5 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-8 sm:right-10"
+              style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 7, connectRevealProgress, reducedMotion, 32)}
+            >
+              <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">04</span>
+              <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
+                Connect
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -937,14 +1205,14 @@ export default function Home() {
         .landing-motion .intro-line-inner-h {
           transform: scaleX(0);
         }
-        .landing-motion .intro-line-inner-v {
+        .landing-motion .intro-line-inner-v:not(.intro-line-v-driven) {
           transform: scaleY(0);
         }
         .landing-motion[data-intro-step="2"] .intro-line-top .intro-line-inner {
           animation: landing-line-x var(--line-dur) var(--line-ease) forwards;
           animation-delay: 0s;
         }
-        .landing-motion[data-intro-step="2"] .intro-line-v .intro-line-inner {
+        .landing-motion[data-intro-step="2"] .intro-line-v .intro-line-inner:not(.intro-line-v-driven) {
           animation: landing-line-y var(--line-dur) var(--line-ease) forwards;
           animation-delay: var(--line-stagger);
         }
@@ -952,11 +1220,6 @@ export default function Home() {
           animation: landing-line-x var(--line-dur) var(--line-ease) forwards;
           animation-delay: calc(var(--line-stagger) * 2);
         }
-        .landing-motion[data-intro-step="2"] .intro-line-foot .intro-line-inner {
-          animation: landing-line-x var(--line-dur) var(--line-ease) forwards;
-          animation-delay: calc(var(--line-stagger) * 3);
-        }
-
         .landing-no-motion .intro-line-inner-h {
           transform: scaleX(1);
         }
@@ -1012,9 +1275,6 @@ export default function Home() {
         }
         .landing-motion[data-intro-step="2"] .landing-scroll-cue-under {
           animation-delay: calc(var(--text-after-lines) + 0.28s);
-        }
-        .landing-motion[data-intro-step="2"] .landing-footer-meta {
-          animation-delay: calc(var(--text-after-lines) + 0.34s);
         }
 
         .scroll-cue-arrow {
