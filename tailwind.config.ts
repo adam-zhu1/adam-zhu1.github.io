@@ -14,7 +14,8 @@ export default {
         muted: "hsl(var(--muted) / <alpha-value>)",
         accent: "hsl(var(--accent) / <alpha-value>)",
         line: "hsl(var(--line) / <alpha-value>)",
-        brand: "#E63946",
+        /** Monochrome: lines / focus rings (same as white — kept as semantic token) */
+        brand: "#ffffff",
       },
       maxWidth: {
         measure: "42rem",
