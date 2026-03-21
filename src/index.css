@@ -6,9 +6,9 @@
   :root {
     --paper: 0 0% 0%;
     --ink: 0 0% 100%;
-    --muted: 0 0% 100%;
-    --accent: 355 78% 56%;
-    --line: 0 0% 100%;
+    --muted: 0 0% 62%;
+    --accent: 0 0% 100%;
+    --line: 0 0% 22%;
     color-scheme: dark;
   }
 
@@ -22,6 +22,6 @@
   }
 
   ::selection {
-    @apply bg-brand text-white;
+    @apply bg-white text-black;
   }
 }
