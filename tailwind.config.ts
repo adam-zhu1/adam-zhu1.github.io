@@ -16,6 +16,14 @@ export default {
         line: "hsl(var(--line) / <alpha-value>)",
         /** Monochrome: lines / focus rings (same as white — kept as semantic token) */
         brand: "#ffffff",
+        /** Portfolio accent palette (use with /opacity in class names) */
+        az: {
+          navy: "#002A79",
+          purple: "#512B87",
+          magenta: "#891446",
+          red: "#AE0C00",
+          bright: "#D80515",
+        },
       },
       maxWidth: {
         measure: "42rem",

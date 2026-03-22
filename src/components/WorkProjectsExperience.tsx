@@ -2,6 +2,7 @@ import { useMemo, type CSSProperties } from "react";
 import {
   WORK_PROJECTS,
   mapHorizontalScrollToSlideIndex,
+  remapHorizontalScrollU,
   workProjectsSegmentWeights,
   type WorkProjectMotion,
 } from "../data/workProjects";
@@ -36,7 +37,13 @@ function introStaggerStyle(
 }
 
 const WORK_INTRO_END = 0.1;
-const WORK_HORIZ_END = 0.84;
+/**
+ * p where horizontal scrub u reaches 1 (publication slide in). After this, u stays at 1 — user keeps scrolling
+ * normally; no animated handoff, Connect comes in via the page scroll.
+ */
+const WORK_HORIZ_U_COMPLETE = 0.86;
+/** Team Neutrino (slide index 3): extra scroll at full frame before publication. */
+const NEUTRINO_DWELL_U = 0.068;
 
 function motionStyle(
   motion: WorkProjectMotion,
@@ -51,8 +58,9 @@ function motionStyle(
     case "wipe":
       return {
         opacity: e,
-        transform: `translateX(${(1 - e) * -36}px)`,
-        clipPath: `inset(0 ${(1 - e) * 100}% 0 0)`,
+        transform: `translateX(${(1 - e) * -28}px)`,
+        /** Clip from the left so the right edge + border stay visible while the card moves. */
+        clipPath: `inset(0 0 0 ${(1 - e) * 100}%)`,
       };
     case "depth":
       return {
@@ -73,8 +81,9 @@ function motionStyle(
     case "scan":
       return {
         opacity: e,
-        transform: `translateY(${(1 - e) * 20}px) skewX(${(1 - e) * -3}deg)`,
-        boxShadow: `0 0 ${(1 - e) * 48}px rgba(255,255,255,${0.06 * e})`,
+        /** Gentler than before — heavy skew + handoff transform read as “glitchy” on the last slide. */
+        transform: `translateY(${(1 - e) * 12}px) skewX(${(1 - e) * -1.25}deg)`,
+        boxShadow: `0 0 ${(1 - e) * 32}px rgba(255,255,255,${0.05 * e})`,
       };
     default:
       return { opacity: e };
@@ -91,13 +100,13 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
   const weights = useMemo(() => workProjectsSegmentWeights(), []);
   const n = WORK_PROJECTS.length;
 
-  const { introP, horizU, handoffT, introOverlayOpacity, railBlend } = useMemo(() => {
+  const { introP, horizU, introOverlayOpacity, railBlend } = useMemo(() => {
     const p = clamp01(workRevealProgress);
     const introP = clamp01(p / Math.max(WORK_INTRO_END, 0.001));
     const horizStart = WORK_INTRO_END;
-    const horizSpan = Math.max(WORK_HORIZ_END - horizStart, 0.001);
-    const horizU = clamp01((p - horizStart) / horizSpan);
-    const handoffT = clamp01((p - WORK_HORIZ_END) / Math.max(1 - WORK_HORIZ_END, 0.001));
+    const horizSpan = Math.max(WORK_HORIZ_U_COMPLETE - horizStart, 0.001);
+    const horizU =
+      p >= WORK_HORIZ_U_COMPLETE ? 1 : clamp01((p - horizStart) / horizSpan);
 
     const fadeStart = WORK_INTRO_END * 0.55;
     let introOverlayOpacity = 1;
@@ -109,22 +118,30 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
     const railBlend =
       p < fadeStart ? 0 : p >= WORK_INTRO_END ? 1 : (p - fadeStart) / (WORK_INTRO_END - fadeStart);
 
-    return { introP, horizU, handoffT, introOverlayOpacity, railBlend };
+    return { introP, horizU, introOverlayOpacity, railBlend };
   }, [workRevealProgress]);
 
-  const fractionalSlide = useMemo(
-    () => (reducedMotion ? 0 : mapHorizontalScrollToSlideIndex(horizU, weights)),
+  const horizUForRail = useMemo(
+    () =>
+      reducedMotion ? 0 : remapHorizontalScrollU(horizU, weights, 3, NEUTRINO_DWELL_U),
     [horizU, weights, reducedMotion],
   );
 
-  const translatePx = -fractionalSlide * viewportW;
+  const fractionalSlide = useMemo(
+    () => (reducedMotion ? 0 : mapHorizontalScrollToSlideIndex(horizUForRail, weights)),
+    [horizUForRail, weights, reducedMotion],
+  );
 
-  const handoffStyle: CSSProperties = reducedMotion
-    ? {}
-    : {
-        transform: `translate3d(0, ${handoffT * 42}vh, 0)`,
-        opacity: 1 - handoffT * 0.88,
-      };
+  /** First project stays hidden until a bit into the horizontal phase (no card peeking during intro). */
+  const firstProjectScrollFade = useMemo(() => {
+    if (reducedMotion) {
+      return 1;
+    }
+    const span = 0.11;
+    return easeOutQuart(clamp01(horizU / span));
+  }, [horizU, reducedMotion]);
+
+  const translatePx = -fractionalSlide * viewportW;
 
   if (reducedMotion) {
     return (
@@ -147,7 +164,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
           {WORK_PROJECTS.map((proj) => (
             <li
               key={proj.id}
-              className="border border-white/18 bg-white/[0.04] p-6 sm:p-8"
+              className="bg-az-card border border-white/16 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.035)] sm:p-8"
             >
               <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-white/50">{proj.eyebrow}</p>
               <h3 className="mt-3 font-display text-2xl font-bold uppercase tracking-tight text-white sm:text-3xl">
@@ -178,12 +195,9 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
   }
 
   return (
-    <div
-      className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1600px] flex-col px-5 pb-24 pt-28 sm:px-10 sm:pb-28 sm:pt-32"
-      style={handoffStyle}
-    >
+    <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1600px] flex-col px-5 pb-24 pt-28 sm:px-10 sm:pb-28 sm:pt-32">
       <div
-        className="pointer-events-none absolute bottom-6 right-5 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-8 sm:right-10"
+        className="pointer-events-none absolute bottom-[5.25rem] right-5 z-30 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-[6.5rem] sm:right-10"
         aria-hidden
         style={{ opacity: 0.35 + railBlend * 0.65 }}
       >
@@ -212,8 +226,8 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
         </div>
         <div className="mt-8 max-w-xl" style={introStaggerStyle(2, introP, false)}>
           <p className="font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-            Scroll down: each beat is a project page drifting left → right — pacing is uneven on purpose. At the end,
-            keep scrolling and the view hands off to connect.
+            Scroll down: each beat is a project page drifting left → right — pacing is uneven on purpose. On the last
+            card, pause if you like, then scroll down for Connect.
           </p>
         </div>
       </div>
@@ -222,10 +236,8 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
       <div
         role="region"
         aria-label="Selected projects — scroll vertically to move between slides"
-        className="relative mt-4 flex min-h-0 flex-1 flex-col justify-center overflow-hidden sm:mt-8"
-        style={{
-          opacity: 0.08 + railBlend * 0.92,
-        }}
+        className="relative mt-4 flex min-h-0 flex-1 flex-col justify-center overflow-x-clip overflow-y-visible sm:mt-8"
+        style={{ opacity: railBlend }}
       >
         <div
           aria-hidden
@@ -235,7 +247,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
             transform: `translateY(-50%) translateX(${Math.sin(horizU * Math.PI * 2.1) * 10}px)`,
           }}
         />
-        <div className="overflow-hidden">
+        <div className="overflow-x-clip overflow-y-visible px-2 sm:px-3">
           <div
             className="flex will-change-transform"
             style={{
@@ -248,20 +260,26 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
               const neighbor = clamp01(1 - dist * 1.35);
               const enter = clamp01(1 - dist * 1.15);
               const panelMotion = motionStyle(proj.motion, enter, false);
+              const slideShellOpacity = clamp01(Math.pow(neighbor, 1.05));
+              const firstFade = i === 0 ? firstProjectScrollFade : 1;
               return (
                 <div
                   key={proj.id}
                   className="shrink-0 px-1 sm:px-3"
                   style={{
                     width: viewportW,
-                    opacity: 0.25 + neighbor * 0.75,
+                    opacity: slideShellOpacity * firstFade,
                     transform: `scale(${0.94 + neighbor * 0.06})`,
                     transition: "none",
                   }}
                 >
                   <div
-                    className="mx-auto flex h-[min(72vh,40rem)] max-w-3xl flex-col justify-center border border-white/20 bg-gradient-to-br from-white/[0.06] to-white/[0.02] px-6 py-8 backdrop-blur-[2px] sm:px-10 sm:py-10"
-                    style={panelMotion}
+                    className="bg-az-work-slide mx-auto flex h-[min(72vh,40rem)] max-w-3xl flex-col justify-center border border-white/18 px-6 py-8 backdrop-blur-[2px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.045)] sm:px-10 sm:py-10"
+                    style={{
+                      ...panelMotion,
+                      opacity:
+                        (typeof panelMotion.opacity === "number" ? panelMotion.opacity : 1) * firstFade,
+                    }}
                   >
                     <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-white/50">{proj.eyebrow}</p>
                     <h3 className="mt-4 font-display text-[clamp(1.75rem,5vw,2.75rem)] font-bold uppercase leading-[0.95] tracking-[0.02em] text-white">
@@ -277,7 +295,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
                       {proj.tags.map((t) => (
                         <li
                           key={t}
-                          className="list-none border border-white/22 bg-black/30 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.22em] text-white/72"
+                          className="list-none border border-white/20 bg-black/35 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.22em] text-white/72 shadow-[inset_0_0_0_1px_rgba(81,43,135,0.12)]"
                         >
                           {t}
                         </li>
@@ -290,11 +308,8 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
           </div>
         </div>
 
-        <p
-          className="mt-6 max-w-lg font-mono text-[10px] uppercase tracking-[0.2em] text-white/40"
-          style={{ opacity: railBlend * (1 - handoffT) }}
-        >
-          Last page: keep scrolling — the frame drops toward connect.
+        <p className="mt-6 max-w-lg font-mono text-[10px] uppercase tracking-[0.2em] text-white/40" style={{ opacity: railBlend }}>
+          Last page: when you&apos;re ready, scroll down — Connect is next.
         </p>
       </div>
     </div>
@@ -302,6 +317,6 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
 }
 
 export function workSectionMinHeightVh(projectCount: number): number {
-  /** Tall track: intro + uneven horizontal passes + handoff cushion (non-linear feel needs scroll room). */
-  return 88 + projectCount * 108 + 140;
+  /** Tall track: intro + horizontal rail + extra scroll after the last slide (natural exit to Connect). */
+  return 88 + projectCount * 108 + 200;
 }
