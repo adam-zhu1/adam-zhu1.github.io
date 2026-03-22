@@ -68,18 +68,27 @@ const LINE_STAGGER_S = 0.09;
 const TEXT_AFTER_LINES_S =
   LINE_STAGGER_S * 3 + LINE_DURATION_MS / 1000 + 0.08;
 /** Name panel → letter stagger → then rest of hero (meta, TOC, copy, …). */
-/** Gradient panel: clip-path sweeps TL → BR before letters. */
-const NAME_PANEL_IN_S = 0.92;
-const NAME_LETTER_STAGGER_S = 0.068;
-const NAME_LETTER_IN_S = 1.38;
-const NAME_LETTER_COUNT = 7;
-const REST_INTRO_GAP_S = 0.07;
-const REST_INTRO_DELAY_S =
-  TEXT_AFTER_LINES_S +
-  NAME_PANEL_IN_S +
-  (NAME_LETTER_COUNT - 1) * NAME_LETTER_STAGGER_S +
-  NAME_LETTER_IN_S +
-  REST_INTRO_GAP_S;
+/** Gradient panel: inset() reveal from TL toward BR (single smooth tween). */
+const NAME_PANEL_IN_S = 0.82;
+const NAME_LETTER_STAGGER_S = 0.06;
+const NAME_LETTER_IN_S = 1.22;
+/**
+ * Intro choreography (overlapping, one continuous gesture):
+ * lines → panel → letters start mid-panel → hero rail starts mid–letters.
+ */
+/** Letters begin when this fraction of the panel tween remains (0.5 ≈ halfway through box). */
+const INTRO_BOX_LETTER_BLEND = 0.5;
+/** First meta/TOC motion this long after the first letter starts (rail overlaps letter tail). */
+const INTRO_LETTER_REST_GAP_S = 0.18;
+/** Small offsets so rail items read as one unit (seconds, after --rest-intro-delay). */
+const REST_RAIL_INDEX_S = 0.055;
+const REST_RAIL_COPY_S = 0.1;
+const REST_RAIL_CORNER_S = 0.1;
+const REST_RAIL_SCROLL_S = 0.17;
+
+const NAME_LETTER_BLOCK_START_S =
+  TEXT_AFTER_LINES_S + NAME_PANEL_IN_S * (1 - INTRO_BOX_LETTER_BLEND);
+const REST_INTRO_DELAY_S = NAME_LETTER_BLOCK_START_S + INTRO_LETTER_REST_GAP_S;
 /** Vertical line intro ends at this delay (stagger + duration); small buffer so we don’t cut the animation. */
 const VERTICAL_LINE_INTRO_MS = (LINE_STAGGER_S + LINE_DURATION_MS / 1000) * 1000 + 50;
 /** After scroll cue dismisses, shorten over this much additional scroll (viewport heights). */
@@ -685,7 +694,12 @@ export default function Home() {
           "--name-panel-dur": `${NAME_PANEL_IN_S}s`,
           "--name-letter-stagger": `${NAME_LETTER_STAGGER_S}s`,
           "--name-letter-dur": `${NAME_LETTER_IN_S}s`,
+          "--letter-block-start": `${NAME_LETTER_BLOCK_START_S}s`,
           "--rest-intro-delay": `${REST_INTRO_DELAY_S}s`,
+          "--rest-rail-index": `${REST_RAIL_INDEX_S}s`,
+          "--rest-rail-copy": `${REST_RAIL_COPY_S}s`,
+          "--rest-rail-corner": `${REST_RAIL_CORNER_S}s`,
+          "--rest-rail-scroll": `${REST_RAIL_SCROLL_S}s`,
         } as CSSProperties
       }
     >
@@ -759,9 +773,9 @@ export default function Home() {
                           style={nameBackingStyle}
                         />
                       </div>
-                      <div className="relative z-10 w-fit min-w-0">
+                      <div className="landing-name-fill relative z-10 w-fit min-w-0">
                         <div
-                          className="block w-max text-white"
+                          className="block w-max"
                           style={{
                             transform: reducedMotion ? undefined : `translateY(${-splitPx}px)`,
                           }}
@@ -777,7 +791,7 @@ export default function Home() {
                           ))}
                         </div>
                         <div
-                          className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)] text-white"
+                          className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)]"
                           style={{
                             transform: reducedMotion ? undefined : `translateX(${splitPx}px)`,
                           }}
@@ -1308,45 +1322,62 @@ export default function Home() {
           opacity: 0;
           transform: translateY(18px);
         }
-        /* Hero name uses gradient + background-clip:text — ancestor transform hides it in WebKit */
+        /* Hero name column: no transform (WebKit + background-clip:text breaks under ancestor transforms). */
+        .landing-name {
+          -webkit-font-smoothing: auto;
+          -moz-osx-font-smoothing: auto;
+        }
         .landing-motion .landing-name {
           transform: none;
         }
+        /**
+         * Pure white glyphs; transparency is on the layer (opacity) so color stays #fff, not gray rgba().
+         * Slight opacity lets the gradient panel show through underneath.
+         */
+        .landing-name-fill {
+          color: #fff;
+          -webkit-text-fill-color: #fff;
+          opacity: 0.92;
+          text-shadow:
+            0 0.02em 0.07em rgba(0, 0, 0, 0.28),
+            0 0.01em 0.03em rgba(0, 0, 0, 0.2);
+        }
         .landing-motion .landing-name-backing {
           opacity: 1;
-          clip-path: polygon(0% 0%, 0% 0%, 0% 0%, 0% 0%);
+          /* inset() interpolates smoothly (polygon() multi-stop reads stepped in many browsers). */
+          clip-path: inset(0 100% 100% 0);
         }
         .landing-motion[data-intro-step="2"] .landing-name-backing {
-          animation: landing-name-panel-in var(--name-panel-dur) cubic-bezier(0.2, 0.85, 0.15, 1) forwards;
+          animation: landing-name-panel-in var(--name-panel-dur) cubic-bezier(0.33, 0, 0.18, 1) forwards;
           animation-delay: var(--text-after-lines);
         }
         .landing-motion .landing-name-letter {
           opacity: 0;
         }
         .landing-motion[data-intro-step="2"] .landing-name-letter {
-          animation: landing-letter-in var(--name-letter-dur) cubic-bezier(0.18, 0.88, 0.22, 1) forwards;
+          animation: landing-letter-in var(--name-letter-dur) cubic-bezier(0.28, 0.65, 0.18, 1) forwards;
           animation-delay: calc(
-            var(--text-after-lines) + var(--name-panel-dur) + var(--name-letter-i) * var(--name-letter-stagger)
+            var(--letter-block-start) + var(--name-letter-i) * var(--name-letter-stagger)
           );
         }
         .landing-motion[data-intro-step="2"] .landing-el {
-          animation: landing-rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: landing-rise 0.58s cubic-bezier(0.26, 0.9, 0.2, 1) forwards;
           animation-fill-mode: both;
         }
         .landing-motion[data-intro-step="2"] .landing-meta {
           animation-delay: calc(var(--rest-intro-delay) + 0s);
         }
         .landing-motion[data-intro-step="2"] .landing-index {
-          animation-delay: calc(var(--rest-intro-delay) + 0.12s);
+          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-index));
         }
         .landing-motion[data-intro-step="2"] .landing-copy {
-          animation-delay: calc(var(--rest-intro-delay) + 0.18s);
+          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-copy));
         }
         .landing-motion[data-intro-step="2"] .landing-corner-index {
-          animation-delay: calc(var(--rest-intro-delay) + 0.18s);
+          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-corner));
         }
         .landing-motion[data-intro-step="2"] .landing-scroll-cue-under {
-          animation-delay: calc(var(--rest-intro-delay) + 0.28s);
+          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-scroll));
         }
 
         .scroll-cue-arrow {
@@ -1385,44 +1416,26 @@ export default function Home() {
           animation: none !important;
           transform: none !important;
         }
+        .landing-no-motion .landing-name-fill {
+          opacity: 1 !important;
+        }
 
-        /* Wedge at TL → half-rect along TL–BR diagonal → full rect (gradient “unfolds” toward BR). */
+        /* Single continuous reveal: shrink right/bottom insets from TL toward BR (smooth, not stepped). */
         @keyframes landing-name-panel-in {
-          0% {
-            clip-path: polygon(0% 0%, 0% 0%, 0% 0%, 0% 0%);
+          from {
+            clip-path: inset(0 100% 100% 0);
           }
-          12% {
-            clip-path: polygon(0% 0%, 18% 0%, 0% 18%, 0% 0%);
-          }
-          42% {
-            clip-path: polygon(0% 0%, 72% 0%, 0% 72%, 0% 0%);
-          }
-          58% {
-            clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 0%);
-          }
-          100% {
-            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+          to {
+            clip-path: inset(0 0 0 0);
           }
         }
-        /* Bottom → top drift with a long, readable fade (per letter). */
+        /* One curve for opacity + Y — easing does the gradual fade/rise (no mid keyframe “stairs”). */
         @keyframes landing-letter-in {
-          0% {
+          from {
             opacity: 0;
-            transform: translate3d(0, 0.52em, 0);
+            transform: translate3d(0, 0.46em, 0);
           }
-          18% {
-            opacity: 0.08;
-            transform: translate3d(0, 0.4em, 0);
-          }
-          40% {
-            opacity: 0.28;
-            transform: translate3d(0, 0.26em, 0);
-          }
-          62% {
-            opacity: 0.58;
-            transform: translate3d(0, 0.12em, 0);
-          }
-          100% {
+          to {
             opacity: 1;
             transform: translate3d(0, 0, 0);
           }
