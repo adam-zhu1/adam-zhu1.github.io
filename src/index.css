@@ -28,7 +28,8 @@
   }
 
   ::selection {
-    @apply bg-white text-black;
+    background-color: rgba(255, 255, 255, 0.22);
+    color: #fff;
   }
 }
 
