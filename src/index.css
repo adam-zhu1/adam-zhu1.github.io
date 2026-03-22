@@ -9,6 +9,12 @@
     --muted: 0 0% 62%;
     --accent: 0 0% 100%;
     --line: 0 0% 22%;
+    /* Accent palette — navy → purple → magenta → red (subtle UI only) */
+    --az-navy: #002a79;
+    --az-purple: #512b87;
+    --az-magenta: #891446;
+    --az-red: #ae0c00;
+    --az-bright: #d80515;
     color-scheme: dark;
   }
 
@@ -23,5 +29,89 @@
 
   ::selection {
     @apply bg-white text-black;
+  }
+}
+
+@layer utilities {
+  /** Hero name backing: cool diagonal wash + faint lift toward white */
+  .bg-az-name-panel {
+    background-image:
+      linear-gradient(
+        152deg,
+        rgba(0, 42, 121, 0.46) 0%,
+        rgba(81, 43, 135, 0.34) 42%,
+        rgba(137, 20, 70, 0.24) 100%
+      ),
+      linear-gradient(198deg, rgba(255, 255, 255, 0.07) 0%, rgba(0, 0, 0, 0.48) 100%);
+  }
+
+  /** Contents / TOC rail */
+  .bg-az-toc-panel {
+    background-image:
+      linear-gradient(
+        168deg,
+        rgba(0, 42, 121, 0.24) 0%,
+        rgba(81, 43, 135, 0.17) 50%,
+        rgba(0, 0, 0, 0.38) 100%
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
+  }
+
+  /** Primary content cards (About / Connect) */
+  .bg-az-card {
+    background-image:
+      linear-gradient(
+        142deg,
+        rgba(0, 42, 121, 0.22) 0%,
+        rgba(81, 43, 135, 0.14) 38%,
+        rgba(137, 20, 70, 0.11) 100%
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.34) 100%);
+  }
+
+  .bg-az-card-muted {
+    background-image:
+      linear-gradient(
+        160deg,
+        rgba(81, 43, 135, 0.15) 0%,
+        rgba(137, 20, 70, 0.11) 55%,
+        rgba(0, 0, 0, 0.32) 100%
+      ),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(0, 0, 0, 0.28) 100%);
+  }
+
+  /** Work horizontal slides */
+  .bg-az-work-slide {
+    background-image:
+      linear-gradient(
+        128deg,
+        rgba(0, 42, 121, 0.22) 0%,
+        rgba(81, 43, 135, 0.16) 45%,
+        rgba(137, 20, 70, 0.13) 85%
+      ),
+      linear-gradient(220deg, rgba(174, 12, 0, 0.12) 0%, transparent 52%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.32) 100%);
+  }
+
+  /** Section-wide atmosphere (stacked under grid) */
+  .bg-az-atmos-about {
+    background-image:
+      radial-gradient(ellipse 90% 70% at 48% -28%, rgba(0, 42, 121, 0.32) 0%, transparent 58%),
+      radial-gradient(ellipse 55% 50% at 92% 18%, rgba(81, 43, 135, 0.22) 0%, transparent 52%),
+      linear-gradient(180deg, rgba(6, 6, 6, 0.98) 0%, #000 45%, #080808 100%);
+  }
+
+  .bg-az-atmos-work {
+    background-image:
+      radial-gradient(ellipse 85% 60% at 88% -22%, rgba(81, 43, 135, 0.28) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 55% at 8% 75%, rgba(0, 42, 121, 0.18) 0%, transparent 50%),
+      linear-gradient(200deg, rgba(6, 6, 6, 0.98) 0%, #000 48%, #070707 100%);
+  }
+
+  .bg-az-atmos-connect {
+    background-image:
+      radial-gradient(ellipse 75% 65% at 12% 8%, rgba(137, 20, 70, 0.24) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 95% 85%, rgba(216, 5, 21, 0.16) 0%, transparent 50%),
+      linear-gradient(165deg, rgba(5, 5, 5, 0.98) 0%, #000 52%, #080808 100%);
   }
 }
