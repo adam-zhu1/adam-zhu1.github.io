@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
+import { SmoothScroll } from "./components/SmoothScroll";
+import { scrollWindowToY } from "./lenisBridge";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
@@ -9,7 +11,7 @@ function ScrollToTopOnLoad() {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
-    const go = () => window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const go = () => scrollWindowToY(0, { immediate: true });
     go();
     const raf = window.requestAnimationFrame(go);
     const t = window.setTimeout(go, 0);
@@ -28,6 +30,7 @@ function ScrollToTopOnLoad() {
 export default function App() {
   return (
     <HashRouter>
+      <SmoothScroll />
       <ScrollToTopOnLoad />
       <Routes>
         <Route path="/" element={<Home />} />

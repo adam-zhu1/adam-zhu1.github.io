@@ -318,5 +318,5 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
 
 export function workSectionMinHeightVh(projectCount: number): number {
   /** Tall track: intro + horizontal rail + extra scroll after the last slide (natural exit to Connect). */
-  return 88 + projectCount * 108 + 200;
+  return 102 + projectCount * 142 + 248;
 }

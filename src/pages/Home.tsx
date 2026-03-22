@@ -44,6 +44,7 @@ function HoverLetter({
   );
 }
 import { CustomCursor } from "../components/CustomCursor";
+import { getLenis, scrollWindowToY } from "../lenisBridge";
 import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
 import { WORK_PROJECTS } from "../data/workProjects";
 
@@ -345,7 +346,7 @@ export default function Home() {
         const scrollK =
           id === "work" ? WORK_SECTION_SCROLL_COMPLETE : SECTION_SCROLL_ANIM_COMPLETE;
         const targetY = Math.min(top + stickyScrollRange * scrollK + 12, maxY);
-        const run = () => window.scrollTo({ top: targetY, behavior: "auto" });
+        const run = () => scrollWindowToY(targetY, { immediate: true });
         run();
         window.requestAnimationFrame(run);
         if (id === "about") {
@@ -358,7 +359,12 @@ export default function Home() {
         return;
       }
 
-      el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+      const lenis = getLenis();
+      if (lenis && smooth) {
+        lenis.scrollTo(el, { offset: 0 });
+      } else {
+        el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+      }
     },
     [dismissScrollCue],
   );
@@ -668,7 +674,7 @@ export default function Home() {
 
   const motionClass = reducedMotion ? "landing-no-motion" : "landing-motion";
   const linkClass =
-    "group inline-flex items-center gap-2 border border-white/25 bg-black/55 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-az-bright/55 hover:bg-gradient-to-br hover:from-az-purple/18 hover:to-az-red/14 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+    "group inline-flex items-center gap-2 border border-white/25 bg-black/55 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
   const tocLinkClass = (id: string) =>
     `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
@@ -683,7 +689,7 @@ export default function Home() {
 
   return (
     <div
-      className={`min-h-dvh bg-black text-white [&_a]:cursor-none ${motionClass}`}
+      className={`min-h-dvh bg-black text-white [&_a]:cursor-none [&_a:hover]:text-white ${motionClass}`}
       data-intro-step={introStep}
       style={
         {
@@ -1267,13 +1273,9 @@ export default function Home() {
       </section>
 
       <style>{`
+        /* Lenis drives smooth wheel scroll; CSS smooth + Lenis fights and feels mushy. */
         html {
-          scroll-behavior: smooth;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          html {
-            scroll-behavior: auto;
-          }
+          scroll-behavior: auto;
         }
 
         .landing-motion .intro-line-inner-h {

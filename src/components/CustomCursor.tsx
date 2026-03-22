@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
-const BRAND = "#ffffff";
+const ARM = "rgba(255, 255, 255, 0.72)";
+const CORE = "#ffffff";
 
 /**
- * Custom cursor: crosshair “axes” with a red sample point — distinct from a ring+dot,
- * fits a stats/ML vibe. Uses distance-based smoothing so fast moves catch up quickly.
+ * Compact white crosshair + dot. Smoothing matches pointer for Lenis-era scroll pages.
  */
 export function CustomCursor() {
   const target = useRef({ x: 0, y: 0 });
@@ -45,12 +45,10 @@ export function CustomCursor() {
       const dy = t.y - c.y;
       const dist = Math.hypot(dx, dy);
 
-      // Snap when essentially aligned (avoids micro-jitter).
       if (dist < 0.35) {
         c.x = t.x;
         c.y = t.y;
       } else {
-        // Further behind → higher lerp: responsive on fast flicks, smooth when close.
         const lerp = Math.min(0.94, 0.34 + dist * 0.0065);
         c.x += dx * lerp;
         c.y += dy * lerp;
@@ -79,17 +77,16 @@ export function CustomCursor() {
       style={{
         transform: `translate3d(${render.x}px, ${render.y}px, 0) translate(-50%, -50%)`,
         opacity: visible ? 1 : 0,
-        transition: "opacity 0.15s ease",
+        transition: "opacity 0.12s ease",
       }}
       aria-hidden
     >
-      {/* Crosshair + center “sample” — not a ring cursor */}
-      <svg width="40" height="40" viewBox="-20 -20 40 40" fill="none" aria-hidden>
-        <line x1="-16" y1="0" x2="-5" y2="0" stroke="white" strokeWidth="1.25" strokeLinecap="square" />
-        <line x1="5" y1="0" x2="16" y2="0" stroke="white" strokeWidth="1.25" strokeLinecap="square" />
-        <line x1="0" y1="-16" x2="0" y2="-5" stroke="white" strokeWidth="1.25" strokeLinecap="square" />
-        <line x1="0" y1="5" x2="0" y2="16" stroke="white" strokeWidth="1.25" strokeLinecap="square" />
-        <circle cx="0" cy="0" r="3" fill={BRAND} />
+      <svg width="26" height="26" viewBox="-13 -13 26 26" fill="none" aria-hidden>
+        <line x1="-11" y1="0" x2="-3.5" y2="0" stroke={ARM} strokeWidth="0.9" strokeLinecap="round" />
+        <line x1="3.5" y1="0" x2="11" y2="0" stroke={ARM} strokeWidth="0.9" strokeLinecap="round" />
+        <line x1="0" y1="-11" x2="0" y2="-3.5" stroke={ARM} strokeWidth="0.9" strokeLinecap="round" />
+        <line x1="0" y1="3.5" x2="0" y2="11" stroke={ARM} strokeWidth="0.9" strokeLinecap="round" />
+        <circle cx="0" cy="0" r="1.35" fill={CORE} />
       </svg>
     </div>
   );
