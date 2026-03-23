@@ -779,7 +779,9 @@ export default function Home() {
                               className="landing-name-letter inline-block"
                               style={{ "--name-letter-i": i } as CSSProperties}
                             >
-                              <HoverLetter char={ch} reducedMotion={reducedMotion} />
+                              <span className="hero-letter-drift inline-block">
+                                <HoverLetter char={ch} reducedMotion={reducedMotion} />
+                              </span>
                             </span>
                           ))}
                         </div>
@@ -795,7 +797,9 @@ export default function Home() {
                               className="landing-name-letter inline-block"
                               style={{ "--name-letter-i": i + 4 } as CSSProperties}
                             >
-                              <HoverLetter char={ch} reducedMotion={reducedMotion} />
+                              <span className="hero-letter-drift inline-block">
+                                <HoverLetter char={ch} reducedMotion={reducedMotion} />
+                              </span>
                             </span>
                           ))}
                         </div>
@@ -1392,6 +1396,35 @@ export default function Home() {
           opacity: 1 !important;
           animation: none !important;
           transform: none !important;
+        }
+        .landing-no-motion .hero-letter-drift {
+          animation: none !important;
+        }
+
+        /** Ambient motion on hero letters (independent of hover). */
+        .hero-letter-drift {
+          animation: hero-letter-drift 6.5s ease-in-out infinite;
+          animation-delay: calc(var(--name-letter-i, 0) * 0.2s);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-letter-drift {
+            animation: none !important;
+          }
+        }
+        @keyframes hero-letter-drift {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0) rotate(0deg);
+          }
+          25% {
+            transform: translate3d(1.5px, -2.25px, 0) rotate(0.4deg);
+          }
+          50% {
+            transform: translate3d(-1.25px, 1.5px, 0) rotate(-0.35deg);
+          }
+          75% {
+            transform: translate3d(1.25px, 2px, 0) rotate(0.3deg);
+          }
         }
         .landing-no-motion .landing-name-fill {
           opacity: 1 !important;
