@@ -1,4 +1,5 @@
 import { useMemo, type CSSProperties } from "react";
+import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "./SectionIndexCorner";
 import {
   WORK_PROJECTS,
   mapHorizontalScrollToSlideIndex,
@@ -196,14 +197,11 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
   return (
     <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[1600px] flex-col px-5 pb-24 pt-28 sm:px-10 sm:pb-28 sm:pt-32">
       <div
-        className="pointer-events-none absolute bottom-[5.25rem] right-5 z-30 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-[6.5rem] sm:right-10"
+        className={`${sectionIndexCornerAbsoluteWrap} bottom-[5.25rem] z-30 sm:bottom-[6.5rem]`}
         aria-hidden
         style={{ opacity: 0.35 + railBlend * 0.65 }}
       >
-        <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">03</span>
-        <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
-          Work
-        </span>
+        <SectionIndexCorner index="03" label="Work" />
       </div>
 
       {/* Intro overlay */}

@@ -44,6 +44,7 @@ function HoverLetter({
   );
 }
 import { CustomCursor } from "../components/CustomCursor";
+import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
 import { scrollWindowToY } from "../lenisBridge";
 import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
 import { WORK_PROJECTS } from "../data/workProjects";
@@ -748,9 +749,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tighter pt under top rule; pb keeps space above bottom rule */}
-          <div className="flex min-h-0 flex-1 flex-col justify-center px-5 pb-12 sm:px-10 lg:pb-16">
-            <div className="mx-auto w-full max-w-[1600px] pb-10 pt-4 sm:pb-12 sm:pt-5">
+          {/* Tighter pt under top rule; extra pb so corner index (Bebas) isn’t clipped at viewport bottom */}
+          <div className="flex min-h-0 flex-1 flex-col justify-center px-5 pb-24 sm:px-10 sm:pb-28 lg:pb-32">
+            <div className="mx-auto w-full max-w-[1600px] pb-12 pt-4 sm:pb-14 sm:pt-5 lg:pb-16">
               <div className="grid grid-cols-1 gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)_minmax(0,1fr)] lg:gap-x-10 xl:gap-x-16">
                 <div className="landing-name flex min-w-0 flex-col justify-center lg:min-h-0">
                   <div className="mx-auto w-fit max-w-full" style={nameGroupScaleStyle}>
@@ -858,7 +859,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="landing-rail flex min-h-[min(52vh,520px)] flex-col gap-12 pt-6 lg:min-h-0 lg:flex-1 lg:self-stretch lg:pt-8">
+                <div className="landing-rail flex min-h-[min(52vh,520px)] flex-col gap-12 overflow-visible pt-6 lg:min-h-0 lg:flex-1 lg:self-stretch lg:pt-8">
                   <div className="landing-el landing-index flex">
                     <nav
                       className="bg-az-toc-panel flex w-full flex-col gap-4 border border-white/18 p-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
@@ -964,12 +965,9 @@ export default function Home() {
 
                   <div
                     aria-hidden
-                    className="landing-el landing-corner-index mt-auto flex w-full -translate-y-3 flex-col items-end gap-2 self-end pt-4 text-right font-display font-bold leading-none text-white pointer-events-none sm:-translate-y-4 lg:pt-6"
+                    className="landing-el landing-corner-index relative z-10 mt-auto w-full self-end overflow-visible pb-3 pt-4 lg:pb-4 lg:pt-6"
                   >
-                    <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">01</span>
-                    <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
-                      Home
-                    </span>
+                    <SectionIndexCorner index="01" label="Home" className="pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -1020,7 +1018,7 @@ export default function Home() {
         className="relative scroll-mt-0 bg-black min-h-[260vh]"
         aria-labelledby="about-heading"
       >
-        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-hidden bg-black">
+        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
           <div
             aria-hidden
             className="bg-az-atmos-about pointer-events-none absolute inset-0"
@@ -1106,13 +1104,10 @@ export default function Home() {
 
             <div
               aria-hidden
-              className="pointer-events-none absolute bottom-6 right-5 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-8 sm:right-10"
-              style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,7, aboutRevealProgress, reducedMotion, 32)}
+              className={`${sectionIndexCornerAbsoluteWrap} bottom-10 sm:bottom-12`}
+              style={sectionStaggerStyle(ABOUT_STAGGER_STEPS, 7, aboutRevealProgress, reducedMotion, 32)}
             >
-              <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">02</span>
-              <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
-                About
-              </span>
+              <SectionIndexCorner index="02" label="About" />
             </div>
           </div>
         </div>
@@ -1158,7 +1153,7 @@ export default function Home() {
         className="relative scroll-mt-0 bg-black min-h-[260vh]"
         aria-labelledby="connect-heading"
       >
-        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-hidden bg-black">
+        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
           <div
             aria-hidden
             className="bg-az-atmos-connect pointer-events-none absolute inset-0"
@@ -1245,14 +1240,8 @@ export default function Home() {
               </aside>
             </div>
 
-            <div
-              aria-hidden
-              className="pointer-events-none absolute bottom-6 right-5 z-20 flex flex-col items-end gap-2 text-right font-display font-bold leading-none text-white sm:bottom-8 sm:right-10"
-            >
-              <span className="block text-[clamp(3.5rem,12vw,7.5rem)] tracking-tight">04</span>
-              <span className="block font-mono text-[clamp(11px,2.4vw,14px)] uppercase tracking-[0.28em] text-white/50">
-                Connect
-              </span>
+            <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-10 z-20 sm:bottom-12`}>
+              <SectionIndexCorner index="04" label="Connect" />
             </div>
           </div>
         </div>
