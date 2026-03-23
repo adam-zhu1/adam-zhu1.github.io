@@ -8,6 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+# Bun lock (CI uses npm; stale lock embedded old tooling names)
+bun.lockb
 dist
 dist-ssr
 *.local
