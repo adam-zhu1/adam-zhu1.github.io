@@ -56,11 +56,10 @@ function motionStyle(
   const e = easeOutQuart(enter);
   switch (motion) {
     case "wipe":
+      /** Enter fully from the right; no left clip (that read as “starting in the middle”). */
       return {
         opacity: e,
-        transform: `translateX(${(1 - e) * -28}px)`,
-        /** Clip from the left so the right edge + border stay visible while the card moves. */
-        clipPath: `inset(0 0 0 ${(1 - e) * 100}%)`,
+        transform: `translate3d(${(1 - e) * 100}%, 0, 0)`,
       };
     case "depth":
       return {
@@ -274,7 +273,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
                   }}
                 >
                   <div
-                    className="bg-az-work-slide mx-auto flex h-[min(72vh,40rem)] max-w-3xl flex-col justify-center border border-white/18 px-6 py-8 backdrop-blur-[2px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.045)] sm:px-10 sm:py-10"
+                    className="bg-az-work-slide mx-auto flex h-[min(72vh,40rem)] max-w-3xl flex-col justify-center rounded-xl px-6 py-8 ring-1 ring-inset ring-white/[0.09] backdrop-blur-[2px] sm:px-10 sm:py-10"
                     style={{
                       ...panelMotion,
                       opacity:

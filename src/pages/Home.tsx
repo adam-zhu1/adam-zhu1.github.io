@@ -44,7 +44,7 @@ function HoverLetter({
   );
 }
 import { CustomCursor } from "../components/CustomCursor";
-import { getLenis, scrollWindowToY } from "../lenisBridge";
+import { scrollWindowToY } from "../lenisBridge";
 import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
 import { WORK_PROJECTS } from "../data/workProjects";
 
@@ -157,6 +157,11 @@ function getInitialIntroStep(): IntroStep {
 
 function clamp01(n: number): number {
   return Math.min(Math.max(n, 0), 1);
+}
+
+/** Document Y for an element’s top (avoids wrong `offsetTop` inside nested layout + Lenis). */
+function getElementDocumentTop(el: HTMLElement): number {
+  return el.getBoundingClientRect().top + window.scrollY;
 }
 
 /** Same px threshold as the scroll-cue dismiss effect — line stays full until then. */
@@ -327,44 +332,25 @@ export default function Home() {
       if (id !== "home") {
         dismissScrollCue();
       }
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const smooth = !reduced;
 
-      /** Sticky reveals: block-start is black (reveal=0). Jump to where scrub is finished. */
-      if (id === "about" || id === "work" || id === "connect") {
-        const sectionEl =
-          id === "about"
+      const sectionEl =
+        id === "home"
+          ? heroRef.current ?? el
+          : id === "about"
             ? aboutRef.current ?? el
             : id === "work"
               ? workRef.current ?? el
-              : connectRef.current ?? el;
-        const vh = window.innerHeight;
-        const top = sectionEl.offsetTop;
-        const h = sectionEl.offsetHeight;
-        const stickyScrollRange = Math.max(h - vh, 1);
-        const maxY = Math.max(0, document.documentElement.scrollHeight - vh);
-        const scrollK =
-          id === "work" ? WORK_SECTION_SCROLL_COMPLETE : SECTION_SCROLL_ANIM_COMPLETE;
-        const targetY = Math.min(top + stickyScrollRange * scrollK + 12, maxY);
-        const run = () => scrollWindowToY(targetY, { immediate: true });
-        run();
-        window.requestAnimationFrame(run);
-        if (id === "about") {
-          setAboutRevealProgress(1);
-        } else if (id === "work") {
-          setWorkRevealProgress(1);
-        } else {
-          setConnectRevealProgress(1);
-        }
-        return;
-      }
+              : id === "connect"
+                ? connectRef.current ?? el
+                : el;
 
-      const lenis = getLenis();
-      if (lenis && smooth) {
-        lenis.scrollTo(el, { offset: 0 });
-      } else {
-        el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-      }
+      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const targetY = Math.max(0, Math.min(maxY, Math.round(getElementDocumentTop(sectionEl))));
+
+      /** Jump to the section’s start so Contents matches what you see; reveal progress follows scroll. */
+      const run = () => scrollWindowToY(targetY, { immediate: true });
+      run();
+      window.requestAnimationFrame(run);
     },
     [dismissScrollCue],
   );
@@ -631,7 +617,7 @@ export default function Home() {
         if (!el) {
           continue;
         }
-        const top = el.offsetTop;
+        const top = getElementDocumentTop(el);
         if (top <= marker) {
           current = s.id;
         }
