@@ -45,7 +45,7 @@ function HoverLetter({
 }
 import { CustomCursor } from "../components/CustomCursor";
 import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
-import { scrollWindowToY } from "../lenisBridge";
+import { getLenis, getScrollY, scrollWindowToY } from "../lenisBridge";
 import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
 import { WORK_PROJECTS } from "../data/workProjects";
 
@@ -54,7 +54,7 @@ const LINKEDIN_URL = "https://www.linkedin.com/in/adamzhu";
 const EMAIL = "adamzhu@andrew.cmu.edu";
 const EMAIL_MAILTO = `mailto:${EMAIL}`;
 
-/** Sections: TOC + scroll targets (HashRouter: use click handlers, not raw hash links) */
+/** Sections: TOC + scroll targets (HashRouter: href must stay `#/` — `#about` replaces the route and blanks the app) */
 const SECTIONS = [
   { id: "home", label: "Home" },
   { id: "about", label: "About" },
@@ -113,6 +113,15 @@ const SECTION_SCROLL_ANIM_COMPLETE = 1.92;
  */
 const WORK_SECTION_SCROLL_COMPLETE = 1;
 
+/**
+ * Contents nav: sticky sections scrub 0→1 over `stickyRange * scrollK` px from the section top.
+ * Jumping to `offsetTop` leaves reveal ≈0 (black). Land partway in so headings/body are visible.
+ */
+const CONTENTS_JUMP_REVEAL = 0.46;
+/** Lenis duration (seconds) — quick but readable smooth scroll to that target. */
+const CONTENTS_SCROLL_DURATION_S = 0.55;
+const contentsScrollEase = (t: number) => 1 - Math.pow(1 - t, 3);
+
 /** Bump if you need everyone to see the cue again after changing placement */
 const SCROLL_CUE_SESSION_KEY = "landingScrollCueDismissed_v2";
 /** Cue only shows when scroll is within this many px of the top (“all the way up”). */
@@ -160,9 +169,9 @@ function clamp01(n: number): number {
   return Math.min(Math.max(n, 0), 1);
 }
 
-/** Document Y for an element’s top (avoids wrong `offsetTop` inside nested layout + Lenis). */
+/** Document Y for an element’s top (uses Lenis scroll when active — stays in sync with programmatic scroll). */
 function getElementDocumentTop(el: HTMLElement): number {
-  return el.getBoundingClientRect().top + window.scrollY;
+  return el.getBoundingClientRect().top + getScrollY();
 }
 
 /** Same px threshold as the scroll-cue dismiss effect — line stays full until then. */
@@ -345,15 +354,40 @@ export default function Home() {
                 ? connectRef.current ?? el
                 : el;
 
-      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      const targetY = Math.max(0, Math.min(maxY, Math.round(getElementDocumentTop(sectionEl))));
+      const vh = window.innerHeight;
+      const maxY = Math.max(0, document.documentElement.scrollHeight - vh);
 
-      /** Jump to the section’s start so Contents matches what you see; reveal progress follows scroll. */
-      const run = () => scrollWindowToY(targetY, { immediate: true });
-      run();
-      window.requestAnimationFrame(run);
+      let targetY: number;
+      if (id === "home") {
+        targetY = 0;
+      } else {
+        /** Match `applyStickyReveal` / About logic: same `offsetTop` + height as scroll-driven effects. */
+        const sectionTop = sectionEl.offsetTop;
+        const sectionH = sectionEl.offsetHeight;
+        const stickyRange = Math.max(sectionH - vh, 1);
+        const scrollK =
+          id === "work" ? WORK_SECTION_SCROLL_COMPLETE : SECTION_SCROLL_ANIM_COMPLETE;
+        targetY = sectionTop + CONTENTS_JUMP_REVEAL * stickyRange * scrollK;
+      }
+      targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
+
+      const lenis = getLenis();
+      if (lenis && !reducedMotion) {
+        lenis.scrollTo(targetY, {
+          duration: CONTENTS_SCROLL_DURATION_S,
+          easing: contentsScrollEase,
+        });
+        return;
+      }
+
+      if (!reducedMotion) {
+        window.scrollTo({ top: targetY, left: 0, behavior: "smooth" });
+        return;
+      }
+
+      scrollWindowToY(targetY, { immediate: true });
     },
-    [dismissScrollCue],
+    [dismissScrollCue, reducedMotion],
   );
 
   /**
@@ -362,7 +396,7 @@ export default function Home() {
    */
   useEffect(() => {
     const check = () => {
-      const y = window.scrollY;
+      const y = getScrollY();
       const vh = window.innerHeight;
       const dismissThreshold = scrollCueDismissScrollY(vh);
 
@@ -459,7 +493,7 @@ export default function Home() {
       return;
     }
     lineSmoothRef.current = 1;
-    lineTargetRef.current = computeVerticalLineTarget(window.scrollY, window.innerHeight);
+    lineTargetRef.current = computeVerticalLineTarget(getScrollY(), window.innerHeight);
     applyVerticalLineTransform(1);
   }, [verticalLineIntroDone, reducedMotion, applyVerticalLineTransform]);
 
@@ -474,11 +508,11 @@ export default function Home() {
     }
     const vh = window.innerHeight;
     lineSmoothRef.current = 1;
-    lineTargetRef.current = computeVerticalLineTarget(window.scrollY, vh);
+    lineTargetRef.current = computeVerticalLineTarget(getScrollY(), vh);
     applyVerticalLineTransform(1);
 
     const tick = () => {
-      const y = window.scrollY;
+      const y = getScrollY();
       const vh = window.innerHeight;
       const past =
         activeSection === "home" && y > scrollCueDismissScrollY(vh);
@@ -535,7 +569,7 @@ export default function Home() {
         setHeroNameProgress(reducedMotion ? 0 : Math.min(2, Math.max(0, raw)));
       }
 
-      const scrollY = window.scrollY;
+      const scrollY = getScrollY();
 
       const aboutEl = aboutRef.current ?? document.getElementById("about");
       if (!aboutEl) {
@@ -611,7 +645,7 @@ export default function Home() {
    */
   useEffect(() => {
     const updateActive = () => {
-      const marker = window.scrollY + window.innerHeight * 0.35;
+      const marker = getScrollY() + window.innerHeight * 0.35;
       let current: (typeof SECTIONS)[number]["id"] = SECTIONS[0].id;
       for (const s of SECTIONS) {
         const el = document.getElementById(s.id);
@@ -714,7 +748,7 @@ export default function Home() {
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
-                href="#home"
+                href="#/"
                 className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
                   e.preventDefault();
@@ -779,9 +813,7 @@ export default function Home() {
                               className="landing-name-letter inline-block"
                               style={{ "--name-letter-i": i } as CSSProperties}
                             >
-                              <span className="hero-letter-drift inline-block">
-                                <HoverLetter char={ch} reducedMotion={reducedMotion} />
-                              </span>
+                              <HoverLetter char={ch} reducedMotion={reducedMotion} />
                             </span>
                           ))}
                         </div>
@@ -797,9 +829,7 @@ export default function Home() {
                               className="landing-name-letter inline-block"
                               style={{ "--name-letter-i": i + 4 } as CSSProperties}
                             >
-                              <span className="hero-letter-drift inline-block">
-                                <HoverLetter char={ch} reducedMotion={reducedMotion} />
-                              </span>
+                              <HoverLetter char={ch} reducedMotion={reducedMotion} />
                             </span>
                           ))}
                         </div>
@@ -874,7 +904,7 @@ export default function Home() {
                         {SECTIONS.map((s, i) => (
                           <li key={s.id}>
                             <a
-                              href={`#${s.id}`}
+                              href="#/"
                               className={tocLinkClass(s.id)}
                               aria-current={activeSection === s.id ? "page" : undefined}
                               onClick={(e) => {
@@ -1396,35 +1426,6 @@ export default function Home() {
           opacity: 1 !important;
           animation: none !important;
           transform: none !important;
-        }
-        .landing-no-motion .hero-letter-drift {
-          animation: none !important;
-        }
-
-        /** Ambient motion on hero letters (independent of hover). */
-        .hero-letter-drift {
-          animation: hero-letter-drift 6.5s ease-in-out infinite;
-          animation-delay: calc(var(--name-letter-i, 0) * 0.2s);
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .hero-letter-drift {
-            animation: none !important;
-          }
-        }
-        @keyframes hero-letter-drift {
-          0%,
-          100% {
-            transform: translate3d(0, 0, 0) rotate(0deg);
-          }
-          25% {
-            transform: translate3d(1.5px, -2.25px, 0) rotate(0.4deg);
-          }
-          50% {
-            transform: translate3d(-1.25px, 1.5px, 0) rotate(-0.35deg);
-          }
-          75% {
-            transform: translate3d(1.25px, 2px, 0) rotate(0.3deg);
-          }
         }
         .landing-no-motion .landing-name-fill {
           opacity: 1 !important;
