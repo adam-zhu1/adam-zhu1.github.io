@@ -116,11 +116,9 @@ const WORK_SECTION_SCROLL_COMPLETE = 1;
 /**
  * Contents nav reveal targets:
  * - About / Connect need a deeper offset to avoid initial black reveal frame.
- * - Work should land earlier so the "Selected work" intro is still visible (not first project card).
+ * - Work should jump to section start so the intro "Selected work" text is shown.
  */
 const CONTENTS_JUMP_REVEAL_DEFAULT = 0.46;
-/** Keep Work jump early in intro overlay so it lands on "Selected work" text, not transition midpoint. */
-const CONTENTS_JUMP_REVEAL_WORK = 0.035;
 /** Lenis duration (seconds) — quick but readable smooth scroll to that target. */
 const CONTENTS_SCROLL_DURATION_S = 0.55;
 const contentsScrollEase = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -363,15 +361,16 @@ export default function Home() {
       let targetY: number;
       if (id === "home") {
         targetY = 0;
+      } else if (id === "work") {
+        /** Land at Work section start so intro overlay copy is visible before horizontal slides. */
+        targetY = sectionEl.offsetTop;
       } else {
         /** Match `applyStickyReveal` / About logic: same `offsetTop` + height as scroll-driven effects. */
         const sectionTop = sectionEl.offsetTop;
         const sectionH = sectionEl.offsetHeight;
         const stickyRange = Math.max(sectionH - vh, 1);
-        const scrollK =
-          id === "work" ? WORK_SECTION_SCROLL_COMPLETE : SECTION_SCROLL_ANIM_COMPLETE;
-        const revealK =
-          id === "work" ? CONTENTS_JUMP_REVEAL_WORK : CONTENTS_JUMP_REVEAL_DEFAULT;
+        const scrollK = SECTION_SCROLL_ANIM_COMPLETE;
+        const revealK = CONTENTS_JUMP_REVEAL_DEFAULT;
         targetY = sectionTop + revealK * stickyRange * scrollK;
       }
       targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
@@ -908,18 +907,17 @@ export default function Home() {
                       <ul className="flex flex-col gap-2.5">
                         {SECTIONS.map((s, i) => (
                           <li key={s.id}>
-                            <a
-                              href="#/"
+                            <button
+                              type="button"
                               className={tocLinkClass(s.id)}
                               aria-current={activeSection === s.id ? "page" : undefined}
-                              onClick={(e) => {
-                                e.preventDefault();
+                              onClick={() => {
                                 scrollToSection(s.id);
                               }}
                             >
                               <span className={tocIndexClass(s.id)}>{String(i + 1).padStart(2, "0")}</span>{" "}
                               {s.label}
-                            </a>
+                            </button>
                           </li>
                         ))}
                       </ul>
