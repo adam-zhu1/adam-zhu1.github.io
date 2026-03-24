@@ -114,10 +114,13 @@ const SECTION_SCROLL_ANIM_COMPLETE = 1.92;
 const WORK_SECTION_SCROLL_COMPLETE = 1;
 
 /**
- * Contents nav: sticky sections scrub 0→1 over `stickyRange * scrollK` px from the section top.
- * Jumping to `offsetTop` leaves reveal ≈0 (black). Land partway in so headings/body are visible.
+ * Contents nav reveal targets:
+ * - About / Connect need a deeper offset to avoid initial black reveal frame.
+ * - Work should land earlier so the "Selected work" intro is still visible (not first project card).
  */
-const CONTENTS_JUMP_REVEAL = 0.46;
+const CONTENTS_JUMP_REVEAL_DEFAULT = 0.46;
+/** Keep Work jump early in intro overlay so it lands on "Selected work" text, not transition midpoint. */
+const CONTENTS_JUMP_REVEAL_WORK = 0.035;
 /** Lenis duration (seconds) — quick but readable smooth scroll to that target. */
 const CONTENTS_SCROLL_DURATION_S = 0.55;
 const contentsScrollEase = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -367,7 +370,9 @@ export default function Home() {
         const stickyRange = Math.max(sectionH - vh, 1);
         const scrollK =
           id === "work" ? WORK_SECTION_SCROLL_COMPLETE : SECTION_SCROLL_ANIM_COMPLETE;
-        targetY = sectionTop + CONTENTS_JUMP_REVEAL * stickyRange * scrollK;
+        const revealK =
+          id === "work" ? CONTENTS_JUMP_REVEAL_WORK : CONTENTS_JUMP_REVEAL_DEFAULT;
+        targetY = sectionTop + revealK * stickyRange * scrollK;
       }
       targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
 
