@@ -17,10 +17,9 @@ export function SmoothScroll() {
 
     const lenis = new Lenis({
       autoRaf: true,
-      /** Softer follow = less stair-stepping on wheel. */
-      lerp: 0.075,
-      /** Less distance per notch; combine with taller Work section for slower slides. */
-      wheelMultiplier: 0.78,
+      /** Slightly snappier follow so scroll responds right away after the hero. */
+      lerp: 0.11,
+      wheelMultiplier: 0.88,
       touchMultiplier: 1,
       smoothWheel: true,
     });

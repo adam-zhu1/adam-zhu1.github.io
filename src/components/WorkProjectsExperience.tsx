@@ -13,7 +13,7 @@ import {
  * Larger = more wheel/trackpad travel per slide on the horizontal rail. Must stay in sync with
  * `workSectionMinHeightVh` (viewport + this + small tail).
  */
-export const WORK_REVEAL_SCROLL_CAP_VH = 780;
+export const WORK_REVEAL_SCROLL_CAP_VH = 920;
 
 function clamp01(n: number): number {
   return Math.min(Math.max(n, 0), 1);
