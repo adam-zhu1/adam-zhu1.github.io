@@ -46,7 +46,11 @@ function HoverLetter({
 import { CustomCursor } from "../components/CustomCursor";
 import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
 import { getLenis, getScrollY, scrollWindowToY, subscribeLenisScroll } from "../lenisBridge";
-import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
+import {
+  WorkProjectsExperience,
+  workSectionMinHeightVh,
+  WORK_REVEAL_SCROLL_CAP_VH,
+} from "../components/WorkProjectsExperience";
 import { WORK_PROJECTS } from "../data/workProjects";
 
 const GITHUB_URL = "https://github.com/adam-zhu1";
@@ -101,35 +105,43 @@ const LINE_SCALE_MIN = 0.28;
 const LINE_SMOOTH_ALPHA = 0.09;
 
 /**
- * Scroll-scrubbed animations (e.g. About) hit full progress in this fraction of the
- * section’s scroll span; the rest is “cushion” before the next section enters view.
+ * Plain document scroll **between** full-viewport sections (not inside sticky min-height — that only
+ * stretches reveal math and feels like “nothing changed”). ~2 trackpad swipes before the next screen.
  */
-/** Fraction of sticky scroll range over which section reveal 0→1 runs (larger = longer transition distance). */
-const SECTION_SCROLL_ANIM_COMPLETE = 1.92;
-/**
- * Work horizontal rail: must be ≤1 so `workRevealProgress` can reach 1 inside the section’s scroll span.
- * Using the global 1.92 here caps progress around ~0.52 — sticky unpins while you’re still mid-rail (e.g. Neutrino),
- * then the page scrolls to Connect; scrolling back rewinds the carousel.
- */
-const WORK_SECTION_SCROLL_COMPLETE = 1;
-/**
- * Connect uses k=1 so stagger reaches full strength over one sticky pass. The global 1.92 factor
- * caps progress around ~0.52 in a 260vh section, which reads as “nothing animates while I scroll”.
- */
-const CONNECT_SECTION_SCROLL_COMPLETE = 1;
-/**
- * Work’s section min-height is 1000+vh; mapping 0→1 across the full height makes scrub imperceptible.
- * Cap the effective range so the rail / intro respond over ~this many viewports of vertical scroll.
- */
-const WORK_REVEAL_SCROLL_CAP_VH = 56;
+const SECTION_SCROLL_GAP_VH = 88;
+/** Between Work (03) and Connect (04) only — shorter than other inter-section gaps. */
+const SECTION_SCROLL_GAP_WORK_TO_CONNECT_VH = 18;
 
 /**
- * Contents nav reveal targets:
- * - About / Connect need a deeper offset to avoid initial black reveal frame.
- * - Work should jump to section start so the intro "Selected work" text is shown.
+ * Share of each sticky scroll span (0→1 document progress through that span) used to run reveal 0→1.
+ * The remainder keeps the section fully revealed (dwell) before the sticky track ends — then the gap
+ * below provides space before the next screen, matching “constant pace → pause → next page”.
+ */
+const SECTION_REVEAL_ACROSS_FRACTION = 0.44;
+/**
+ * Work (03): higher = slower `workRevealProgress` ramp (more vertical scroll before p hits 1).
+ * Tuned so each project slide gets enough scroll distance; paired with `WORK_REVEAL_SCROLL_CAP_VH`.
+ */
+const WORK_REVEAL_ACROSS_FRACTION = 0.95;
+
+/**
+ * Contents nav reveal targets (desired scrub progress p in 0–1; scroll offset = p × revealFraction × range):
+ * - About / Connect: offset into sticky range (avoid black first frame).
+ * - Work: must not land at section top only — `workRevealProgress` would be ~0, railBlend stays 0 and the
+ *   intro overlay reads as a blank/black viewport.
  */
 const CONTENTS_JUMP_REVEAL_ABOUT = 0.2;
 const CONTENTS_JUMP_REVEAL_CONNECT = 0.46;
+/**
+ * Must land above `WORK_INTRO_END * 0.55` (~0.11) in `WorkProjectsExperience` or the intro overlay
+ * stays full-opacity and `railBlend` stays 0 — reads as a black screen. 0.18 clears that after Lenis settles.
+ */
+const CONTENTS_JUMP_REVEAL_WORK = 0.18;
+/**
+ * Same as `WorkProjectsExperience` `fadeStart` (`WORK_INTRO_END * 0.55`). During Contents→Work smooth
+ * scroll, floor reveal so we do not sit in the “full intro overlay / opaque text” band mid-animation.
+ */
+const WORK_INTRO_FADE_START = 0.11;
 /** Lenis duration (seconds) — quick but readable smooth scroll to that target. */
 const CONTENTS_SCROLL_DURATION_S = 0.55;
 const contentsScrollEase = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -184,6 +196,14 @@ function clamp01(n: number): number {
 /** Document Y for an element’s top (uses Lenis scroll when active — stays in sync with programmatic scroll). */
 function getElementDocumentTop(el: HTMLElement): number {
   return el.getBoundingClientRect().top + getScrollY();
+}
+
+/**
+ * In scroll handlers, `viewportHeightPx` is `window.innerHeight` (px). `capVh` counts CSS vh units
+ * (e.g. 112 → 112vh). Do not use `viewportHeightPx * capVh` — that was 112× the viewport by mistake.
+ */
+function workRevealScrollCapPx(viewportHeightPx: number, capVh: number): number {
+  return Math.max((viewportHeightPx * capVh) / 100, 1);
 }
 
 /** Same px threshold as the scroll-cue dismiss effect — line stays full until then. */
@@ -279,6 +299,8 @@ export default function Home() {
   /** Same frame as vertical-line shorten — avoids cue vs line desync from async React state. */
   const [scrollPastCueDismiss, setScrollPastCueDismiss] = useState(false);
   const scrollPastCueDismissRef = useRef(false);
+  /** True while Lenis is performing a Contents→Work jump; `update()` floors Work reveal to avoid mid-intro opacity. */
+  const workTocScrollActiveRef = useRef(false);
 
   /** Eased 0→1: letters move slower early, still reach full split at raw progress 1. */
   const HERO_NAME_SCROLL_EASE = 1.72;
@@ -354,6 +376,9 @@ export default function Home() {
       if (id !== "home") {
         dismissScrollCue();
       }
+      if (id !== "work") {
+        workTocScrollActiveRef.current = false;
+      }
 
       const sectionEl =
         id === "home"
@@ -373,34 +398,49 @@ export default function Home() {
       if (id === "home") {
         targetY = 0;
       } else if (id === "work") {
-        /** Land at Work section start so intro overlay copy is visible before horizontal slides. */
-        targetY = getElementDocumentTop(sectionEl);
-      } else {
-        /** Match `applyStickyReveal` / About logic: same `offsetTop` + height as scroll-driven effects. */
         const sectionTop = getElementDocumentTop(sectionEl);
         const sectionH = sectionEl.offsetHeight;
         const stickyRange = Math.max(sectionH - vh, 1);
-        const scrollK =
-          id === "about"
-            ? SECTION_SCROLL_ANIM_COMPLETE
-            : id === "connect"
-              ? CONNECT_SECTION_SCROLL_COMPLETE
-              : WORK_SECTION_SCROLL_COMPLETE;
+        const effectiveRange = Math.min(stickyRange, workRevealScrollCapPx(vh, WORK_REVEAL_SCROLL_CAP_VH));
+        /** Land at target reveal progress p: rawScroll = p * WORK_REVEAL_ACROSS_FRACTION → offset = p * f * range. */
+        targetY =
+          sectionTop +
+          CONTENTS_JUMP_REVEAL_WORK * WORK_REVEAL_ACROSS_FRACTION * effectiveRange;
+      } else {
+        const sectionTop = getElementDocumentTop(sectionEl);
+        const sectionH = sectionEl.offsetHeight;
+        const stickyRange = Math.max(sectionH - vh, 1);
         const revealK = id === "about" ? CONTENTS_JUMP_REVEAL_ABOUT : CONTENTS_JUMP_REVEAL_CONNECT;
-        targetY = sectionTop + revealK * stickyRange * scrollK;
+        targetY = sectionTop + revealK * SECTION_REVEAL_ACROSS_FRACTION * stickyRange;
       }
       targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
 
       const lenis = getLenis();
       if (lenis && !reducedMotion) {
+        if (id === "work") {
+          workTocScrollActiveRef.current = true;
+        }
         lenis.scrollTo(targetY, {
           duration: CONTENTS_SCROLL_DURATION_S,
           easing: contentsScrollEase,
+          ...(id === "work"
+            ? {
+                onComplete: () => {
+                  workTocScrollActiveRef.current = false;
+                },
+              }
+            : {}),
         });
         return;
       }
 
       if (!reducedMotion) {
+        if (id === "work") {
+          workTocScrollActiveRef.current = true;
+          window.setTimeout(() => {
+            workTocScrollActiveRef.current = false;
+          }, Math.round(CONTENTS_SCROLL_DURATION_S * 1000) + 120);
+        }
         window.scrollTo({ top: targetY, left: 0, behavior: "smooth" });
         return;
       }
@@ -610,50 +650,50 @@ export default function Home() {
           const br = clamp01((scrollY - start) / range);
           setSectionBridge(br);
 
-          /** Sticky About: 0→1 in the first part of the section scroll; then cushion before Work. */
+          /** Sticky About: 0→1 over first SECTION_REVEAL_ACROSS_FRACTION of span; then dwell at 1. */
           const stickyScrollRange = Math.max(aboutH - vh, 1);
-          const revealRaw =
-            (scrollY - aboutTop) / Math.max(stickyScrollRange * SECTION_SCROLL_ANIM_COMPLETE, 1);
-          setAboutRevealProgress(clamp01(revealRaw));
+          const rawScroll = (scrollY - aboutTop) / Math.max(stickyScrollRange, 1);
+          setAboutRevealProgress(clamp01(rawScroll / SECTION_REVEAL_ACROSS_FRACTION));
         }
       }
 
-      const applyStickyReveal = (
-        sectionEl: HTMLElement | null,
-        setReveal: (n: number) => void,
-        scrollCompleteK: number = SECTION_SCROLL_ANIM_COMPLETE,
-        capScrollRangeVh?: number,
-      ) => {
-        if (!sectionEl) {
-          setReveal(0);
-          return;
+      {
+        const workEl = workRef.current ?? document.getElementById("work");
+        if (!workEl) {
+          setWorkRevealProgress(0);
+        } else if (reducedMotion) {
+          setWorkRevealProgress(1);
+        } else {
+          const top = getElementDocumentTop(workEl);
+          const h = workEl.offsetHeight;
+          let stickyScrollRange = Math.max(h - vh, 1);
+          stickyScrollRange = Math.min(
+            stickyScrollRange,
+            workRevealScrollCapPx(vh, WORK_REVEAL_SCROLL_CAP_VH),
+          );
+          const rawScroll = (scrollY - top) / Math.max(stickyScrollRange, 1);
+          let reveal = clamp01(rawScroll / WORK_REVEAL_ACROSS_FRACTION);
+          if (workTocScrollActiveRef.current && scrollY >= top - 0.5) {
+            reveal = Math.max(reveal, WORK_INTRO_FADE_START);
+          }
+          setWorkRevealProgress(reveal);
         }
-        if (reducedMotion) {
-          setReveal(1);
-          return;
-        }
-        const top = getElementDocumentTop(sectionEl);
-        const h = sectionEl.offsetHeight;
-        let stickyScrollRange = Math.max(h - vh, 1);
-        if (capScrollRangeVh !== undefined) {
-          stickyScrollRange = Math.min(stickyScrollRange, Math.max(vh * capScrollRangeVh, 1));
-        }
-        const revealRaw =
-          (scrollY - top) / Math.max(stickyScrollRange * scrollCompleteK, 1);
-        setReveal(clamp01(revealRaw));
-      };
+      }
 
-      applyStickyReveal(
-        workRef.current ?? document.getElementById("work"),
-        setWorkRevealProgress,
-        WORK_SECTION_SCROLL_COMPLETE,
-        WORK_REVEAL_SCROLL_CAP_VH,
-      );
-      applyStickyReveal(
-        connectRef.current ?? document.getElementById("connect"),
-        setConnectRevealProgress,
-        CONNECT_SECTION_SCROLL_COMPLETE,
-      );
+      {
+        const connectEl = connectRef.current ?? document.getElementById("connect");
+        if (!connectEl) {
+          setConnectRevealProgress(0);
+        } else if (reducedMotion) {
+          setConnectRevealProgress(1);
+        } else {
+          const top = getElementDocumentTop(connectEl);
+          const h = connectEl.offsetHeight;
+          const stickyScrollRange = Math.max(h - vh, 1);
+          const rawScroll = (scrollY - top) / Math.max(stickyScrollRange, 1);
+          setConnectRevealProgress(clamp01(rawScroll / SECTION_REVEAL_ACROSS_FRACTION));
+        }
+      }
     };
 
     update();
@@ -1073,6 +1113,11 @@ export default function Home() {
         </div>
         {/* Extra scroll after hero before About (animations feel “done” before the next screen). */}
         <div aria-hidden className="pointer-events-none min-h-[min(48vh,520px)] w-full shrink-0" />
+        <div
+          aria-hidden
+          className="pointer-events-none w-full shrink-0 bg-black"
+          style={{ minHeight: `${SECTION_SCROLL_GAP_VH}vh` }}
+        />
       </section>
 
       {/* ─── About: tall track + sticky full-viewport panel (scrub reveal while pinned) ─── */}
@@ -1177,12 +1222,20 @@ export default function Home() {
         </div>
       </section>
 
+      <div
+        aria-hidden
+        className="pointer-events-none w-full shrink-0 bg-black"
+        style={{ minHeight: `${SECTION_SCROLL_GAP_VH}vh` }}
+      />
+
       {/* ─── Work: tall track + sticky — horizontal project rail, then handoff to Connect ─── */}
       <section
         id="work"
         ref={workRef}
         className="relative scroll-mt-0 bg-black"
-        style={{ minHeight: `${workSectionMinHeightVh(WORK_PROJECTS.length)}vh` }}
+        style={{
+          minHeight: `${workSectionMinHeightVh(WORK_PROJECTS.length)}vh`,
+        }}
         aria-labelledby="work-heading"
       >
         <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
@@ -1209,6 +1262,12 @@ export default function Home() {
           />
         </div>
       </section>
+
+      <div
+        aria-hidden
+        className="pointer-events-none w-full shrink-0 bg-black"
+        style={{ minHeight: `${SECTION_SCROLL_GAP_WORK_TO_CONNECT_VH}vh` }}
+      />
 
       {/* ─── Connect: tall track + sticky panel (scrub reveal) ─── */}
       <section
