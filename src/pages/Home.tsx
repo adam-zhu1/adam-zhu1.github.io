@@ -121,14 +121,15 @@ const CONNECT_SECTION_SCROLL_COMPLETE = 1;
  * Work’s section min-height is 1000+vh; mapping 0→1 across the full height makes scrub imperceptible.
  * Cap the effective range so the rail / intro respond over ~this many viewports of vertical scroll.
  */
-const WORK_REVEAL_SCROLL_CAP_VH = 28;
+const WORK_REVEAL_SCROLL_CAP_VH = 56;
 
 /**
  * Contents nav reveal targets:
  * - About / Connect need a deeper offset to avoid initial black reveal frame.
  * - Work should jump to section start so the intro "Selected work" text is shown.
  */
-const CONTENTS_JUMP_REVEAL_DEFAULT = 0.46;
+const CONTENTS_JUMP_REVEAL_ABOUT = 0.2;
+const CONTENTS_JUMP_REVEAL_CONNECT = 0.46;
 /** Lenis duration (seconds) — quick but readable smooth scroll to that target. */
 const CONTENTS_SCROLL_DURATION_S = 0.55;
 const contentsScrollEase = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -204,9 +205,9 @@ function computeVerticalLineTarget(scrollY: number, vh: number): number {
 const ABOUT_STAGGER_STEPS = 8;
 const CONNECT_STAGGER_STEPS = 8;
 /** Progress between one item starting and the next (smaller = closer together). */
-const STAGGER_START_INTERVAL = 0.065;
+const STAGGER_START_INTERVAL = 0.09;
 /** Each item’s in-animation spans this much progress (unchanged = not quicker). */
-const STAGGER_ANIM_SPAN = 0.28;
+const STAGGER_ANIM_SPAN = 0.36;
 /** Quartic ease-out: super smooth, cushioned deceleration into the stop. */
 function easeOutQuart(t: number): number {
   return 1 - (1 - t) * (1 - t) * (1 - t) * (1 - t);
@@ -373,14 +374,19 @@ export default function Home() {
         targetY = 0;
       } else if (id === "work") {
         /** Land at Work section start so intro overlay copy is visible before horizontal slides. */
-        targetY = sectionEl.offsetTop;
+        targetY = getElementDocumentTop(sectionEl);
       } else {
         /** Match `applyStickyReveal` / About logic: same `offsetTop` + height as scroll-driven effects. */
-        const sectionTop = sectionEl.offsetTop;
+        const sectionTop = getElementDocumentTop(sectionEl);
         const sectionH = sectionEl.offsetHeight;
         const stickyRange = Math.max(sectionH - vh, 1);
-        const scrollK = SECTION_SCROLL_ANIM_COMPLETE;
-        const revealK = CONTENTS_JUMP_REVEAL_DEFAULT;
+        const scrollK =
+          id === "about"
+            ? SECTION_SCROLL_ANIM_COMPLETE
+            : id === "connect"
+              ? CONNECT_SECTION_SCROLL_COMPLETE
+              : WORK_SECTION_SCROLL_COMPLETE;
+        const revealK = id === "about" ? CONTENTS_JUMP_REVEAL_ABOUT : CONTENTS_JUMP_REVEAL_CONNECT;
         targetY = sectionTop + revealK * stickyRange * scrollK;
       }
       targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));

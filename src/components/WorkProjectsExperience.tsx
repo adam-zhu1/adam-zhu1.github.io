@@ -37,12 +37,12 @@ function introStaggerStyle(
   };
 }
 
-const WORK_INTRO_END = 0.1;
+const WORK_INTRO_END = 0.2;
 /**
  * p where horizontal scrub u reaches 1 (publication slide in). After this, u stays at 1 — user keeps scrolling
  * normally; no animated handoff, Connect comes in via the page scroll.
  */
-const WORK_HORIZ_U_COMPLETE = 0.86;
+const WORK_HORIZ_U_COMPLETE = 0.9;
 /** Team Neutrino (slide index 3): extra scroll at full frame before publication. */
 const NEUTRINO_DWELL_U = 0.068;
 
