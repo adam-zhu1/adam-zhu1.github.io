@@ -94,6 +94,14 @@
       linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.32) 100%);
   }
 
+  /** Hero — subtle auras top-right + bottom-right only */
+  .bg-az-atmos-home {
+    background-image:
+      radial-gradient(ellipse 70% 55% at 96% 6%, rgba(81, 43, 135, 0.11) 0%, transparent 52%),
+      radial-gradient(ellipse 65% 58% at 98% 92%, rgba(216, 5, 21, 0.09) 0%, transparent 52%),
+      linear-gradient(165deg, rgba(5, 5, 5, 0.98) 0%, #000 52%, #080808 100%);
+  }
+
   /** Section-wide atmosphere (stacked under grid) */
   .bg-az-atmos-about {
     background-image:
