@@ -4,24 +4,55 @@ let lenisRef: Lenis | null = null;
 
 const lenisScrollSubscribers = new Set<() => void>();
 let lenisScrollUnsub: (() => void) | undefined;
+let lenisScrollRafId = 0;
+/** Last `lenis.scroll` we pushed to subscribers (avoid redundant React updates). */
+let lenisScrollLastPushed: number | null = null;
+
+function stopLenisScrollRaf(): void {
+  if (lenisScrollRafId) {
+    cancelAnimationFrame(lenisScrollRafId);
+    lenisScrollRafId = 0;
+  }
+  lenisScrollLastPushed = null;
+}
 
 function attachLenisScrollEmitter(): void {
   lenisScrollUnsub?.();
   lenisScrollUnsub = undefined;
+  stopLenisScrollRaf();
+
   const lenis = lenisRef;
   if (!lenis || lenisScrollSubscribers.size === 0) {
     return;
   }
-  lenisScrollUnsub = lenis.on("scroll", () => {
+
+  /**
+   * Lenis updates `animatedScroll` every internal frame; native `window` scroll events and even
+   * `lenis.on("scroll")` are not guaranteed once per visual frame in every browser. Poll `scroll`
+   * on rAF so Work / Connect scrub progress stays continuous while wheel-smoothing runs.
+   */
+  const tick = (): void => {
+    lenisScrollRafId = requestAnimationFrame(tick);
+    const y = lenis.scroll;
+    if (lenisScrollLastPushed !== null && y === lenisScrollLastPushed) {
+      return;
+    }
+    lenisScrollLastPushed = y;
     for (const cb of lenisScrollSubscribers) {
       cb();
     }
-  });
+  };
+
+  lenisScrollLastPushed = null;
+  lenisScrollRafId = requestAnimationFrame(tick);
+  lenisScrollUnsub = () => {
+    stopLenisScrollRaf();
+  };
 }
 
 /**
- * Lenis smooth scroll updates `lenis.scroll` every frame but may not emit a native
- * `window` scroll event each time — subscribe here so scrub-linked UI stays in sync.
+ * Continuous Lenis sync: we poll `lenis.scroll` on rAF so scrub-linked UI updates every frame
+ * during smooth wheel scrolling (more reliable than native `window` scroll alone).
  */
 export function subscribeLenisScroll(callback: () => void): () => void {
   lenisScrollSubscribers.add(callback);
@@ -31,6 +62,7 @@ export function subscribeLenisScroll(callback: () => void): () => void {
     if (lenisScrollSubscribers.size === 0) {
       lenisScrollUnsub?.();
       lenisScrollUnsub = undefined;
+      stopLenisScrollRaf();
     }
   };
 }
