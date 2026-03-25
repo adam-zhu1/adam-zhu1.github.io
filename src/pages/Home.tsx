@@ -112,6 +112,8 @@ const LINE_SMOOTH_ALPHA = 0.09;
 const SECTION_SCROLL_GAP_VH = 88;
 /** Between Work (03) and Connect (04) only — shorter than other inter-section gaps. */
 const SECTION_SCROLL_GAP_WORK_TO_CONNECT_VH = 18;
+/** Home → About only — short tail so the next section arrives soon after the hero (see spacer divs under #home). */
+const SECTION_SCROLL_GAP_HOME_TO_ABOUT_VH = 12;
 
 /**
  * Share of each sticky scroll span (0→1 document progress through that span) used to run reveal 0→1.
@@ -125,13 +127,6 @@ const SECTION_REVEAL_ACROSS_FRACTION = 0.44;
  */
 const WORK_REVEAL_ACROSS_FRACTION = 0.95;
 
-/**
- * Contents rail: fixed document scroll Y (px), same space as `getScrollY()` / Lenis. Tune with scroll debug
- * overlay when layout changes (console + `ScrollDebugOverlay`).
- */
-const CONTENTS_SCROLL_Y_ABOUT = 2680;
-const CONTENTS_SCROLL_Y_WORK = 5338;
-const CONTENTS_SCROLL_Y_CONNECT = 13118;
 /**
  * Same as `WorkProjectsExperience` `fadeStart` (`WORK_INTRO_END * 0.55`). During Contents→Work smooth
  * scroll, floor reveal so we do not sit in the “full intro overlay / opaque text” band mid-animation.
@@ -380,14 +375,9 @@ export default function Home() {
       let targetY: number;
       if (id === "home") {
         targetY = 0;
-      } else if (id === "about") {
-        targetY = CONTENTS_SCROLL_Y_ABOUT;
-      } else if (id === "work") {
-        targetY = CONTENTS_SCROLL_Y_WORK;
       } else {
-        targetY = CONTENTS_SCROLL_Y_CONNECT;
+        targetY = Math.max(0, Math.min(maxY, Math.round(getElementDocumentTop(el))));
       }
-      targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
 
       const lenis = getLenis();
       if (lenis && !reducedMotion) {
@@ -1084,12 +1074,12 @@ export default function Home() {
           </div>
 
         </div>
-        {/* Extra scroll after hero before About (animations feel “done” before the next screen). */}
-        <div aria-hidden className="pointer-events-none min-h-[min(48vh,520px)] w-full shrink-0" />
+        {/* Short tail after sticky hero so About follows quickly (TOC uses section offset from DOM). */}
+        <div aria-hidden className="pointer-events-none min-h-[min(12vh,180px)] w-full shrink-0" />
         <div
           aria-hidden
           className="pointer-events-none w-full shrink-0 bg-black"
-          style={{ minHeight: `${SECTION_SCROLL_GAP_VH}vh` }}
+          style={{ minHeight: `${SECTION_SCROLL_GAP_HOME_TO_ABOUT_VH}vh` }}
         />
       </section>
 
