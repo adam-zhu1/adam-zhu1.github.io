@@ -44,6 +44,7 @@ function HoverLetter({
   );
 }
 import { CustomCursor } from "../components/CustomCursor";
+import { ScrollDebugOverlay } from "../components/ScrollDebugOverlay";
 import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
 import { getLenis, getScrollY, scrollWindowToY, subscribeLenisScroll } from "../lenisBridge";
 import {
@@ -125,18 +126,12 @@ const SECTION_REVEAL_ACROSS_FRACTION = 0.44;
 const WORK_REVEAL_ACROSS_FRACTION = 0.95;
 
 /**
- * Contents nav reveal targets (desired scrub progress p in 0–1; scroll offset = p × revealFraction × range):
- * - About / Connect: offset into sticky range (avoid black first frame).
- * - Work: must not land at section top only — `workRevealProgress` would be ~0, railBlend stays 0 and the
- *   intro overlay reads as a blank/black viewport.
+ * Contents rail: fixed document scroll Y (px), same space as `getScrollY()` / Lenis. Tune with scroll debug
+ * overlay when layout changes (console + `ScrollDebugOverlay`).
  */
-const CONTENTS_JUMP_REVEAL_ABOUT = 0.2;
-const CONTENTS_JUMP_REVEAL_CONNECT = 0.46;
-/**
- * Must land above `WORK_INTRO_END * 0.55` (~0.11) in `WorkProjectsExperience` or the intro overlay
- * stays full-opacity and `railBlend` stays 0 — reads as a black screen. 0.18 clears that after Lenis settles.
- */
-const CONTENTS_JUMP_REVEAL_WORK = 0.18;
+const CONTENTS_SCROLL_Y_ABOUT = 2680;
+const CONTENTS_SCROLL_Y_WORK = 5338;
+const CONTENTS_SCROLL_Y_CONNECT = 13118;
 /**
  * Same as `WorkProjectsExperience` `fadeStart` (`WORK_INTRO_END * 0.55`). During Contents→Work smooth
  * scroll, floor reveal so we do not sit in the “full intro overlay / opaque text” band mid-animation.
@@ -380,38 +375,17 @@ export default function Home() {
         workTocScrollActiveRef.current = false;
       }
 
-      const sectionEl =
-        id === "home"
-          ? heroRef.current ?? el
-          : id === "about"
-            ? aboutRef.current ?? el
-            : id === "work"
-              ? workRef.current ?? el
-              : id === "connect"
-                ? connectRef.current ?? el
-                : el;
-
-      const vh = window.innerHeight;
-      const maxY = Math.max(0, document.documentElement.scrollHeight - vh);
+      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
       let targetY: number;
       if (id === "home") {
         targetY = 0;
+      } else if (id === "about") {
+        targetY = CONTENTS_SCROLL_Y_ABOUT;
       } else if (id === "work") {
-        const sectionTop = getElementDocumentTop(sectionEl);
-        const sectionH = sectionEl.offsetHeight;
-        const stickyRange = Math.max(sectionH - vh, 1);
-        const effectiveRange = Math.min(stickyRange, workRevealScrollCapPx(vh, WORK_REVEAL_SCROLL_CAP_VH));
-        /** Land at target reveal progress p: rawScroll = p * WORK_REVEAL_ACROSS_FRACTION → offset = p * f * range. */
-        targetY =
-          sectionTop +
-          CONTENTS_JUMP_REVEAL_WORK * WORK_REVEAL_ACROSS_FRACTION * effectiveRange;
+        targetY = CONTENTS_SCROLL_Y_WORK;
       } else {
-        const sectionTop = getElementDocumentTop(sectionEl);
-        const sectionH = sectionEl.offsetHeight;
-        const stickyRange = Math.max(sectionH - vh, 1);
-        const revealK = id === "about" ? CONTENTS_JUMP_REVEAL_ABOUT : CONTENTS_JUMP_REVEAL_CONNECT;
-        targetY = sectionTop + revealK * SECTION_REVEAL_ACROSS_FRACTION * stickyRange;
+        targetY = CONTENTS_SCROLL_Y_CONNECT;
       }
       targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
 
@@ -423,13 +397,11 @@ export default function Home() {
         lenis.scrollTo(targetY, {
           duration: CONTENTS_SCROLL_DURATION_S,
           easing: contentsScrollEase,
-          ...(id === "work"
-            ? {
-                onComplete: () => {
-                  workTocScrollActiveRef.current = false;
-                },
-              }
-            : {}),
+          onComplete: () => {
+            if (id === "work") {
+              workTocScrollActiveRef.current = false;
+            }
+          },
         });
         return;
       }
@@ -801,6 +773,7 @@ export default function Home() {
       }
     >
       <CustomCursor />
+      <ScrollDebugOverlay />
 
       {showOverlay && (
         <div
