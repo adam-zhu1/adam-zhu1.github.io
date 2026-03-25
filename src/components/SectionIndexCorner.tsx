@@ -18,7 +18,7 @@ export function SectionIndexCorner({ index, label, className = "", style }: Sect
       className={`flex flex-col items-end gap-0 overflow-visible text-right font-display font-bold text-white ${className}`}
       style={style}
     >
-      <span className="block select-none pb-0 pt-[0.14em] text-[clamp(3.5rem,12vw,7.5rem)] leading-[0.9] tracking-tight">
+      <span className="block select-none py-[0.16em] text-[clamp(3.5rem,12vw,7.5rem)] leading-[0.95] tracking-tight">
         {index}
       </span>
       <span className="-mt-1 block font-mono text-[clamp(11px,2.4vw,14px)] uppercase leading-tight tracking-[0.28em] text-white/50 sm:-mt-1.5">
