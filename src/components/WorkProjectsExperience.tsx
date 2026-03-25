@@ -8,6 +8,13 @@ import {
   type WorkProjectMotion,
 } from "../data/workProjects";
 
+/**
+ * CSS vh count for the vertical scroll span that drives `workRevealProgress` in Home (`workRevealScrollCapPx`).
+ * Larger = more wheel/trackpad travel per slide on the horizontal rail. Must stay in sync with
+ * `workSectionMinHeightVh` (viewport + this + small tail).
+ */
+export const WORK_REVEAL_SCROLL_CAP_VH = 780;
+
 function clamp01(n: number): number {
   return Math.min(Math.max(n, 0), 1);
 }
@@ -313,7 +320,15 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
   );
 }
 
-export function workSectionMinHeightVh(projectCount: number): number {
-  /** Tall track: intro + horizontal rail + extra scroll after the last slide (natural exit to Connect). */
-  return 102 + projectCount * 142 + 248;
+/**
+ * Min height for the Work `<section>` sticky track.
+ *
+ * Home maps vertical scroll to `workRevealProgress` via `workRevealScrollCapPx` (`WORK_REVEAL_SCROLL_CAP_VH`
+ * as CSS vh in px — not `innerHeight * cap` by mistake). Section height must be ≥ viewport + that cap so
+ * the scrub can reach 1; add a small tail only for a short pause after the rail before the spacer to Connect.
+ */
+export function workSectionMinHeightVh(_projectCount: number): number {
+  const viewportVh = 100;
+  const tailAfterFullRevealVh = 8;
+  return viewportVh + WORK_REVEAL_SCROLL_CAP_VH + tailAfterFullRevealVh;
 }
