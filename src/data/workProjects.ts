@@ -8,6 +8,8 @@ export type WorkProject = {
   body: string;
   tags: string[];
   motion: WorkProjectMotion;
+  /** Optional external link (e.g. journal PDF) rendered below `body`. */
+  paperUrl?: string;
 };
 
 /**
@@ -67,7 +69,8 @@ export const WORK_PROJECTS: (WorkProject & { segmentWeight: number })[] = [
     subtitle: "Mathematics 2024, 12, 741",
     body:
       "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, with application to environmental Salmonella testing in the U.S.",
-    tags: ["GLMs", "Diagnostics", "DOI 10.3390/math12050741"],
+    paperUrl: "https://www.mdpi.com/2227-7390/12/5/741",
+    tags: ["GLMs", "Diagnostics", "Open access"],
     motion: "scan",
     segmentWeight: 0.15,
   },

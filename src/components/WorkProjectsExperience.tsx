@@ -163,8 +163,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
             <span className="block text-white">work</span>
           </h2>
           <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-            Projects and research — scroll the main page to move on; each block is a snapshot you can expand later
-            with links and figures.
+            Scroll the page to move through projects in order — each card is a snapshot. Connect is next.
           </p>
         </header>
         <ul className="grid max-w-4xl list-none gap-6 p-0 sm:grid-cols-1">
@@ -181,6 +180,18 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
               <p className="mt-4 font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/82 sm:text-[13px]">
                 {proj.body}
               </p>
+              {proj.paperUrl ? (
+                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-white/75 sm:text-[12px]">
+                  <a
+                    href={proj.paperUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-white/90 underline decoration-white/30 underline-offset-2 transition-colors hover:text-white hover:decoration-white/55"
+                  >
+                    Read the paper
+                  </a>
+                </p>
+              ) : null}
               <ul className="mt-4 flex flex-wrap gap-2 p-0">
                 {proj.tags.map((t) => (
                   <li
@@ -195,7 +206,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
           ))}
         </ul>
         <p className="max-w-md font-mono text-[10px] uppercase tracking-[0.22em] text-white/45">
-          Next section: connect — email, GitHub, and LinkedIn.
+          Scroll down for Connect — email, GitHub, and LinkedIn.
         </p>
       </div>
     );
@@ -230,8 +241,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
         </div>
         <div className="mt-8 max-w-xl" style={introStaggerStyle(2, introP, false)}>
           <p className="font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-            Scroll down: each beat is a project page drifting left → right — pacing is uneven on purpose. On the last
-            card, pause if you like, then scroll down for Connect.
+            Scroll down — each project appears as you go. Keep going for Connect.
           </p>
         </div>
       </div>
@@ -295,6 +305,18 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
                     <p className="mt-6 font-mono text-[12px] uppercase leading-relaxed tracking-[0.11em] text-white/82 sm:text-[13px]">
                       {proj.body}
                     </p>
+                    {proj.paperUrl ? (
+                      <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-white/75 sm:text-[12px]">
+                        <a
+                          href={proj.paperUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="text-white/90 underline decoration-white/30 underline-offset-2 transition-colors hover:text-white hover:decoration-white/55"
+                        >
+                          Read the paper
+                        </a>
+                      </p>
+                    ) : null}
                     <ul className="mt-8 flex flex-wrap gap-2 p-0">
                       {proj.tags.map((t) => (
                         <li
@@ -313,7 +335,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
         </div>
 
         <p className="mt-6 max-w-lg font-mono text-[10px] uppercase tracking-[0.2em] text-white/40" style={{ opacity: railBlend }}>
-          Last page: when you&apos;re ready, scroll down — Connect is next.
+          Scroll down for Connect.
         </p>
       </div>
     </div>
