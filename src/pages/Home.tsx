@@ -112,6 +112,16 @@ const SECTION_SCROLL_ANIM_COMPLETE = 1.92;
  * then the page scrolls to Connect; scrolling back rewinds the carousel.
  */
 const WORK_SECTION_SCROLL_COMPLETE = 1;
+/**
+ * Connect uses k=1 so stagger reaches full strength over one sticky pass. The global 1.92 factor
+ * caps progress around ~0.52 in a 260vh section, which reads as “nothing animates while I scroll”.
+ */
+const CONNECT_SECTION_SCROLL_COMPLETE = 1;
+/**
+ * Work’s section min-height is 1000+vh; mapping 0→1 across the full height makes scrub imperceptible.
+ * Cap the effective range so the rail / intro respond over ~this many viewports of vertical scroll.
+ */
+const WORK_REVEAL_SCROLL_CAP_VH = 28;
 
 /**
  * Contents nav reveal targets:
@@ -606,6 +616,7 @@ export default function Home() {
         sectionEl: HTMLElement | null,
         setReveal: (n: number) => void,
         scrollCompleteK: number = SECTION_SCROLL_ANIM_COMPLETE,
+        capScrollRangeVh?: number,
       ) => {
         if (!sectionEl) {
           setReveal(0);
@@ -617,7 +628,10 @@ export default function Home() {
         }
         const top = getElementDocumentTop(sectionEl);
         const h = sectionEl.offsetHeight;
-        const stickyScrollRange = Math.max(h - vh, 1);
+        let stickyScrollRange = Math.max(h - vh, 1);
+        if (capScrollRangeVh !== undefined) {
+          stickyScrollRange = Math.min(stickyScrollRange, Math.max(vh * capScrollRangeVh, 1));
+        }
         const revealRaw =
           (scrollY - top) / Math.max(stickyScrollRange * scrollCompleteK, 1);
         setReveal(clamp01(revealRaw));
@@ -627,10 +641,12 @@ export default function Home() {
         workRef.current ?? document.getElementById("work"),
         setWorkRevealProgress,
         WORK_SECTION_SCROLL_COMPLETE,
+        WORK_REVEAL_SCROLL_CAP_VH,
       );
       applyStickyReveal(
         connectRef.current ?? document.getElementById("connect"),
         setConnectRevealProgress,
+        CONNECT_SECTION_SCROLL_COMPLETE,
       );
     };
 
