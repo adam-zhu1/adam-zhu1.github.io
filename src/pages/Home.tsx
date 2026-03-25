@@ -777,7 +777,11 @@ export default function Home() {
 
       {/* ─── Home (hero + sticky name split) ─── */}
       <section id="home" ref={heroRef} className="min-h-[125vh] scroll-mt-0">
-        <div className="sticky top-0 flex min-h-dvh flex-col">
+        <div className="sticky top-0 isolate flex min-h-dvh flex-col">
+          <div
+            aria-hidden
+            className="bg-az-atmos-home pointer-events-none absolute inset-0 -z-10"
+          />
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
