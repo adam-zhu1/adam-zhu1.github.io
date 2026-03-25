@@ -199,7 +199,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
       <div
         className={`${sectionIndexCornerAbsoluteWrap} bottom-[5.25rem] z-30 sm:bottom-[6.5rem]`}
         aria-hidden
-        style={{ opacity: 0.35 + railBlend * 0.65 }}
+        style={{ opacity: 1 }}
       >
         <SectionIndexCorner index="03" label="Work" />
       </div>

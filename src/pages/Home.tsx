@@ -45,7 +45,7 @@ function HoverLetter({
 }
 import { CustomCursor } from "../components/CustomCursor";
 import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
-import { getLenis, getScrollY, scrollWindowToY } from "../lenisBridge";
+import { getLenis, getScrollY, scrollWindowToY, subscribeLenisScroll } from "../lenisBridge";
 import { WorkProjectsExperience, workSectionMinHeightVh } from "../components/WorkProjectsExperience";
 import { WORK_PROJECTS } from "../data/workProjects";
 
@@ -580,7 +580,7 @@ export default function Home() {
         setSectionBridge(0);
         setAboutRevealProgress(0);
       } else {
-        const aboutTop = aboutEl.offsetTop;
+        const aboutTop = getElementDocumentTop(aboutEl);
         const aboutH = aboutEl.offsetHeight;
 
         if (reducedMotion) {
@@ -615,7 +615,7 @@ export default function Home() {
           setReveal(1);
           return;
         }
-        const top = sectionEl.offsetTop;
+        const top = getElementDocumentTop(sectionEl);
         const h = sectionEl.offsetHeight;
         const stickyScrollRange = Math.max(h - vh, 1);
         const revealRaw =
@@ -637,9 +637,11 @@ export default function Home() {
     update();
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update, { passive: true });
+    const unsubLenisScroll = subscribeLenisScroll(update);
     return () => {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      unsubLenisScroll();
     };
   }, [reducedMotion]);
 
@@ -667,9 +669,11 @@ export default function Home() {
     updateActive();
     window.addEventListener("scroll", updateActive, { passive: true });
     window.addEventListener("resize", updateActive, { passive: true });
+    const unsubLenisScroll = subscribeLenisScroll(updateActive);
     return () => {
       window.removeEventListener("scroll", updateActive);
       window.removeEventListener("resize", updateActive);
+      unsubLenisScroll();
     };
   }, []);
 
@@ -907,17 +911,18 @@ export default function Home() {
                       <ul className="flex flex-col gap-2.5">
                         {SECTIONS.map((s, i) => (
                           <li key={s.id}>
-                            <button
-                              type="button"
+                            <a
+                              href="#/"
                               className={tocLinkClass(s.id)}
                               aria-current={activeSection === s.id ? "page" : undefined}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
                                 scrollToSection(s.id);
                               }}
                             >
                               <span className={tocIndexClass(s.id)}>{String(i + 1).padStart(2, "0")}</span>{" "}
                               {s.label}
-                            </button>
+                            </a>
                           </li>
                         ))}
                       </ul>
@@ -1142,7 +1147,7 @@ export default function Home() {
             <div
               aria-hidden
               className={`${sectionIndexCornerAbsoluteWrap} bottom-10 sm:bottom-12`}
-              style={sectionStaggerStyle(ABOUT_STAGGER_STEPS, 7, aboutRevealProgress, reducedMotion, 32)}
+              style={sectionStaggerStyle(ABOUT_STAGGER_STEPS, 0, aboutRevealProgress, reducedMotion, 32)}
             >
               <SectionIndexCorner index="02" label="About" />
             </div>

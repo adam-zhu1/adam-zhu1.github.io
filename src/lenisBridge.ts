@@ -2,8 +2,44 @@ import type Lenis from "lenis";
 
 let lenisRef: Lenis | null = null;
 
+const lenisScrollSubscribers = new Set<() => void>();
+let lenisScrollUnsub: (() => void) | undefined;
+
+function attachLenisScrollEmitter(): void {
+  lenisScrollUnsub?.();
+  lenisScrollUnsub = undefined;
+  const lenis = lenisRef;
+  if (!lenis || lenisScrollSubscribers.size === 0) {
+    return;
+  }
+  lenisScrollUnsub = lenis.on("scroll", () => {
+    for (const cb of lenisScrollSubscribers) {
+      cb();
+    }
+  });
+}
+
+/**
+ * Lenis smooth scroll updates `lenis.scroll` every frame but may not emit a native
+ * `window` scroll event each time — subscribe here so scrub-linked UI stays in sync.
+ */
+export function subscribeLenisScroll(callback: () => void): () => void {
+  lenisScrollSubscribers.add(callback);
+  attachLenisScrollEmitter();
+  return () => {
+    lenisScrollSubscribers.delete(callback);
+    if (lenisScrollSubscribers.size === 0) {
+      lenisScrollUnsub?.();
+      lenisScrollUnsub = undefined;
+    }
+  };
+}
+
 export function registerLenis(instance: Lenis | null): void {
+  lenisScrollUnsub?.();
+  lenisScrollUnsub = undefined;
   lenisRef = instance;
+  attachLenisScrollEmitter();
 }
 
 export function getLenis(): Lenis | null {
