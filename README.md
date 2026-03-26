@@ -18,21 +18,10 @@ App runs at [http://localhost:8080](http://localhost:8080) (see `vite.config.ts`
 
 ### Scroll debug overlay
 
-Shows live **lenis Y** (document scroll px) for tuning Contents jump targets. Not linked from the UI; enable from **DevTools → Console** on localhost or the deployed site:
+Shows live **lenis Y**, native **window Y**, and **max Y** (px) in a small fixed panel—useful when tuning section heights, sticky tracks, or TOC scroll behavior.
 
-**Enable** (then reload):
-
-```js
-localStorage.setItem("portfolio_scroll_debug_v1", "1");
-location.reload();
-```
-
-**Disable** (or use **Turn off & reload** on the panel):
-
-```js
-localStorage.removeItem("portfolio_scroll_debug_v1");
-location.reload();
-```
+- **On/off:** edit [`src/config/site.ts`](src/config/site.ts) and set `SCROLL_DEBUG_OVERLAY` to `true` or `false`, then commit and deploy as usual. No console or `localStorage`.
+- **Production:** set to `false` before pushing if you don’t want visitors to see the panel on GitHub Pages.
 
 ## Build
 
