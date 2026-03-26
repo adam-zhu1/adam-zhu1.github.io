@@ -1,38 +1,18 @@
 import { useEffect, useState } from "react";
+import { SCROLL_DEBUG_OVERLAY } from "../config/site";
 import { getScrollY, subscribeLenisScroll } from "../lenisBridge";
 
 /**
- * Not in the URL (avoids accidental shares/bookmarks). Set from DevTools console only — see panel copy.
- */
-const SCROLL_DEBUG_STORAGE_KEY = "portfolio_scroll_debug_v1";
-
-function isScrollDebugEnabled(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    return localStorage.getItem(SCROLL_DEBUG_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Live document scroll Y (px), same as `getScrollY()` / Lenis `scrollTo` for tuning Contents targets.
- * Works on production; enable intentionally via console (see in-panel instructions).
+ * Live document scroll Y (px), same as `getScrollY()` / Lenis `scrollTo`.
+ * Enabled when {@link SCROLL_DEBUG_OVERLAY} is true in `src/config/site.ts`.
  */
 export function ScrollDebugOverlay() {
-  const [enabled, setEnabled] = useState(false);
   const [y, setY] = useState(0);
   const [yNative, setYNative] = useState(0);
   const [maxY, setMaxY] = useState(0);
 
   useEffect(() => {
-    setEnabled(isScrollDebugEnabled());
-  }, []);
-
-  useEffect(() => {
-    if (!enabled) {
+    if (!SCROLL_DEBUG_OVERLAY) {
       return;
     }
     const tick = () => {
@@ -50,20 +30,11 @@ export function ScrollDebugOverlay() {
       window.removeEventListener("resize", tick);
       unsub();
     };
-  }, [enabled]);
+  }, []);
 
-  if (!enabled) {
+  if (!SCROLL_DEBUG_OVERLAY) {
     return null;
   }
-
-  const disable = () => {
-    try {
-      localStorage.removeItem(SCROLL_DEBUG_STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    window.location.reload();
-  };
 
   return (
     <div
@@ -80,11 +51,8 @@ export function ScrollDebugOverlay() {
         <dd className="text-right tabular-nums text-white/70">{maxY}</dd>
       </dl>
       <p className="mt-2 border-t border-white/10 pt-2 text-[9px] leading-snug text-white/40 normal-case tracking-normal">
-        Use <strong className="text-white/60">lenis Y</strong> for Contents targets (same as{" "}
-        <code className="text-amber-200/80">scrollTo</code>). No URL flag — open DevTools → Console, run:{" "}
-        <code className="break-all text-amber-200/80">
-          {`localStorage.setItem('${SCROLL_DEBUG_STORAGE_KEY}','1');location.reload()`}
-        </code>
+        Toggle in <code className="text-amber-200/80">src/config/site.ts</code> (<strong className="text-white/55">SCROLL_DEBUG_OVERLAY</strong>
+        ). Use <strong className="text-white/60">lenis Y</strong> when comparing to programmatic scroll.
       </p>
       <button
         type="button"
@@ -98,13 +66,6 @@ export function ScrollDebugOverlay() {
         }}
       >
         Copy lenis Y
-      </button>
-      <button
-        type="button"
-        className="mt-1.5 w-full rounded border border-white/15 bg-transparent py-1.5 text-[9px] text-white/50 hover:bg-white/5 hover:text-white/70"
-        onClick={disable}
-      >
-        Turn off &amp; reload
       </button>
     </div>
   );
