@@ -217,7 +217,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
       <div
         className={`${sectionIndexCornerAbsoluteWrap} bottom-[5.25rem] z-30 sm:bottom-[6.5rem]`}
         aria-hidden
-        style={{ opacity: 1 }}
+        style={introStaggerStyle(0, introP, reducedMotion, 28)}
       >
         <SectionIndexCorner index="03" label="Work" />
       </div>

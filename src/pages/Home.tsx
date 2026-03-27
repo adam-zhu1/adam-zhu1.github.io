@@ -128,6 +128,14 @@ const SECTION_REVEAL_ACROSS_FRACTION = 0.44;
 const WORK_REVEAL_ACROSS_FRACTION = 0.95;
 
 /**
+ * Contents rail: fixed document scroll Y (px), same space as `getScrollY()` / Lenis.
+ * Keep these in sync with the current layout.
+ */
+const CONTENTS_SCROLL_Y_ABOUT = 1804;
+const CONTENTS_SCROLL_Y_WORK = 4384;
+const CONTENTS_SCROLL_Y_CONNECT = 13337;
+
+/**
  * Same as `WorkProjectsExperience` `fadeStart` (`WORK_INTRO_END * 0.55`). During Contents→Work smooth
  * scroll, floor reveal so we do not sit in the “full intro overlay / opaque text” band mid-animation.
  */
@@ -375,9 +383,14 @@ export default function Home() {
       let targetY: number;
       if (id === "home") {
         targetY = 0;
+      } else if (id === "about") {
+        targetY = CONTENTS_SCROLL_Y_ABOUT;
+      } else if (id === "work") {
+        targetY = CONTENTS_SCROLL_Y_WORK;
       } else {
-        targetY = Math.max(0, Math.min(maxY, Math.round(getElementDocumentTop(el))));
+        targetY = CONTENTS_SCROLL_Y_CONNECT;
       }
+      targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
 
       const lenis = getLenis();
       if (lenis && !reducedMotion) {
@@ -1332,7 +1345,11 @@ export default function Home() {
               </aside>
             </div>
 
-            <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-10 z-20 sm:bottom-12`}>
+            <div
+              aria-hidden
+              className={`${sectionIndexCornerAbsoluteWrap} bottom-10 z-20 sm:bottom-12`}
+              style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 0, connectRevealProgress, reducedMotion, 32)}
+            >
               <SectionIndexCorner index="04" label="Connect" />
             </div>
           </div>
