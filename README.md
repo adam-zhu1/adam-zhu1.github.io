@@ -18,10 +18,10 @@ App runs at [http://localhost:8080](http://localhost:8080) (see `vite.config.ts`
 
 ### Scroll debug overlay
 
-Shows live **lenis Y**, native **window Y**, and **max Y** (px) in a small fixed panel—useful when tuning section heights, sticky tracks, or TOC scroll behavior.
+Live panel for `lenis Y`, native `window Y`, and `max Y` (px).
 
-- **On/off:** edit [`src/config/site.ts`](src/config/site.ts) and set `SCROLL_DEBUG_OVERLAY` to `true` or `false`, then commit and deploy as usual. No console or `localStorage`.
-- **Production:** set to `false` before pushing if you don’t want visitors to see the panel on GitHub Pages.
+- Toggle in `src/config/site.ts` via `SCROLL_DEBUG_OVERLAY`.
+- Default is `false` (off).
 
 ## Build
 
