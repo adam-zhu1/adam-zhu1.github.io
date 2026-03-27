@@ -50,8 +50,22 @@ const WORK_INTRO_END = 0.2;
  * normally; no animated handoff, Connect comes in via the page scroll.
  */
 const WORK_HORIZ_U_COMPLETE = 0.9;
+/** Hold slide 1 fully visible before horizontal movement starts. */
+const FIRST_SLIDE_DWELL_U = 0.09;
 /** Team Neutrino (slide index 3): extra scroll at full frame before publication. */
 const NEUTRINO_DWELL_U = 0.068;
+
+function remapWithStartDwell(u: number, dwellFraction: number): number {
+  const clamped = clamp01(u);
+  if (dwellFraction <= 0) {
+    return clamped;
+  }
+  if (clamped <= dwellFraction) {
+    return 0;
+  }
+  const tailSpan = Math.max(1 - dwellFraction, 1e-6);
+  return clamp01((clamped - dwellFraction) / tailSpan);
+}
 
 function motionStyle(
   motion: WorkProjectMotion,
@@ -128,11 +142,13 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
     return { introP, horizU, introOverlayOpacity, railBlend };
   }, [workRevealProgress]);
 
-  const horizUForRail = useMemo(
-    () =>
-      reducedMotion ? 0 : remapHorizontalScrollU(horizU, weights, 3, NEUTRINO_DWELL_U),
-    [horizU, weights, reducedMotion],
-  );
+  const horizUForRail = useMemo(() => {
+    if (reducedMotion) {
+      return 0;
+    }
+    const uWithFirstDwell = remapWithStartDwell(horizU, FIRST_SLIDE_DWELL_U);
+    return remapHorizontalScrollU(uWithFirstDwell, weights, 3, NEUTRINO_DWELL_U);
+  }, [horizU, weights, reducedMotion]);
 
   const fractionalSlide = useMemo(
     () => (reducedMotion ? 0 : mapHorizontalScrollToSlideIndex(horizUForRail, weights)),
@@ -144,7 +160,7 @@ export function WorkProjectsExperience({ workRevealProgress, reducedMotion, view
     if (reducedMotion) {
       return 1;
     }
-    const span = 0.11;
+    const span = 0.06;
     return easeOutQuart(clamp01(horizU / span));
   }, [horizU, reducedMotion]);
 

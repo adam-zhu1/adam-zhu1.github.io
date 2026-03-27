@@ -4,7 +4,7 @@ import { getScrollY, subscribeLenisScroll } from "../lenisBridge";
 
 /**
  * Live document scroll Y (px), same as `getScrollY()` / Lenis `scrollTo`.
- * Enabled when {@link SCROLL_DEBUG_OVERLAY} is true in `src/config/site.ts`.
+ * Enabled when `SCROLL_DEBUG_OVERLAY` is true in `src/config/site.ts`.
  */
 export function ScrollDebugOverlay() {
   const [y, setY] = useState(0);
@@ -38,7 +38,7 @@ export function ScrollDebugOverlay() {
 
   return (
     <div
-      className="pointer-events-auto fixed top-4 right-4 z-[200] max-w-[min(100vw-2rem,22rem)] rounded border border-amber-500/60 bg-black/90 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-amber-100 shadow-lg backdrop-blur-sm"
+      className="pointer-events-auto fixed right-4 top-4 z-[200] max-w-[min(100vw-2rem,22rem)] rounded border border-amber-500/60 bg-black/90 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-amber-100 shadow-lg backdrop-blur-sm"
       aria-live="polite"
     >
       <p className="mb-1.5 text-amber-400/90">Scroll debug</p>
@@ -50,10 +50,6 @@ export function ScrollDebugOverlay() {
         <dt className="text-white/45">max Y</dt>
         <dd className="text-right tabular-nums text-white/70">{maxY}</dd>
       </dl>
-      <p className="mt-2 border-t border-white/10 pt-2 text-[9px] leading-snug text-white/40 normal-case tracking-normal">
-        Toggle in <code className="text-amber-200/80">src/config/site.ts</code> (<strong className="text-white/55">SCROLL_DEBUG_OVERLAY</strong>
-        ). Use <strong className="text-white/60">lenis Y</strong> when comparing to programmatic scroll.
-      </p>
       <button
         type="button"
         className="mt-2 w-full rounded border border-white/20 bg-white/5 py-1.5 text-[9px] text-white/80 hover:bg-white/10"
