@@ -220,8 +220,8 @@ function computeVerticalLineTarget(scrollY: number, vh: number): number {
 }
 
 /** Sticky scrub: item animates in (fade + slide up); one after another. */
-const ABOUT_STAGGER_STEPS = 9;
-const CONNECT_STAGGER_STEPS = 8;
+const ABOUT_STAGGER_STEPS = 6;
+const CONNECT_STAGGER_STEPS = 7;
 /** Progress between one item starting and the next (smaller = closer together). */
 const STAGGER_START_INTERVAL = 0.09;
 /** Each item’s in-animation spans this much progress (unchanged = not quicker). */
@@ -1146,19 +1146,8 @@ export default function Home() {
                     I&apos;m an undergraduate at{" "}
                     <span className="text-white">Carnegie Mellon</span> studying Statistics &amp; Machine
                     Learning — I care about applying data-driven thinking to real-world problems and exploring how
-                    rigorous analytics can make technology more human and impactful.
-                  </p>
-                </div>
-                <div className="mt-6" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,3, aboutRevealProgress, reducedMotion)}>
-                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/50 sm:text-[13px]">
-                    This site collects work I&apos;m excited about — research, coursework, experiments, and side
-                    projects.
-                  </p>
-                </div>
-                <div className="mt-6" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,4, aboutRevealProgress, reducedMotion)}>
-                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/50 sm:text-[13px]">
-                    I grew up in Ames, Iowa. Outside of class I like time with friends, being outdoors, travel when I
-                    can, and keeping up with sports.
+                    rigorous analytics can make technology more human and impactful. What follows is work I&apos;m
+                    excited about — research, coursework, experiments, and side builds.
                   </p>
                 </div>
               </div>
@@ -1166,21 +1155,21 @@ export default function Home() {
               <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
                 <div
                   className="bg-az-card border border-white/18 p-6 backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-                  style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,5, aboutRevealProgress, reducedMotion)}>
+                  style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,3, aboutRevealProgress, reducedMotion)}>
                   <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Now</p>
-                  <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
-                    Undergraduate at CMU — Statistics &amp; Machine Learning. Coursework, research, and hands-on
-                    projects in inference and learning.
+                  <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-white/90 sm:text-[12px]">
+                    CMU · Statistics / ML · research &amp; coursework
                   </p>
                 </div>
-                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,6, aboutRevealProgress, reducedMotion, 28)}>
+                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,4, aboutRevealProgress, reducedMotion, 28)}>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
                       <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Focus</p>
-                      <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                        Curious first — always learning new methods, tools, and ways to explain results. Still anchored
-                        in modeling, careful evaluation, and honest uncertainty.
-                      </p>
+                      <ul className="mt-2 list-none space-y-1.5 p-0 font-mono text-[10px] uppercase leading-snug tracking-[0.14em] text-white/80 sm:text-[11px]">
+                        <li>Modeling &amp; inference</li>
+                        <li>Careful evaluation</li>
+                        <li>Clear explanations</li>
+                      </ul>
                     </div>
                     <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
                       <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
@@ -1190,7 +1179,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,7, aboutRevealProgress, reducedMotion, 24)}>
+                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,5, aboutRevealProgress, reducedMotion, 24)}>
                   <div className="h-px w-full bg-gradient-to-r from-white/40 via-white/10 to-transparent" aria-hidden />
                   <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
                     Scroll for work &amp; connect — or jump from the contents rail.
@@ -1304,9 +1293,14 @@ export default function Home() {
                     feel free to reach out. I&apos;m open to opportunities and I read everything.
                   </p>
                 </div>
+                <div className="mt-6" style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 3, connectRevealProgress, reducedMotion)}>
+                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/50 sm:text-[13px]">
+                    Grew up in Ames, Iowa — friends, outdoors, travel when I can, keeping up with sports.
+                  </p>
+                </div>
                 <div
                   className="mt-10 flex flex-wrap gap-4"
-                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 3, connectRevealProgress, reducedMotion, 26)}
+                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 4, connectRevealProgress, reducedMotion, 26)}
                 >
                   <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
                     <IconGitHub className="h-4 w-4" />
@@ -1326,7 +1320,7 @@ export default function Home() {
               <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
                 <div
                   className="bg-az-card border border-white/18 p-6 backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 4, connectRevealProgress, reducedMotion)}
+                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 5, connectRevealProgress, reducedMotion)}
                 >
                   <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Open to</p>
                   <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
@@ -1334,7 +1328,7 @@ export default function Home() {
                     about on this site, feel free to reach out — happy to talk.
                   </p>
                 </div>
-                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 5, connectRevealProgress, reducedMotion, 28)}>
+                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 6, connectRevealProgress, reducedMotion, 28)}>
                   <div className="bg-az-card-muted border border-white/14 p-5 sm:p-6">
                     <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Thanks</p>
                     <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
