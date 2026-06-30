@@ -1,6 +1,6 @@
 /**
  * Native scroll helpers. The site uses CSS scroll-snap (no smooth-scroll library), so these are
- * thin wrappers over `window`. Names are kept stable for existing importers.
+ * thin wrappers over `window`.
  */
 
 const scrollSubscribers = new Set<() => void>();
@@ -21,7 +21,7 @@ function ensureScrollAttached(): void {
 }
 
 /** Subscribe to scroll updates (native `scroll` event). Returns an unsubscribe fn. */
-export function subscribeLenisScroll(callback: () => void): () => void {
+export function subscribeScroll(callback: () => void): () => void {
   scrollSubscribers.add(callback);
   ensureScrollAttached();
   return () => {

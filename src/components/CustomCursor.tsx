@@ -8,7 +8,7 @@ const INTERACTIVE_SELECTOR = 'a, button, [role="button"], summary, label, input,
 
 /**
  * Compact white crosshair + dot that morphs into a clear "clickable" ring over links/buttons,
- * so clicking never feels uncertain. Smoothing matches pointer for Lenis-era scroll pages.
+ * so clicking never feels uncertain. Smoothing keeps the cursor tracking the pointer closely.
  */
 export function CustomCursor() {
   const target = useRef({ x: 0, y: 0 });

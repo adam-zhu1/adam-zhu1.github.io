@@ -18,7 +18,7 @@ App runs at [http://localhost:8080](http://localhost:8080) (see `vite.config.ts`
 
 ### Scroll debug overlay
 
-Live panel for `lenis Y`, native `window Y`, and `max Y` (px).
+Live panel for `scroll Y`, native `window Y`, and `max Y` (px).
 
 - Toggle in `src/config/site.ts` via `SCROLL_DEBUG_OVERLAY`.
 - Default is `false` (off).

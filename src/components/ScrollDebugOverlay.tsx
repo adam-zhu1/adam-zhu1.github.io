@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { SCROLL_DEBUG_OVERLAY } from "../config/site";
-import { getScrollY, subscribeLenisScroll } from "../lenisBridge";
+import { getScrollY, subscribeScroll } from "../scroll";
 
 /**
- * Live document scroll Y (px), same as `getScrollY()` / Lenis `scrollTo`.
+ * Live document scroll Y (px), same as `getScrollY()`.
  * Enabled when `SCROLL_DEBUG_OVERLAY` is true in `src/config/site.ts`.
  */
 export function ScrollDebugOverlay() {
@@ -24,7 +24,7 @@ export function ScrollDebugOverlay() {
     tick();
     window.addEventListener("scroll", tick, { passive: true });
     window.addEventListener("resize", tick, { passive: true });
-    const unsub = subscribeLenisScroll(tick);
+    const unsub = subscribeScroll(tick);
     return () => {
       window.removeEventListener("scroll", tick);
       window.removeEventListener("resize", tick);
@@ -43,7 +43,7 @@ export function ScrollDebugOverlay() {
     >
       <p className="mb-1.5 text-amber-400/90">Scroll debug</p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 normal-case tracking-normal">
-        <dt className="text-white/45">lenis Y</dt>
+        <dt className="text-white/45">scroll Y</dt>
         <dd className="text-right tabular-nums text-white">{y}</dd>
         <dt className="text-white/45">window Y</dt>
         <dd className="text-right tabular-nums text-white/70">{yNative}</dd>
@@ -61,7 +61,7 @@ export function ScrollDebugOverlay() {
           }
         }}
       >
-        Copy lenis Y
+        Copy scroll Y
       </button>
     </div>
   );

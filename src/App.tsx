@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
-import { scrollWindowToY } from "./lenisBridge";
+import { scrollWindowToY } from "./scroll";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
