@@ -58,6 +58,8 @@ const GITHUB_URL = "https://github.com/adam-zhu1";
 const LINKEDIN_URL = "https://www.linkedin.com/in/adamzhu";
 const EMAIL = "adamzhu@andrew.cmu.edu";
 const EMAIL_MAILTO = `mailto:${EMAIL}`;
+/** Resume PDF in public/. Drop a real file at this name to replace the placeholder. */
+const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
 
 /** Sections: TOC + scroll targets (HashRouter: href must stay `#/` — `#about` replaces the route and blanks the app) */
 const SECTIONS = [
@@ -109,7 +111,7 @@ const LINE_SMOOTH_ALPHA = 0.09;
  * Plain document scroll **between** full-viewport sections (not inside sticky min-height — that only
  * stretches reveal math and feels like “nothing changed”). ~2 trackpad swipes before the next screen.
  */
-const SECTION_SCROLL_GAP_VH = 88;
+const SECTION_SCROLL_GAP_VH = 36;
 /** Between Work (03) and Connect (04) only — shorter than other inter-section gaps. */
 const SECTION_SCROLL_GAP_WORK_TO_CONNECT_VH = 18;
 /** Home → About only — short tail so the next section arrives soon after the hero (see spacer divs under #home). */
@@ -120,7 +122,7 @@ const SECTION_SCROLL_GAP_HOME_TO_ABOUT_VH = 12;
  * The remainder keeps the section fully revealed (dwell) before the sticky track ends — then the gap
  * below provides space before the next screen, matching “constant pace → pause → next page”.
  */
-const SECTION_REVEAL_ACROSS_FRACTION = 0.44;
+const SECTION_REVEAL_ACROSS_FRACTION = 0.55;
 /**
  * Work (03): higher = slower `workRevealProgress` ramp (more vertical scroll before p hits 1).
  * Tuned so each project slide gets enough scroll distance; paired with `WORK_REVEAL_SCROLL_CAP_VH`.
@@ -128,12 +130,13 @@ const SECTION_REVEAL_ACROSS_FRACTION = 0.44;
 const WORK_REVEAL_ACROSS_FRACTION = 0.95;
 
 /**
- * Contents rail: fixed document scroll Y (px), same space as `getScrollY()` / Lenis.
- * Keep these in sync with the current layout.
+ * Nav jumps are computed live from each section's measured position (see `computeSectionScrollTarget`),
+ * so they stay correct on any screen size and after content edits — no hardcoded pixel offsets.
+ *
+ * Work (03): reveal `p` to land on after a nav jump — just past the intro overlay so the first project
+ * card is fully in view (intro heading gone, rail visible). See `WorkProjectsExperience` phase constants.
  */
-const CONTENTS_SCROLL_Y_ABOUT = 1804;
-const CONTENTS_SCROLL_Y_WORK = 4384;
-const CONTENTS_SCROLL_Y_CONNECT = 13337;
+const WORK_SCROLL_TARGET_REVEAL = 0.24;
 
 /**
  * Same as `WorkProjectsExperience` `fadeStart` (`WORK_INTRO_END * 0.55`). During Contents→Work smooth
@@ -173,6 +176,14 @@ function IconMail({ className }: { className?: string }) {
   );
 }
 
+function IconDownload({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+    </svg>
+  );
+}
+
 /** 0 = black overlay, 1 = overlay fading, 2 = lines + text sequence */
 type IntroStep = 0 | 1 | 2;
 
@@ -194,6 +205,40 @@ function clamp01(n: number): number {
 /** Document Y for an element’s top (uses Lenis scroll when active — stays in sync with programmatic scroll). */
 function getElementDocumentTop(el: HTMLElement): number {
   return el.getBoundingClientRect().top + getScrollY();
+}
+
+/**
+ * Live document-Y target for a nav jump to `id`. Measured from the section's current position so it is
+ * correct on any viewport and after content edits (replaces the old hardcoded pixel offsets).
+ *
+ * About / Connect: land where the sticky scrub reveal finishes (content fully on-screen).
+ * Work: land just past the intro overlay so the first project card is in view (mirrors the reveal math
+ * in the scroll handler so the same scroll Y maps to `WORK_SCROLL_TARGET_REVEAL`).
+ */
+function computeSectionScrollTarget(id: (typeof SECTIONS)[number]["id"]): number {
+  if (id === "home") {
+    return 0;
+  }
+  const el = document.getElementById(id);
+  if (!el) {
+    return 0;
+  }
+  const vh = window.innerHeight;
+  const top = getElementDocumentTop(el);
+  const h = el.offsetHeight;
+
+  if (id === "work") {
+    let stickyScrollRange = Math.max(h - vh, 1);
+    stickyScrollRange = Math.min(
+      stickyScrollRange,
+      workRevealScrollCapPx(vh, WORK_REVEAL_SCROLL_CAP_VH),
+    );
+    return top + WORK_SCROLL_TARGET_REVEAL * WORK_REVEAL_ACROSS_FRACTION * stickyScrollRange;
+  }
+
+  /** about / connect — sticky scrub sections. */
+  const stickyScrollRange = Math.max(h - vh, 1);
+  return top + SECTION_REVEAL_ACROSS_FRACTION * stickyScrollRange;
 }
 
 /**
@@ -267,6 +312,8 @@ export default function Home() {
     typeof window !== "undefined" ? window.innerWidth : 1024,
   );
   const [activeSection, setActiveSection] = useState<string>("home");
+  /** Persistent top nav: hidden over the hero, slides in once you scroll past the first viewport. */
+  const [showTopNav, setShowTopNav] = useState(false);
   /** About: 0 = black / hidden, 1 = full reveal (scroll-driven; 1 if reduced motion). */
   const [aboutRevealProgress, setAboutRevealProgress] = useState(() =>
     getInitialReducedMotion() ? 1 : 0,
@@ -380,16 +427,7 @@ export default function Home() {
 
       const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
-      let targetY: number;
-      if (id === "home") {
-        targetY = 0;
-      } else if (id === "about") {
-        targetY = CONTENTS_SCROLL_Y_ABOUT;
-      } else if (id === "work") {
-        targetY = CONTENTS_SCROLL_Y_WORK;
-      } else {
-        targetY = CONTENTS_SCROLL_Y_CONNECT;
-      }
+      let targetY = computeSectionScrollTarget(id);
       targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
 
       const lenis = getLenis();
@@ -714,6 +752,22 @@ export default function Home() {
     };
   }, []);
 
+  /** Reveal the persistent top nav once the hero has scrolled most of the way off-screen. */
+  useEffect(() => {
+    const updateNav = () => {
+      setShowTopNav(getScrollY() > window.innerHeight * 0.85);
+    };
+    updateNav();
+    window.addEventListener("scroll", updateNav, { passive: true });
+    window.addEventListener("resize", updateNav, { passive: true });
+    const unsubLenisScroll = subscribeLenisScroll(updateNav);
+    return () => {
+      window.removeEventListener("scroll", updateNav);
+      window.removeEventListener("resize", updateNav);
+      unsubLenisScroll();
+    };
+  }, []);
+
   /** Name split: 0→1 eases like before; 1→2 continues so Zhu/Adam keep moving. */
   const maxSplitPx = Math.min(viewportW * 0.12, 140);
   const splitPx =
@@ -751,6 +805,11 @@ export default function Home() {
   const tocIndexClass = (id: string) =>
     activeSection === id ? "text-white" : "text-white/45 group-hover:text-white";
 
+  const topNavLinkClass = (id: string) =>
+    `rounded-sm px-2 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-[10px] sm:tracking-[0.22em] ${
+      activeSection === id ? "text-white" : "text-white/50 hover:text-white"
+    }`;
+
   const showOverlay = introStep < 2 && !reducedMotion;
 
   return (
@@ -787,6 +846,69 @@ export default function Home() {
           onTransitionEnd={onIntroOverlayEnd}
         />
       )}
+
+      {/* ─── Persistent top nav (slides in after the hero) ─── */}
+      <nav
+        aria-label="Primary"
+        className={`fixed inset-x-0 top-0 z-40 transition-[transform,opacity] duration-300 ease-out ${
+          showTopNav ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-full opacity-0"
+        }`}
+      >
+        <div className="border-b border-white/10 bg-black/70 backdrop-blur-md">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-5 py-3 sm:px-10">
+            <a
+              href="#/"
+              className="inline-flex shrink-0 items-center gap-2.5 normal-case text-white transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              aria-label="Adam Zhu — back to top"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection("home");
+              }}
+            >
+              <img
+                src={`${import.meta.env.BASE_URL}favicon.svg`}
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 shrink-0 rounded-[8px]"
+                decoding="async"
+              />
+              <span className="hidden font-sans text-[12px] font-medium tracking-[0.08em] sm:inline">
+                Adam Zhu
+              </span>
+            </a>
+
+            <div className="flex min-w-0 items-center gap-1 sm:gap-3">
+              <ul className="flex items-center gap-0.5 sm:gap-1">
+                {SECTIONS.map((s) => (
+                  <li key={s.id}>
+                    <a
+                      href="#/"
+                      className={topNavLinkClass(s.id)}
+                      aria-current={activeSection === s.id ? "page" : undefined}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        scrollToSection(s.id);
+                      }}
+                    >
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={RESUME_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="group inline-flex shrink-0 items-center gap-1.5 rounded-sm border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
+              >
+                <IconDownload className="h-3.5 w-3.5" />
+                Resume
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
 
       {/* ─── Home (hero + sticky name split) ─── */}
       <section id="home" ref={heroRef} className="min-h-[125vh] scroll-mt-0">
@@ -1104,7 +1226,7 @@ export default function Home() {
       <section
         id="about"
         ref={aboutRef}
-        className="relative scroll-mt-0 bg-black min-h-[260vh]"
+        className="relative scroll-mt-0 bg-black min-h-[155vh]"
         aria-labelledby="about-heading"
       >
         <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
@@ -1250,7 +1372,7 @@ export default function Home() {
       <section
         id="connect"
         ref={connectRef}
-        className="relative scroll-mt-0 bg-black min-h-[260vh]"
+        className="relative scroll-mt-0 bg-black min-h-[155vh]"
         aria-labelledby="connect-heading"
       >
         <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
