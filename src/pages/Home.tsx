@@ -1,24 +1,69 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
   type TransitionEvent,
 } from "react";
+import { CustomCursor } from "../components/CustomCursor";
+import { ScrollDebugOverlay } from "../components/ScrollDebugOverlay";
+import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
+import { WORK_PROJECTS } from "../data/workProjects";
+
+const GITHUB_URL = "https://github.com/adam-zhu1";
+const LINKEDIN_URL = "https://www.linkedin.com/in/adamzhu";
+const EMAIL = "adamzhu@andrew.cmu.edu";
+const EMAIL_MAILTO = `mailto:${EMAIL}`;
+/** Resume PDF in public/. Drop a real file at this name to replace the placeholder. */
+const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
+
+/** Short labels for the project panels (used in the intro list + progress dots). */
+const PROJECT_NAV_LABELS: Record<string, string> = {
+  csafe: "CSAFE",
+  vrac: "VRAC",
+  "cor-robotics": "COR Robotics",
+  first: "Neutrino",
+  publication: "Publication",
+};
+
+/** Main sections (side nav + top nav). Work is a single entry even though it holds the project rail. */
+const SECTIONS = [
+  { id: "home", label: "Home" },
+  { id: "about", label: "About" },
+  { id: "work", label: "Work" },
+  { id: "connect", label: "Connect" },
+] as const;
+type SectionId = (typeof SECTIONS)[number]["id"];
+
+/** Work panels: an intro panel (index 0) followed by one panel per project. */
+const WORK_PANEL_COUNT = WORK_PROJECTS.length + 1;
+
+function clamp01(n: number): number {
+  return Math.min(Math.max(n, 0), 1);
+}
+
+/* ── Hero intro choreography (time-based, plays once on load) ─────────────────────────── */
+const LINE_EASE = "cubic-bezier(0.45, 0, 0.15, 1)";
+const LINE_DURATION_MS = 780;
+const LINE_STAGGER_S = 0.09;
+const TEXT_AFTER_LINES_S = LINE_STAGGER_S * 3 + LINE_DURATION_MS / 1000 + 0.08;
+const NAME_PANEL_IN_S = 0.82;
+const NAME_LETTER_STAGGER_S = 0.06;
+const NAME_LETTER_IN_S = 1.22;
+const INTRO_BOX_LETTER_BLEND = 0.5;
+const INTRO_LETTER_REST_GAP_S = 0.18;
+const REST_RAIL_INDEX_S = 0.055;
+const REST_RAIL_COPY_S = 0.1;
+const REST_RAIL_CORNER_S = 0.1;
+const REST_RAIL_SCROLL_S = 0.17;
+const NAME_LETTER_BLOCK_START_S =
+  TEXT_AFTER_LINES_S + NAME_PANEL_IN_S * (1 - INTRO_BOX_LETTER_BLEND);
+const REST_INTRO_DELAY_S = NAME_LETTER_BLOCK_START_S + INTRO_LETTER_REST_GAP_S;
 
 /** Hero name letters: small random nudge on hover (skipped when reduced motion). */
-function HoverLetter({
-  char,
-  reducedMotion,
-}: {
-  char: string;
-  reducedMotion: boolean;
-}) {
+function HoverLetter({ char, reducedMotion }: { char: string; reducedMotion: boolean }) {
   const [jitter, setJitter] = useState<{ x: number; y: number } | null>(null);
-
   return (
     <span
       className="inline-block origin-center transition-transform duration-[480ms] ease-[cubic-bezier(0.25,0.85,0.35,1)]"
@@ -30,12 +75,8 @@ function HoverLetter({
         if (reducedMotion) {
           return;
         }
-        /** Max ~±4px per axis — very subtle drift */
         const n = 4;
-        setJitter({
-          x: (Math.random() - 0.5) * 2 * n,
-          y: (Math.random() - 0.5) * 2 * n,
-        });
+        setJitter({ x: (Math.random() - 0.5) * 2 * n, y: (Math.random() - 0.5) * 2 * n });
       }}
       onMouseLeave={() => setJitter(null)}
     >
@@ -43,114 +84,6 @@ function HoverLetter({
     </span>
   );
 }
-import { CustomCursor } from "../components/CustomCursor";
-import { ScrollDebugOverlay } from "../components/ScrollDebugOverlay";
-import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
-import { getLenis, getScrollY, scrollWindowToY, subscribeLenisScroll } from "../lenisBridge";
-import {
-  WorkProjectsExperience,
-  workSectionMinHeightVh,
-  WORK_REVEAL_SCROLL_CAP_VH,
-} from "../components/WorkProjectsExperience";
-import { WORK_PROJECTS } from "../data/workProjects";
-
-const GITHUB_URL = "https://github.com/adam-zhu1";
-const LINKEDIN_URL = "https://www.linkedin.com/in/adamzhu";
-const EMAIL = "adamzhu@andrew.cmu.edu";
-const EMAIL_MAILTO = `mailto:${EMAIL}`;
-/** Resume PDF in public/. Drop a real file at this name to replace the placeholder. */
-const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
-
-/** Sections: TOC + scroll targets (HashRouter: href must stay `#/` — `#about` replaces the route and blanks the app) */
-const SECTIONS = [
-  { id: "home", label: "Home" },
-  { id: "about", label: "About" },
-  { id: "work", label: "Work" },
-  { id: "connect", label: "Connect" },
-] as const;
-
-/** Easing: accelerates, then eases into the end (ease-in-out style) */
-const LINE_EASE = "cubic-bezier(0.45, 0, 0.15, 1)";
-const LINE_DURATION_MS = 780;
-const LINE_STAGGER_S = 0.09;
-/** After last line finishes, text begins (seconds) */
-const TEXT_AFTER_LINES_S =
-  LINE_STAGGER_S * 3 + LINE_DURATION_MS / 1000 + 0.08;
-/** Name panel → letter stagger → then rest of hero (meta, TOC, copy, …). */
-/** Gradient panel: inset() reveal from TL toward BR (single smooth tween). */
-const NAME_PANEL_IN_S = 0.82;
-const NAME_LETTER_STAGGER_S = 0.06;
-const NAME_LETTER_IN_S = 1.22;
-/**
- * Intro choreography (overlapping, one continuous gesture):
- * lines → panel → letters start mid-panel → hero rail starts mid–letters.
- */
-/** Letters begin when this fraction of the panel tween remains (0.5 ≈ halfway through box). */
-const INTRO_BOX_LETTER_BLEND = 0.5;
-/** First meta/TOC motion this long after the first letter starts (rail overlaps letter tail). */
-const INTRO_LETTER_REST_GAP_S = 0.18;
-/** Small offsets so rail items read as one unit (seconds, after --rest-intro-delay). */
-const REST_RAIL_INDEX_S = 0.055;
-const REST_RAIL_COPY_S = 0.1;
-const REST_RAIL_CORNER_S = 0.1;
-const REST_RAIL_SCROLL_S = 0.17;
-
-const NAME_LETTER_BLOCK_START_S =
-  TEXT_AFTER_LINES_S + NAME_PANEL_IN_S * (1 - INTRO_BOX_LETTER_BLEND);
-const REST_INTRO_DELAY_S = NAME_LETTER_BLOCK_START_S + INTRO_LETTER_REST_GAP_S;
-/** Vertical line intro ends at this delay (stagger + duration); small buffer so we don’t cut the animation. */
-const VERTICAL_LINE_INTRO_MS = (LINE_STAGGER_S + LINE_DURATION_MS / 1000) * 1000 + 50;
-/** After scroll cue dismisses, shorten over this much additional scroll (viewport heights). */
-const LINE_SCROLL_SPAN_VH = 0.88;
-/** Line never shorter than this (0 = fully gone; ~0.28 = subtle stub). */
-const LINE_SCALE_MIN = 0.28;
-/** Per-frame lerp toward target (higher = snappier). */
-const LINE_SMOOTH_ALPHA = 0.09;
-
-/**
- * Plain document scroll **between** full-viewport sections (not inside sticky min-height — that only
- * stretches reveal math and feels like “nothing changed”). ~2 trackpad swipes before the next screen.
- */
-const SECTION_SCROLL_GAP_VH = 36;
-/** Between Work (03) and Connect (04) only — shorter than other inter-section gaps. */
-const SECTION_SCROLL_GAP_WORK_TO_CONNECT_VH = 18;
-/** Home → About only — short tail so the next section arrives soon after the hero (see spacer divs under #home). */
-const SECTION_SCROLL_GAP_HOME_TO_ABOUT_VH = 12;
-
-/**
- * Share of each sticky scroll span (0→1 document progress through that span) used to run reveal 0→1.
- * The remainder keeps the section fully revealed (dwell) before the sticky track ends — then the gap
- * below provides space before the next screen, matching “constant pace → pause → next page”.
- */
-const SECTION_REVEAL_ACROSS_FRACTION = 0.55;
-/**
- * Work (03): higher = slower `workRevealProgress` ramp (more vertical scroll before p hits 1).
- * Tuned so each project slide gets enough scroll distance; paired with `WORK_REVEAL_SCROLL_CAP_VH`.
- */
-const WORK_REVEAL_ACROSS_FRACTION = 0.95;
-
-/**
- * Nav jumps are computed live from each section's measured position (see `computeSectionScrollTarget`),
- * so they stay correct on any screen size and after content edits — no hardcoded pixel offsets.
- *
- * Work (03): reveal `p` to land on after a nav jump — just past the intro overlay so the first project
- * card is fully in view (intro heading gone, rail visible). See `WorkProjectsExperience` phase constants.
- */
-const WORK_SCROLL_TARGET_REVEAL = 0.24;
-
-/**
- * Same as `WorkProjectsExperience` `fadeStart` (`WORK_INTRO_END * 0.55`). During Contents→Work smooth
- * scroll, floor reveal so we do not sit in the “full intro overlay / opaque text” band mid-animation.
- */
-const WORK_INTRO_FADE_START = 0.11;
-/** Lenis duration (seconds) — quick but readable smooth scroll to that target. */
-const CONTENTS_SCROLL_DURATION_S = 0.55;
-const contentsScrollEase = (t: number) => 1 - Math.pow(1 - t, 3);
-
-/** Bump if you need everyone to see the cue again after changing placement */
-const SCROLL_CUE_SESSION_KEY = "landingScrollCueDismissed_v2";
-/** Cue only shows when scroll is within this many px of the top (“all the way up”). */
-const SCROLL_CUE_AT_TOP_MAX_PX = 72;
 
 function IconGitHub({ className }: { className?: string }) {
   return (
@@ -184,6 +117,14 @@ function IconDownload({ className }: { className?: string }) {
   );
 }
 
+function IconArrowRight({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 /** 0 = black overlay, 1 = overlay fading, 2 = lines + text sequence */
 type IntroStep = 0 | 1 | 2;
 
@@ -198,310 +139,34 @@ function getInitialIntroStep(): IntroStep {
   return getInitialReducedMotion() ? 2 : 0;
 }
 
-function clamp01(n: number): number {
-  return Math.min(Math.max(n, 0), 1);
+const linkClass =
+  "group inline-flex items-center gap-2 border border-white/25 bg-black/55 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+
+/** Reusable on-enter reveal: fades/slides in once an ancestor has `is-in`. */
+function reveal(i: number): { className: string; style: CSSProperties } {
+  return { className: "reveal-item", style: { "--ri": i } as CSSProperties };
 }
 
-/** Document Y for an element’s top (uses Lenis scroll when active — stays in sync with programmatic scroll). */
-function getElementDocumentTop(el: HTMLElement): number {
-  return el.getBoundingClientRect().top + getScrollY();
-}
-
-/**
- * Live document-Y target for a nav jump to `id`. Measured from the section's current position so it is
- * correct on any viewport and after content edits (replaces the old hardcoded pixel offsets).
- *
- * About / Connect: land where the sticky scrub reveal finishes (content fully on-screen).
- * Work: land just past the intro overlay so the first project card is in view (mirrors the reveal math
- * in the scroll handler so the same scroll Y maps to `WORK_SCROLL_TARGET_REVEAL`).
- */
-function computeSectionScrollTarget(id: (typeof SECTIONS)[number]["id"]): number {
-  if (id === "home") {
-    return 0;
-  }
-  const el = document.getElementById(id);
-  if (!el) {
-    return 0;
-  }
-  const vh = window.innerHeight;
-  const top = getElementDocumentTop(el);
-  const h = el.offsetHeight;
-
-  if (id === "work") {
-    let stickyScrollRange = Math.max(h - vh, 1);
-    stickyScrollRange = Math.min(
-      stickyScrollRange,
-      workRevealScrollCapPx(vh, WORK_REVEAL_SCROLL_CAP_VH),
-    );
-    return top + WORK_SCROLL_TARGET_REVEAL * WORK_REVEAL_ACROSS_FRACTION * stickyScrollRange;
-  }
-
-  /** about / connect — sticky scrub sections. */
-  const stickyScrollRange = Math.max(h - vh, 1);
-  return top + SECTION_REVEAL_ACROSS_FRACTION * stickyScrollRange;
-}
-
-/**
- * In scroll handlers, `viewportHeightPx` is `window.innerHeight` (px). `capVh` counts CSS vh units
- * (e.g. 112 → 112vh). Do not use `viewportHeightPx * capVh` — that was 112× the viewport by mistake.
- */
-function workRevealScrollCapPx(viewportHeightPx: number, capVh: number): number {
-  return Math.max((viewportHeightPx * capVh) / 100, 1);
-}
-
-/** Same px threshold as the scroll-cue dismiss effect — line stays full until then. */
-function scrollCueDismissScrollY(vh: number): number {
-  return Math.min(200, vh * 0.22);
-}
-
-function computeVerticalLineTarget(scrollY: number, vh: number): number {
-  const startY = scrollCueDismissScrollY(vh);
-  if (scrollY <= startY) {
-    return 1;
-  }
-  const spanPx = vh * LINE_SCROLL_SPAN_VH;
-  const raw = 1 - (scrollY - startY) / spanPx;
-  return Math.max(LINE_SCALE_MIN, clamp01(raw));
-}
-
-/** Sticky scrub: item animates in (fade + slide up); one after another. */
-const ABOUT_STAGGER_STEPS = 6;
-const CONNECT_STAGGER_STEPS = 7;
-/** Progress between one item starting and the next (smaller = closer together). */
-const STAGGER_START_INTERVAL = 0.09;
-/** Each item’s in-animation spans this much progress (unchanged = not quicker). */
-const STAGGER_ANIM_SPAN = 0.36;
-/** Quartic ease-out: super smooth, cushioned deceleration into the stop. */
-function easeOutQuart(t: number): number {
-  return 1 - (1 - t) * (1 - t) * (1 - t) * (1 - t);
-}
-
-function sectionStaggerStyle(
-  totalSteps: number,
-  index: number,
-  progress: number,
-  reducedMotion: boolean,
-  slidePx = 28,
-): CSSProperties | undefined {
-  if (reducedMotion) {
-    return undefined;
-  }
-  const tLinear = clamp01((progress - index * STAGGER_START_INTERVAL) / STAGGER_ANIM_SPAN);
-  const tMove = easeOutQuart(tLinear);
-  /** Opacity lags motion so the fade stays readable over more scroll. */
-  const tFade = Math.pow(tMove, 1.48);
-  return {
-    opacity: tFade,
-    transform: `translateY(${(1 - tMove) * slidePx}px)`,
-  };
-}
+const SECTION_SHELL =
+  "snap-start relative flex min-h-dvh w-full items-center overflow-hidden px-5 py-24 sm:px-10 lg:pl-28";
 
 export default function Home() {
-  const heroRef = useRef<HTMLElement | null>(null);
-  const aboutRef = useRef<HTMLElement | null>(null);
-  const workRef = useRef<HTMLElement | null>(null);
-  const connectRef = useRef<HTMLElement | null>(null);
-  const [progress, setProgress] = useState(0);
-  /** Name split 0→2 so Zhu/Adam keep moving past first viewport. */
-  const [heroNameProgress, setHeroNameProgress] = useState(0);
-  /** 0 = Home / “01”; 1 = About handoff — drives big index, lines, backing morph. */
-  const [sectionBridge, setSectionBridge] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(getInitialReducedMotion);
   const [introStep, setIntroStep] = useState<IntroStep>(getInitialIntroStep);
+  const [activeScreen, setActiveScreen] = useState<SectionId>("home");
+  const [revealed, setRevealed] = useState<Set<string>>(() => new Set(["home"]));
+  const [activePanel, setActivePanel] = useState(0);
   const [viewportW, setViewportW] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1024,
-  );
-  const [activeSection, setActiveSection] = useState<string>("home");
-  /** Persistent top nav: hidden over the hero, slides in once you scroll past the first viewport. */
-  const [showTopNav, setShowTopNav] = useState(false);
-  /** About: 0 = black / hidden, 1 = full reveal (scroll-driven; 1 if reduced motion). */
-  const [aboutRevealProgress, setAboutRevealProgress] = useState(() =>
-    getInitialReducedMotion() ? 1 : 0,
-  );
-  const [workRevealProgress, setWorkRevealProgress] = useState(() =>
-    getInitialReducedMotion() ? 1 : 0,
-  );
-  const [connectRevealProgress, setConnectRevealProgress] = useState(() =>
-    getInitialReducedMotion() ? 1 : 0,
-  );
-  /** Only apply scroll-driven shorten after the vertical line’s intro animation has finished. */
-  const [verticalLineIntroDone, setVerticalLineIntroDone] = useState(false);
-  const verticalLineInnerRef = useRef<HTMLDivElement | null>(null);
-  const lineSmoothRef = useRef(1);
-  const lineTargetRef = useRef(1);
-  /** 0 = idle; non-zero = rAF loop is running (don’t cancel on every scroll). */
-  const lineAnimRafRef = useRef(0);
-  const [showScrollCue, setShowScrollCue] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-    try {
-      return sessionStorage.getItem(SCROLL_CUE_SESSION_KEY) !== "1";
-    } catch {
-      return true;
-    }
-  });
-  /** Same frame as vertical-line shorten — avoids cue vs line desync from async React state. */
-  const [scrollPastCueDismiss, setScrollPastCueDismiss] = useState(false);
-  const scrollPastCueDismissRef = useRef(false);
-  /** True while Lenis is performing a Contents→Work jump; `update()` floors Work reveal to avoid mid-intro opacity. */
-  const workTocScrollActiveRef = useRef(false);
-
-  /** Eased 0→1: letters move slower early, still reach full split at raw progress 1. */
-  const HERO_NAME_SCROLL_EASE = 1.72;
-  const scrollMotionEased = useMemo(
-    () => (reducedMotion ? 0 : Math.pow(progress, HERO_NAME_SCROLL_EASE)),
-    [progress, reducedMotion],
+    typeof window !== "undefined" ? window.innerWidth : 1280,
   );
 
-  /**
-   * Brand panel behind the hero name: scroll 0→1 drifts gently and morphs from a
-   * tight frame toward a softer “pill” — keeps motion subtle so type stays focal.
-   */
-  /** Bridge fade on shell only so CSS can run the panel intro on the inner layer. */
-  const nameBackingShellStyle: CSSProperties = useMemo(() => {
-    if (reducedMotion) {
-      return { opacity: 1 };
-    }
-    return { opacity: 1 - sectionBridge * 0.94 };
-  }, [reducedMotion, sectionBridge]);
+  const workSectionRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const activeScreenRef = useRef<SectionId>("home");
+  const activePanelRef = useRef(0);
+  const vwRef = useRef(viewportW);
 
-  const nameBackingStyle: CSSProperties = useMemo(() => {
-    if (reducedMotion) {
-      return { transform: "translate3d(0, 0, 0)", borderRadius: "0.25rem" };
-    }
-    const p = scrollMotionEased;
-    const b = sectionBridge;
-    const tx = (p - 0.5) * 20;
-    const ty = p * 14;
-    const rot = (p - 0.5) * 1.4;
-    const s = 1 + p * 0.015;
-    const borderRadius = `${0.125 + p * 2}rem`;
-    const bridgeLift = -b * 52;
-    const bridgeScale = 1 - b * 0.14;
-    return {
-      transform: `translate3d(${tx}px, ${ty + bridgeLift}px, 0) rotate(${rot * (1 - b * 0.35)}deg) scale(${s * bridgeScale})`,
-      borderRadius,
-      willChange: "transform",
-    };
-  }, [scrollMotionEased, reducedMotion, sectionBridge]);
-
-  /** Whole name + panel scales down slightly as you move through the hero (stays on-screen). */
-  const nameGroupScaleStyle: CSSProperties = useMemo(
-    () =>
-      reducedMotion
-        ? {}
-        : {
-            transform: `scale(${1 - scrollMotionEased * 0.045})`,
-            transformOrigin: "center center",
-          },
-    [scrollMotionEased, reducedMotion],
-  );
-
-  const dismissScrollCue = useCallback(() => {
-    setShowScrollCue((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      try {
-        sessionStorage.setItem(SCROLL_CUE_SESSION_KEY, "1");
-      } catch {
-        /* ignore */
-      }
-      return false;
-    });
-  }, []);
-
-  const scrollToSection = useCallback(
-    (id: (typeof SECTIONS)[number]["id"]) => {
-      const el = document.getElementById(id);
-      if (!el) {
-        return;
-      }
-      if (id !== "home") {
-        dismissScrollCue();
-      }
-      if (id !== "work") {
-        workTocScrollActiveRef.current = false;
-      }
-
-      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-
-      let targetY = computeSectionScrollTarget(id);
-      targetY = Math.max(0, Math.min(maxY, Math.round(targetY)));
-
-      const lenis = getLenis();
-      if (lenis && !reducedMotion) {
-        if (id === "work") {
-          workTocScrollActiveRef.current = true;
-        }
-        lenis.scrollTo(targetY, {
-          duration: CONTENTS_SCROLL_DURATION_S,
-          easing: contentsScrollEase,
-          onComplete: () => {
-            if (id === "work") {
-              workTocScrollActiveRef.current = false;
-            }
-          },
-        });
-        return;
-      }
-
-      if (!reducedMotion) {
-        if (id === "work") {
-          workTocScrollActiveRef.current = true;
-          window.setTimeout(() => {
-            workTocScrollActiveRef.current = false;
-          }, Math.round(CONTENTS_SCROLL_DURATION_S * 1000) + 120);
-        }
-        window.scrollTo({ top: targetY, left: 0, behavior: "smooth" });
-        return;
-      }
-
-      scrollWindowToY(targetY, { immediate: true });
-    },
-    [dismissScrollCue, reducedMotion],
-  );
-
-  /**
-   * Scroll cue: hide after scrolling down into the page; show again only when
-   * scrolled back to the very top of Home (same session). Leaving Home hides it.
-   */
-  useEffect(() => {
-    const check = () => {
-      const y = getScrollY();
-      const vh = window.innerHeight;
-      const dismissThreshold = scrollCueDismissScrollY(vh);
-
-      if (activeSection !== "home") {
-        dismissScrollCue();
-        return;
-      }
-
-      if (y <= SCROLL_CUE_AT_TOP_MAX_PX) {
-        setShowScrollCue(true);
-        try {
-          sessionStorage.removeItem(SCROLL_CUE_SESSION_KEY);
-        } catch {
-          /* ignore */
-        }
-        return;
-      }
-
-      if (y > dismissThreshold) {
-        dismissScrollCue();
-      }
-    };
-
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-    };
-  }, [activeSection, dismissScrollCue]);
-
+  /* ── Reduced motion ─────────────────────────────────────────── */
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mq.matches);
@@ -518,13 +183,12 @@ export default function Home() {
     return () => mq.removeEventListener("change", onMq);
   }, []);
 
+  /* ── Intro choreography 0 → 1 → 2 ───────────────────────────── */
   useEffect(() => {
     if (reducedMotion) {
       return;
     }
-    const id = window.requestAnimationFrame(() => {
-      setIntroStep(1);
-    });
+    const id = window.requestAnimationFrame(() => setIntroStep(1));
     return () => window.cancelAnimationFrame(id);
   }, [reducedMotion]);
 
@@ -532,83 +196,11 @@ export default function Home() {
     if (reducedMotion || introStep !== 1) {
       return;
     }
-    const ms = 780;
-    const t = window.setTimeout(() => {
-      setIntroStep((s) => (s === 1 ? 2 : s));
-    }, ms);
+    const t = window.setTimeout(() => setIntroStep((s) => (s === 1 ? 2 : s)), 780);
     return () => window.clearTimeout(t);
   }, [introStep, reducedMotion]);
 
-  useEffect(() => {
-    if (reducedMotion) {
-      setVerticalLineIntroDone(true);
-      return;
-    }
-    if (introStep < 2) {
-      return;
-    }
-    const t = window.setTimeout(() => setVerticalLineIntroDone(true), VERTICAL_LINE_INTRO_MS);
-    return () => window.clearTimeout(t);
-  }, [introStep, reducedMotion]);
-
-  const applyVerticalLineTransform = useCallback((scale: number) => {
-    const el = verticalLineInnerRef.current;
-    if (!el) {
-      return;
-    }
-    el.style.setProperty("transform-origin", "top");
-    el.style.setProperty("transform", `scaleY(${scale})`);
-  }, []);
-
-  /** Hand off from CSS keyframes to JS so our transform can apply. */
-  useLayoutEffect(() => {
-    if (reducedMotion || !verticalLineIntroDone) {
-      return;
-    }
-    lineSmoothRef.current = 1;
-    lineTargetRef.current = computeVerticalLineTarget(getScrollY(), window.innerHeight);
-    applyVerticalLineTransform(1);
-  }, [verticalLineIntroDone, reducedMotion, applyVerticalLineTransform]);
-
-  /** One continuous rAF loop — no stop/start on scroll, so no back‑and‑forth glitch. */
-  useEffect(() => {
-    if (reducedMotion || !verticalLineIntroDone) {
-      if (lineAnimRafRef.current !== 0) {
-        cancelAnimationFrame(lineAnimRafRef.current);
-        lineAnimRafRef.current = 0;
-      }
-      return;
-    }
-    const vh = window.innerHeight;
-    lineSmoothRef.current = 1;
-    lineTargetRef.current = computeVerticalLineTarget(getScrollY(), vh);
-    applyVerticalLineTransform(1);
-
-    const tick = () => {
-      const y = getScrollY();
-      const vh = window.innerHeight;
-      const past =
-        activeSection === "home" && y > scrollCueDismissScrollY(vh);
-      if (past !== scrollPastCueDismissRef.current) {
-        scrollPastCueDismissRef.current = past;
-        setScrollPastCueDismiss(past);
-      }
-
-      const t = computeVerticalLineTarget(y, vh);
-      lineTargetRef.current = t;
-      const s = lineSmoothRef.current;
-      const next = s + (t - s) * LINE_SMOOTH_ALPHA;
-      lineSmoothRef.current = next;
-      applyVerticalLineTransform(next);
-      lineAnimRafRef.current = requestAnimationFrame(tick);
-    };
-    lineAnimRafRef.current = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(lineAnimRafRef.current);
-      lineAnimRafRef.current = 0;
-    };
-  }, [verticalLineIntroDone, reducedMotion, applyVerticalLineTransform, activeSection]);
-
+  /* ── Hide native cursor while the custom cursor is active ───── */
   useEffect(() => {
     if (reducedMotion) {
       return;
@@ -622,168 +214,111 @@ export default function Home() {
     };
   }, [reducedMotion]);
 
+  /* ── Viewport width (panel sizing) ─────────────────────────── */
   useEffect(() => {
-    const onResize = () => setViewportW(window.innerWidth);
+    const onResize = () => {
+      vwRef.current = window.innerWidth;
+      setViewportW(window.innerWidth);
+    };
     onResize();
     window.addEventListener("resize", onResize, { passive: true });
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  /** Hero progress + Home→About bridge (01→02, backing morph, line parallax). */
+  /* ── Single scroll loop: active section, reveals, and the horizontal work track ── */
   useEffect(() => {
-    const update = () => {
-      const el = heroRef.current;
+    let raf = 0;
+    const run = () => {
+      raf = 0;
       const vh = window.innerHeight;
-      if (el) {
-        const top = el.getBoundingClientRect().top;
-        const raw = (0 - top) / vh;
-        const p = clamp01(raw);
-        setProgress(reducedMotion ? 0 : p);
-        setHeroNameProgress(reducedMotion ? 0 : Math.min(2, Math.max(0, raw)));
-      }
+      const vw = vwRef.current;
+      const scrollY = window.scrollY;
 
-      const scrollY = getScrollY();
-
-      const aboutEl = aboutRef.current ?? document.getElementById("about");
-      if (!aboutEl) {
-        setSectionBridge(0);
-        setAboutRevealProgress(0);
-      } else {
-        const aboutTop = getElementDocumentTop(aboutEl);
-        const aboutH = aboutEl.offsetHeight;
-
-        if (reducedMotion) {
-          const marker = scrollY + vh * 0.38;
-          setSectionBridge(marker >= aboutTop ? 1 : 0);
-          setAboutRevealProgress(1);
-        } else {
-          const start = aboutTop - vh * 1.38;
-          const end = aboutTop - vh * 0.06;
-          const range = Math.max(end - start, 1);
-          const br = clamp01((scrollY - start) / range);
-          setSectionBridge(br);
-
-          /** Sticky About: 0→1 over first SECTION_REVEAL_ACROSS_FRACTION of span; then dwell at 1. */
-          const stickyScrollRange = Math.max(aboutH - vh, 1);
-          const rawScroll = (scrollY - aboutTop) / Math.max(stickyScrollRange, 1);
-          setAboutRevealProgress(clamp01(rawScroll / SECTION_REVEAL_ACROSS_FRACTION));
-        }
-      }
-
-      {
-        const workEl = workRef.current ?? document.getElementById("work");
-        if (!workEl) {
-          setWorkRevealProgress(0);
-        } else if (reducedMotion) {
-          setWorkRevealProgress(1);
-        } else {
-          const top = getElementDocumentTop(workEl);
-          const h = workEl.offsetHeight;
-          let stickyScrollRange = Math.max(h - vh, 1);
-          stickyScrollRange = Math.min(
-            stickyScrollRange,
-            workRevealScrollCapPx(vh, WORK_REVEAL_SCROLL_CAP_VH),
-          );
-          const rawScroll = (scrollY - top) / Math.max(stickyScrollRange, 1);
-          let reveal = clamp01(rawScroll / WORK_REVEAL_ACROSS_FRACTION);
-          if (workTocScrollActiveRef.current && scrollY >= top - 0.5) {
-            reveal = Math.max(reveal, WORK_INTRO_FADE_START);
-          }
-          setWorkRevealProgress(reveal);
-        }
-      }
-
-      {
-        const connectEl = connectRef.current ?? document.getElementById("connect");
-        if (!connectEl) {
-          setConnectRevealProgress(0);
-        } else if (reducedMotion) {
-          setConnectRevealProgress(1);
-        } else {
-          const top = getElementDocumentTop(connectEl);
-          const h = connectEl.offsetHeight;
-          const stickyScrollRange = Math.max(h - vh, 1);
-          const rawScroll = (scrollY - top) / Math.max(stickyScrollRange, 1);
-          setConnectRevealProgress(clamp01(rawScroll / SECTION_REVEAL_ACROSS_FRACTION));
-        }
-      }
-    };
-
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update, { passive: true });
-    const unsubLenisScroll = subscribeLenisScroll(update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-      unsubLenisScroll();
-    };
-  }, [reducedMotion]);
-
-  /**
-   * TOC highlight: use scroll position, not IntersectionObserver (home is tall,
-   * so observers often picked the wrong section, e.g. About always “active”).
-   */
-  useEffect(() => {
-    const updateActive = () => {
-      const marker = getScrollY() + window.innerHeight * 0.35;
-      let current: (typeof SECTIONS)[number]["id"] = SECTIONS[0].id;
+      /* Active section: last section whose top is above the 40% marker. */
+      const marker = scrollY + vh * 0.4;
+      let current: SectionId = "home";
       for (const s of SECTIONS) {
         const el = document.getElementById(s.id);
         if (!el) {
           continue;
         }
-        const top = getElementDocumentTop(el);
+        const top = el.getBoundingClientRect().top + scrollY;
         if (top <= marker) {
           current = s.id;
         }
       }
-      setActiveSection(current);
-    };
+      if (current !== activeScreenRef.current) {
+        activeScreenRef.current = current;
+        setActiveScreen(current);
+      }
 
-    updateActive();
-    window.addEventListener("scroll", updateActive, { passive: true });
-    window.addEventListener("resize", updateActive, { passive: true });
-    const unsubLenisScroll = subscribeLenisScroll(updateActive);
+      /* Reveal sections once their top crosses into view. */
+      for (const id of ["about", "connect"]) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top < vh * 0.82) {
+          setRevealed((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+        }
+      }
+
+      /* Horizontal work rail: map vertical progress through the tall section to translateX. */
+      const sec = workSectionRef.current;
+      const track = trackRef.current;
+      if (sec && track && !reducedMotion) {
+        const top = sec.getBoundingClientRect().top;
+        const total = sec.offsetHeight - vh;
+        const scrolled = clamp01(total > 0 ? -top / total : 0);
+        const maxShift = (WORK_PANEL_COUNT - 1) * vw;
+        track.style.transform = `translate3d(${-(scrolled * maxShift)}px, 0, 0)`;
+        const idx = Math.round(scrolled * (WORK_PANEL_COUNT - 1));
+        if (idx !== activePanelRef.current) {
+          activePanelRef.current = idx;
+          setActivePanel(idx);
+        }
+      }
+    };
+    const onScroll = () => {
+      if (raf === 0) {
+        raf = window.requestAnimationFrame(run);
+      }
+    };
+    run();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
     return () => {
-      window.removeEventListener("scroll", updateActive);
-      window.removeEventListener("resize", updateActive);
-      unsubLenisScroll();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) {
+        window.cancelAnimationFrame(raf);
+      }
     };
-  }, []);
+  }, [reducedMotion]);
 
-  /** Reveal the persistent top nav once the hero has scrolled most of the way off-screen. */
-  useEffect(() => {
-    const updateNav = () => {
-      setShowTopNav(getScrollY() > window.innerHeight * 0.85);
-    };
-    updateNav();
-    window.addEventListener("scroll", updateNav, { passive: true });
-    window.addEventListener("resize", updateNav, { passive: true });
-    const unsubLenisScroll = subscribeLenisScroll(updateNav);
-    return () => {
-      window.removeEventListener("scroll", updateNav);
-      window.removeEventListener("resize", updateNav);
-      unsubLenisScroll();
-    };
-  }, []);
+  const goToScreen = useCallback(
+    (id: string) => {
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    },
+    [reducedMotion],
+  );
 
-  /** Name split: 0→1 eases like before; 1→2 continues so Zhu/Adam keep moving. */
-  const maxSplitPx = Math.min(viewportW * 0.12, 140);
-  const splitPx =
-    reducedMotion
-      ? 0
-      : heroNameProgress <= 1
-        ? Math.pow(heroNameProgress, HERO_NAME_SCROLL_EASE) * maxSplitPx
-        : maxSplitPx + (heroNameProgress - 1) * 72;
-
-  /** Inline bridge parallax only after intro lines + text are allowed (avoids fighting landing-rise). */
-  const bridgeOn = introStep >= 2 && sectionBridge > 0;
-
-  /** Background layers follow overall scroll progress per sticky section. */
-  const aboutDecorOpacity = reducedMotion ? 1 : aboutRevealProgress;
-  const workDecorOpacity = reducedMotion ? 1 : workRevealProgress;
-  const connectDecorOpacity = reducedMotion ? 1 : connectRevealProgress;
+  /** Jump to a specific work panel (k=0 intro, k>=1 projects) by mapping to its vertical snap slot. */
+  const goToPanel = useCallback(
+    (k: number) => {
+      const sec = workSectionRef.current;
+      if (!sec) {
+        return;
+      }
+      if (reducedMotion) {
+        document
+          .getElementById(WORK_PROJECTS[Math.max(0, k - 1)]?.id ?? "work")
+          ?.scrollIntoView({ behavior: "auto", block: "start" });
+        return;
+      }
+      const top = sec.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: top + k * window.innerHeight, behavior: "smooth" });
+    },
+    [reducedMotion],
+  );
 
   const onIntroOverlayEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== "opacity") {
@@ -793,28 +328,23 @@ export default function Home() {
   };
 
   const motionClass = reducedMotion ? "landing-no-motion" : "landing-motion";
-  const linkClass =
-    "group inline-flex items-center gap-2 border border-white/25 bg-black/55 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+  const showOverlay = introStep < 2 && !reducedMotion;
+  const navVisible = introStep >= 2 && activeScreen !== "home";
 
   const tocLinkClass = (id: string) =>
     `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-      activeSection === id ? "text-white" : "text-white/45 hover:text-white"
+      activeScreen === id ? "text-white" : "text-white/45 hover:text-white"
     }`;
-
-  /** Index span must match label hover. */
   const tocIndexClass = (id: string) =>
-    activeSection === id ? "text-white" : "text-white/45 group-hover:text-white";
-
+    activeScreen === id ? "text-white" : "text-white/45 group-hover:text-white";
   const topNavLinkClass = (id: string) =>
     `rounded-sm px-2 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-[10px] sm:tracking-[0.22em] ${
-      activeSection === id ? "text-white" : "text-white/50 hover:text-white"
+      activeScreen === id ? "text-white" : "text-white/50 hover:text-white"
     }`;
-
-  const showOverlay = introStep < 2 && !reducedMotion;
 
   return (
     <div
-      className={`min-h-dvh bg-black text-white [&_a]:cursor-none [&_a:hover]:text-white ${motionClass}`}
+      className={`relative text-white [&_a]:cursor-none [&_a:hover]:text-white ${motionClass}`}
       data-intro-step={introStep}
       style={
         {
@@ -834,6 +364,10 @@ export default function Home() {
         } as CSSProperties
       }
     >
+      {/* One continuous backdrop spanning the whole page (color journey + grid) — no per-section seams. */}
+      <div aria-hidden className="bg-az-page absolute inset-0 -z-20" />
+      <div aria-hidden className="bg-az-grid absolute inset-0 -z-10 opacity-[0.05]" />
+
       <CustomCursor />
       <ScrollDebugOverlay />
 
@@ -847,11 +381,11 @@ export default function Home() {
         />
       )}
 
-      {/* ─── Persistent top nav (slides in after the hero) ─── */}
+      {/* ─── Persistent top nav ─── */}
       <nav
         aria-label="Primary"
         className={`fixed inset-x-0 top-0 z-40 transition-[transform,opacity] duration-300 ease-out ${
-          showTopNav ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-full opacity-0"
+          navVisible ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-full opacity-0"
         }`}
       >
         <div className="border-b border-white/10 bg-black/70 backdrop-blur-md">
@@ -862,7 +396,7 @@ export default function Home() {
               aria-label="Adam Zhu — back to top"
               onClick={(e) => {
                 e.preventDefault();
-                scrollToSection("home");
+                goToScreen("home");
               }}
             >
               <img
@@ -879,16 +413,17 @@ export default function Home() {
             </a>
 
             <div className="flex min-w-0 items-center gap-1 sm:gap-3">
-              <ul className="flex items-center gap-0.5 sm:gap-1">
+              {/* On large screens the numbered side nav handles section jumps, so hide these there. */}
+              <ul className="flex items-center gap-0.5 sm:gap-1 lg:hidden">
                 {SECTIONS.map((s) => (
                   <li key={s.id}>
                     <a
                       href="#/"
                       className={topNavLinkClass(s.id)}
-                      aria-current={activeSection === s.id ? "page" : undefined}
+                      aria-current={activeScreen === s.id ? "page" : undefined}
                       onClick={(e) => {
                         e.preventDefault();
-                        scrollToSection(s.id);
+                        goToScreen(s.id);
                       }}
                     >
                       {s.label}
@@ -910,13 +445,58 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ─── Home (hero + sticky name split) ─── */}
-      <section id="home" ref={heroRef} className="min-h-[125vh] scroll-mt-0">
-        <div className="sticky top-0 isolate flex min-h-dvh flex-col">
+      {/* ─── Slim side rail (desktop): ticks only by default; expands to labels on hover. Hidden on hero. ─── */}
+      <nav
+        aria-label="Sections"
+        className={`group/sn fixed left-0 top-1/2 z-40 hidden -translate-y-1/2 lg:block transition-opacity duration-500 ${
+          navVisible ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <div className="relative">
+          {/* Panel backdrop fades in only while expanded, so labels stay readable over content. */}
           <div
             aria-hidden
-            className="bg-az-atmos-home pointer-events-none absolute inset-0 -z-10"
+            className="absolute inset-0 rounded-r-2xl border-y border-r border-white/0 bg-black/0 backdrop-blur-0 transition-all duration-300 group-hover/sn:border-white/10 group-hover/sn:bg-black/65 group-hover/sn:backdrop-blur-md"
           />
+          <ul className="relative flex flex-col gap-1 py-4 pl-4 pr-3 sm:pl-5">
+            {SECTIONS.map((s, i) => {
+              const active = activeScreen === s.id;
+              return (
+                <li key={s.id}>
+                  <a
+                    href="#/"
+                    aria-current={active ? "page" : undefined}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      goToScreen(s.id);
+                    }}
+                    className="group/item flex items-center gap-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    <span
+                      aria-hidden
+                      className={`h-px shrink-0 transition-all duration-300 ${
+                        active ? "w-7 bg-white" : "w-4 bg-white/40 group-hover/item:bg-white/80"
+                      }`}
+                    />
+                    <span
+                      className={`max-w-0 overflow-hidden whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.2em] opacity-0 transition-all duration-300 group-hover/sn:max-w-[12rem] group-hover/sn:opacity-100 ${
+                        active ? "text-white" : "text-white/55"
+                      }`}
+                    >
+                      <span className="tabular-nums text-white/40">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="ml-2">{s.label}</span>
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </nav>
+
+      {/* ════════════════ 01 · Home (hero) ════════════════ */}
+      <section id="home" className="relative snap-start">
+        <div className="relative isolate flex min-h-dvh flex-col">
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
@@ -924,7 +504,7 @@ export default function Home() {
                 className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollToSection("home");
+                  goToScreen("home");
                 }}
               >
                 <img
@@ -941,44 +521,25 @@ export default function Home() {
               </a>
               <span>CMU · STAT / ML</span>
             </div>
-            <div
-              className="intro-line intro-line-top mt-6 h-px w-full overflow-hidden sm:mt-7"
-              style={
-                reducedMotion
-                  ? undefined
-                  : bridgeOn
-                    ? { transform: `translateX(${sectionBridge * 18}px)` }
-                    : undefined
-              }
-            >
+            <div className="intro-line intro-line-top mt-6 h-px w-full overflow-hidden sm:mt-7">
               <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-white" />
             </div>
           </div>
 
-          {/* Tighter pt under top rule; extra pb so corner index (Bebas) isn’t clipped at viewport bottom */}
-          <div className="flex min-h-0 flex-1 flex-col justify-center px-5 pb-24 sm:px-10 sm:pb-28 lg:pb-32">
-            <div className="mx-auto w-full max-w-[1600px] pb-12 pt-4 sm:pb-14 sm:pt-5 lg:pb-16">
+          <div className="flex min-h-0 flex-1 flex-col justify-center px-5 pb-24 sm:px-10 sm:pb-28 lg:pb-28">
+            <div className="mx-auto w-full max-w-[1600px] pb-10 pt-4 sm:pb-12 sm:pt-5">
               <div className="grid grid-cols-1 gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)_minmax(0,1fr)] lg:gap-x-10 xl:gap-x-16">
                 <div className="landing-name flex min-w-0 flex-col justify-center lg:min-h-0">
-                  <div className="mx-auto w-fit max-w-full" style={nameGroupScaleStyle}>
+                  <div className="mx-auto w-fit max-w-full">
                     <div className="relative isolate inline-block w-fit max-w-full select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]">
                       <div
                         aria-hidden
                         className="pointer-events-none absolute -left-[0.55rem] -right-[0.55rem] -top-[1.55rem] -bottom-[1.55rem] z-0 sm:-left-[0.72rem] sm:-right-[0.72rem] sm:-top-[1.8rem] sm:-bottom-[1.8rem]"
-                        style={nameBackingShellStyle}
                       >
-                        <div
-                          className="landing-name-backing bg-az-name-panel absolute inset-0 ring-1 ring-inset ring-[rgba(81,43,135,0.38)] ring-offset-0"
-                          style={nameBackingStyle}
-                        />
+                        <div className="landing-name-backing bg-az-name-panel absolute inset-0 rounded-[0.25rem] ring-1 ring-inset ring-[rgba(81,43,135,0.38)]" />
                       </div>
                       <div className="landing-name-fill relative z-10 w-fit min-w-0">
-                        <div
-                          className="block w-max"
-                          style={{
-                            transform: reducedMotion ? undefined : `translateY(${-splitPx}px)`,
-                          }}
-                        >
+                        <div className="block w-max">
                           {"Adam".split("").map((ch, i) => (
                             <span
                               key={`adam-${i}`}
@@ -989,12 +550,7 @@ export default function Home() {
                             </span>
                           ))}
                         </div>
-                        <div
-                          className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)]"
-                          style={{
-                            transform: reducedMotion ? undefined : `translateX(${splitPx}px)`,
-                          }}
-                        >
+                        <div className="mt-[0.02em] block w-max pl-[clamp(3.25rem,19vw,14rem)]">
                           {"Zhu".split("").map((ch, i) => (
                             <span
                               key={`zhu-${i}`}
@@ -1010,54 +566,26 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Vertical rule + scroll: min column height + min line length so both extend lower; cue sits lower */}
-                <div
-                  className="hidden h-full min-h-0 flex-col items-center self-stretch lg:flex lg:min-h-[min(88vh,60rem)]"
-                  style={
-                    reducedMotion
-                      ? undefined
-                      : bridgeOn
-                        ? { transform: `translateY(${sectionBridge * -10}px)` }
-                        : undefined
-                  }
-                >
+                {/* Vertical rule + scroll cue */}
+                <div className="hidden h-full min-h-0 flex-col items-center self-stretch lg:flex lg:min-h-[min(70vh,46rem)]">
                   <div
                     className="intro-line intro-line-v pointer-events-none relative flex min-h-0 w-full flex-1 flex-col items-center overflow-hidden"
                     aria-hidden
                   >
-                    <div
-                      ref={verticalLineInnerRef}
-                      className={`intro-line-inner intro-line-inner-v min-h-[min(44vh,28rem)] w-px min-w-px flex-1 origin-top bg-white${
-                        verticalLineIntroDone && !reducedMotion ? " intro-line-v-driven" : ""
-                      }`}
-                    />
+                    <div className="intro-line-inner intro-line-inner-v min-h-[min(40vh,24rem)] w-px min-w-px flex-1 origin-top bg-white" />
                   </div>
-                  {/* Fixed slot so hiding the cue doesn’t collapse flex / jump the line */}
                   <div
                     className="landing-el landing-scroll-cue-under mt-auto flex min-h-[5.25rem] shrink-0 flex-col items-center justify-end gap-0 pt-5 pb-2 sm:min-h-[5.75rem] sm:pt-6 sm:pb-3"
-                    aria-hidden={
-                      !(showScrollCue && activeSection === "home" && !scrollPastCueDismiss)
-                    }
+                    aria-hidden={activeScreen !== "home"}
                   >
                     <div
                       className={`flex flex-col items-center gap-0 transition-opacity duration-300 ease-out ${
-                        showScrollCue && activeSection === "home" && !scrollPastCueDismiss
-                          ? "opacity-100"
-                          : "pointer-events-none opacity-0"
+                        activeScreen === "home" ? "opacity-100" : "pointer-events-none opacity-0"
                       }`}
                     >
                       <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/50">Scroll</span>
                       <span className="scroll-cue-arrow inline-flex text-white/50">
-                        <svg
-                          width="28"
-                          height="28"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="square"
-                          aria-hidden
-                        >
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" aria-hidden>
                           <path d="M12 5v14M5 12l7 7 7-7" />
                         </svg>
                       </span>
@@ -1078,10 +606,10 @@ export default function Home() {
                             <a
                               href="#/"
                               className={tocLinkClass(s.id)}
-                              aria-current={activeSection === s.id ? "page" : undefined}
+                              aria-current={activeScreen === s.id ? "page" : undefined}
                               onClick={(e) => {
                                 e.preventDefault();
-                                scrollToSection(s.id);
+                                goToScreen(s.id);
                               }}
                             >
                               <span className={tocIndexClass(s.id)}>{String(i + 1).padStart(2, "0")}</span>{" "}
@@ -1093,44 +621,11 @@ export default function Home() {
                     </nav>
                   </div>
 
-                  <div
-                    className="landing-el landing-copy space-y-10"
-                    style={
-                      reducedMotion
-                        ? undefined
-                        : bridgeOn
-                          ? {
-                              opacity: clamp01(1 - sectionBridge * 0.92),
-                              transform: `translate3d(${sectionBridge * 8}px, ${sectionBridge * 28}px, 0)`,
-                            }
-                          : undefined
-                    }
-                  >
-                    <div
-                      className="intro-line intro-line-mid h-px w-full overflow-hidden"
-                      style={
-                        reducedMotion
-                          ? undefined
-                          : bridgeOn
-                            ? { transform: `translateX(${-sectionBridge * 22}px)` }
-                            : undefined
-                      }
-                    >
+                  <div className="landing-el landing-copy space-y-10">
+                    <div className="intro-line intro-line-mid h-px w-full overflow-hidden">
                       <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-white" />
                     </div>
-                    <div
-                      className="space-y-3"
-                      style={
-                        reducedMotion
-                          ? undefined
-                          : bridgeOn
-                            ? {
-                                transform: `translateY(${sectionBridge * 12}px)`,
-                                opacity: clamp01(1 - sectionBridge * 0.55),
-                              }
-                            : undefined
-                      }
-                    >
+                    <div className="space-y-3">
                       <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-white sm:text-[13px]">
                         Carnegie Mellon University
                       </p>
@@ -1139,21 +634,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <nav
-                      className="flex flex-wrap gap-3 sm:gap-4"
-                      aria-label="Social links"
-                      style={
-                        reducedMotion
-                          ? undefined
-                          : bridgeOn
-                            ? {
-                                opacity: clamp01(1 - sectionBridge * 0.75),
-                                transform: `translateY(${sectionBridge * 18}px) scale(${1 - sectionBridge * 0.04})`,
-                                transformOrigin: "left center",
-                              }
-                            : undefined
-                      }
-                    >
+                    <nav className="flex flex-wrap gap-3 sm:gap-4" aria-label="Social links">
                       <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
                         <IconGitHub className="h-4 w-4" />
                         GitHub
@@ -1178,32 +659,19 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Mobile cue: same reserved height so layout doesn’t jump when it fades */}
+              {/* Mobile scroll cue */}
               <div
-                className="landing-el landing-scroll-cue-under mt-40 flex min-h-[3.5rem] flex-col items-center justify-center gap-0 lg:hidden"
-                aria-hidden={
-                  !(showScrollCue && activeSection === "home" && !scrollPastCueDismiss)
-                }
+                className="landing-el landing-scroll-cue-under mt-16 flex min-h-[3.5rem] flex-col items-center justify-center gap-0 lg:hidden"
+                aria-hidden={activeScreen !== "home"}
               >
                 <div
                   className={`flex flex-col items-center gap-0 transition-opacity duration-300 ease-out ${
-                    showScrollCue && activeSection === "home" && !scrollPastCueDismiss
-                      ? "opacity-100"
-                      : "pointer-events-none opacity-0"
+                    activeScreen === "home" ? "opacity-100" : "pointer-events-none opacity-0"
                   }`}
                 >
                   <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/50">Scroll</span>
                   <span className="scroll-cue-arrow inline-flex text-white/50">
-                    <svg
-                      width="28"
-                      height="28"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="square"
-                      aria-hidden
-                    >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" aria-hidden>
                       <path d="M12 5v14M5 12l7 7 7-7" />
                     </svg>
                   </span>
@@ -1211,284 +679,356 @@ export default function Home() {
               </div>
             </div>
           </div>
-
         </div>
-        {/* Short tail after sticky hero so About follows quickly (TOC uses section offset from DOM). */}
-        <div aria-hidden className="pointer-events-none min-h-[min(12vh,180px)] w-full shrink-0" />
-        <div
-          aria-hidden
-          className="pointer-events-none w-full shrink-0 bg-black"
-          style={{ minHeight: `${SECTION_SCROLL_GAP_HOME_TO_ABOUT_VH}vh` }}
-        />
       </section>
 
-      {/* ─── About: tall track + sticky full-viewport panel (scrub reveal while pinned) ─── */}
+      {/* ════════════════ 02 · About ════════════════ */}
       <section
         id="about"
-        ref={aboutRef}
-        className="relative scroll-mt-0 bg-black min-h-[155vh]"
+        className={`${SECTION_SHELL} ${revealed.has("about") ? "is-in" : ""}`}
         aria-labelledby="about-heading"
       >
-        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
-          <div
-            aria-hidden
-            className="bg-az-atmos-about pointer-events-none absolute inset-0"
-            style={{ opacity: aboutDecorOpacity }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.11)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
-            style={{ opacity: 0.055 * aboutDecorOpacity }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
-            style={{ opacity: aboutDecorOpacity }}
-          />
+        <div className="relative z-10 mx-auto w-full max-w-[1600px]">
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
+            <div className="flex flex-col gap-0 lg:col-span-7">
+              <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
+                02 · About
+              </p>
+              <h2
+                id="about-heading"
+                {...reveal(1)}
+                className={`${reveal(1).className} mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white`}
+              >
+                Curiosity
+                <span className="block text-white">driven by data</span>
+              </h2>
+              <p {...reveal(2)} className={`${reveal(2).className} mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]`}>
+                I&apos;m an undergraduate at{" "}
+                <span className="text-white">Carnegie Mellon</span> studying Statistics &amp; Machine
+                Learning — I care about applying data-driven thinking to real-world problems and exploring how
+                rigorous analytics can make technology more human and impactful.
+              </p>
+            </div>
 
-          <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col justify-center px-5 pb-20 pt-28 sm:px-10 sm:pb-28 sm:pt-32">
-            <div className="grid gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
-              <div className="flex flex-col gap-0 lg:col-span-7">
-                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,0, aboutRevealProgress, reducedMotion)}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">
-                    02 · About
-                  </p>
-                </div>
-                <div className="mt-5 sm:mt-6" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,1, aboutRevealProgress, reducedMotion)}>
-                  <h2
-                    id="about-heading"
-                    className="font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
-                  >
-                    Curiosity
-                    <span className="block text-white">driven by data</span>
-                  </h2>
-                </div>
-                <div className="mt-10" style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,2, aboutRevealProgress, reducedMotion)}>
-                  <p className="max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-                    I&apos;m an undergraduate at{" "}
-                    <span className="text-white">Carnegie Mellon</span> studying Statistics &amp; Machine
-                    Learning — I care about applying data-driven thinking to real-world problems and exploring how
-                    rigorous analytics can make technology more human and impactful. What follows is work I&apos;m
-                    excited about — research, coursework, experiments, and side builds.
-                  </p>
-                </div>
+            <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
+              <div {...reveal(3)} className={`${reveal(3).className} bg-az-card border border-white/18 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]`}>
+                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Now</p>
+                <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-white/90 sm:text-[12px]">
+                  CMU · Statistics / ML · research &amp; coursework
+                </p>
               </div>
-
-              <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
-                <div
-                  className="bg-az-card border border-white/18 p-6 backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-                  style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,3, aboutRevealProgress, reducedMotion)}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Now</p>
-                  <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-white/90 sm:text-[12px]">
-                    CMU · Statistics / ML · research &amp; coursework
-                  </p>
-                </div>
-                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,4, aboutRevealProgress, reducedMotion, 28)}>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Focus</p>
-                      <ul className="mt-2 list-none space-y-1.5 p-0 font-mono text-[10px] uppercase leading-snug tracking-[0.14em] text-white/80 sm:text-[11px]">
-                        <li>Modeling &amp; inference</li>
-                        <li>Careful evaluation</li>
-                        <li>Clear explanations</li>
-                      </ul>
-                    </div>
-                    <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
-                      <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                        On campus with remote-friendly collaborations when it makes sense.
-                      </p>
-                    </div>
+              <div {...reveal(4)} className={reveal(4).className}>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Focus</p>
+                    <ul className="mt-2 list-none space-y-1.5 p-0 font-mono text-[10px] uppercase leading-snug tracking-[0.14em] text-white/80 sm:text-[11px]">
+                      <li>Modeling &amp; inference</li>
+                      <li>Careful evaluation</li>
+                      <li>Clear explanations</li>
+                    </ul>
                   </div>
-                </div>
-                <div style={sectionStaggerStyle(ABOUT_STAGGER_STEPS,5, aboutRevealProgress, reducedMotion, 24)}>
-                  <div className="h-px w-full bg-gradient-to-r from-white/40 via-white/10 to-transparent" aria-hidden />
-                  <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
-                    Scroll for work &amp; connect — or jump from the contents rail.
-                  </p>
-                </div>
-              </aside>
-            </div>
-
-            <div
-              aria-hidden
-              className={`${sectionIndexCornerAbsoluteWrap} bottom-10 sm:bottom-12`}
-              style={sectionStaggerStyle(ABOUT_STAGGER_STEPS, 0, aboutRevealProgress, reducedMotion, 32)}
-            >
-              <SectionIndexCorner index="02" label="About" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div
-        aria-hidden
-        className="pointer-events-none w-full shrink-0 bg-black"
-        style={{ minHeight: `${SECTION_SCROLL_GAP_VH}vh` }}
-      />
-
-      {/* ─── Work: tall track + sticky — horizontal project rail, then handoff to Connect ─── */}
-      <section
-        id="work"
-        ref={workRef}
-        className="relative scroll-mt-0 bg-black"
-        style={{
-          minHeight: `${workSectionMinHeightVh(WORK_PROJECTS.length)}vh`,
-        }}
-        aria-labelledby="work-heading"
-      >
-        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
-          <div
-            aria-hidden
-            className="bg-az-atmos-work pointer-events-none absolute inset-0"
-            style={{ opacity: workDecorOpacity }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.11)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
-            style={{ opacity: 0.055 * workDecorOpacity }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-white/32 to-transparent"
-            style={{ opacity: workDecorOpacity }}
-          />
-
-          <WorkProjectsExperience
-            workRevealProgress={workRevealProgress}
-            reducedMotion={reducedMotion}
-            viewportW={viewportW}
-          />
-        </div>
-      </section>
-
-      <div
-        aria-hidden
-        className="pointer-events-none w-full shrink-0 bg-black"
-        style={{ minHeight: `${SECTION_SCROLL_GAP_WORK_TO_CONNECT_VH}vh` }}
-      />
-
-      {/* ─── Connect: tall track + sticky panel (scrub reveal) ─── */}
-      <section
-        id="connect"
-        ref={connectRef}
-        className="relative scroll-mt-0 bg-black min-h-[155vh]"
-        aria-labelledby="connect-heading"
-      >
-        <div className="sticky top-0 z-10 relative min-h-dvh w-full overflow-x-clip overflow-y-visible bg-black">
-          <div
-            aria-hidden
-            className="bg-az-atmos-connect pointer-events-none absolute inset-0"
-            style={{ opacity: connectDecorOpacity }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.11)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.11)_1px,transparent_1px)] [background-size:min(3.5rem,10vw)_min(3.5rem,10vw)]"
-            style={{ opacity: 0.055 * connectDecorOpacity }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
-            style={{ opacity: connectDecorOpacity }}
-          />
-
-          <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col justify-center px-5 pb-28 pt-28 sm:px-10 sm:pb-32 sm:pt-32">
-            <div className="grid gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
-              <div className="flex flex-col gap-0 lg:col-span-7">
-                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 0, connectRevealProgress, reducedMotion)}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">
-                    04 · Connect
-                  </p>
-                </div>
-                <div className="mt-5 sm:mt-6" style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 1, connectRevealProgress, reducedMotion)}>
-                  <h2
-                    id="connect-heading"
-                    className="font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
-                  >
-                    Let&apos;s
-                    <span className="block text-white">talk</span>
-                  </h2>
-                </div>
-                <div className="mt-10" style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 2, connectRevealProgress, reducedMotion)}>
-                  <p className="max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-                    If you have questions, collaborations, research, coursework, or anything else on your mind,
-                    feel free to reach out. I&apos;m open to opportunities and I read everything.
-                  </p>
-                </div>
-                <div className="mt-6" style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 3, connectRevealProgress, reducedMotion)}>
-                  <p className="max-w-xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/50 sm:text-[13px]">
-                    Grew up in Ames, Iowa — friends, outdoors, travel when I can, keeping up with sports.
-                  </p>
-                </div>
-                <div
-                  className="mt-10 flex flex-wrap gap-4"
-                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 4, connectRevealProgress, reducedMotion, 26)}
-                >
-                  <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
-                    <IconGitHub className="h-4 w-4" />
-                    GitHub
-                  </a>
-                  <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" className={linkClass}>
-                    <IconLinkedIn className="h-4 w-4" />
-                    LinkedIn
-                  </a>
-                  <a href={EMAIL_MAILTO} className={linkClass}>
-                    <IconMail className="h-4 w-4" />
-                    {EMAIL}
-                  </a>
-                </div>
-              </div>
-
-              <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
-                <div
-                  className="bg-az-card border border-white/18 p-6 backdrop-blur-sm shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-                  style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 5, connectRevealProgress, reducedMotion)}
-                >
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Open to</p>
-                  <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
-                    If you want to talk research chats, internships, tooling feedback, or anything you&apos;re curious
-                    about on this site, feel free to reach out — happy to talk.
-                  </p>
-                </div>
-                <div style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 6, connectRevealProgress, reducedMotion, 28)}>
-                  <div className="bg-az-card-muted border border-white/14 p-5 sm:p-6">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Thanks</p>
+                  <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
                     <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                      Thanks for visiting — glad you made it this far.
+                      On campus with remote-friendly collaborations when it makes sense.
                     </p>
                   </div>
                 </div>
-              </aside>
+              </div>
+            </aside>
+          </div>
+        </div>
+        <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
+          <SectionIndexCorner index="02" label="About" />
+        </div>
+      </section>
+
+      {/* ════════════════ 03 · Work — pinned horizontal rail ════════════════ */}
+      {reducedMotion ? (
+        <section
+          id="work"
+          ref={workSectionRef}
+          className={`${SECTION_SHELL} is-in`}
+          aria-labelledby="work-heading"
+        >
+          <div className="relative z-10 mx-auto w-full max-w-[1600px]">
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 · Work</p>
+            <h2 id="work-heading" className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white">
+              Selected<span className="block">work</span>
+            </h2>
+            <ul className="mt-10 grid max-w-4xl list-none gap-6 p-0">
+              {WORK_PROJECTS.map((proj) => (
+                <li key={proj.id} className="bg-az-card border border-white/16 p-6 sm:p-8">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-white/50">{proj.eyebrow}</p>
+                  <h3 className="mt-3 font-display text-2xl font-bold uppercase tracking-tight text-white sm:text-3xl">{proj.title}</h3>
+                  <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-white/65">{proj.subtitle}</p>
+                  <p className="mt-4 font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/82 sm:text-[13px]">{proj.body}</p>
+                  {proj.paperUrl ? (
+                    <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em]">
+                      <a href={proj.paperUrl} target="_blank" rel="noreferrer noopener" className="text-white/90 underline decoration-white/30 underline-offset-2 hover:text-white">
+                        Read the paper
+                      </a>
+                    </p>
+                  ) : null}
+                  <ul className="mt-4 flex flex-wrap gap-2 p-0">
+                    {proj.tags.map((t) => (
+                      <li key={t} className="list-none border border-white/20 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.2em] text-white/70">{t}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : (
+        <section
+          id="work"
+          ref={workSectionRef}
+          className="relative"
+          aria-labelledby="work-heading"
+        >
+          {/* Pinned stage */}
+          <div className="sticky top-0 z-10 h-dvh w-full overflow-hidden">
+            {/* Horizontal track */}
+            <div
+              ref={trackRef}
+              className="flex h-full will-change-transform"
+              style={{ width: `${WORK_PANEL_COUNT * viewportW}px` }}
+            >
+              {/* Panel 0 — intro */}
+              <div className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28" style={{ width: `${viewportW}px` }}>
+                <div className="mx-auto w-full max-w-[1600px]">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 · Work</p>
+                  <h2
+                    id="work-heading"
+                    className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
+                  >
+                    Selected
+                    <span className="block text-white">work</span>
+                  </h2>
+                  <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
+                    Research, leadership, teaching, and a publication. Keep scrolling — the rail moves sideways,
+                    one project at a time.
+                  </p>
+                  <ol className="mt-10 flex max-w-2xl flex-col gap-2 p-0">
+                    {WORK_PROJECTS.map((p, i) => (
+                      <li key={p.id} className="list-none">
+                        <button
+                          type="button"
+                          onClick={() => goToPanel(i + 1)}
+                          className="group inline-flex items-center gap-3 font-mono text-[12px] uppercase tracking-[0.16em] text-white/55 transition-colors hover:text-white"
+                        >
+                          <span className="text-white/35 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                          {PROJECT_NAV_LABELS[p.id] ?? p.title}
+                          <IconArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="mt-10 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-white/40">
+                    Scroll <IconArrowRight className="h-3.5 w-3.5" />
+                  </p>
+                </div>
+              </div>
+
+              {/* Project panels */}
+              {WORK_PROJECTS.map((proj, i) => {
+                const panelIndex = i + 1;
+                const isActive = activePanel === panelIndex;
+                return (
+                  <div
+                    key={proj.id}
+                    className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28"
+                    style={{
+                      width: `${viewportW}px`,
+                      opacity: isActive ? 1 : 0.25,
+                      transition: "opacity 0.5s ease",
+                    }}
+                  >
+                    <div className="mx-auto w-full max-w-[1600px]">
+                      <div className="max-w-3xl">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/45">
+                          {proj.eyebrow} · {String(panelIndex).padStart(2, "0")} / {String(WORK_PROJECTS.length).padStart(2, "0")}
+                        </p>
+                        <h3 className="mt-4 font-display text-[clamp(2.25rem,6vw,4rem)] font-bold uppercase leading-[0.95] tracking-[0.02em] text-white">
+                          {proj.title}
+                        </h3>
+                        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60 sm:text-[12px]">
+                          {proj.subtitle}
+                        </p>
+                        <p className="mt-6 max-w-2xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.11em] text-white/82 sm:text-[13px]">
+                          {proj.body}
+                        </p>
+                        {proj.paperUrl ? (
+                          <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-white/75 sm:text-[12px]">
+                            <a
+                              href={proj.paperUrl}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="inline-flex items-center gap-2 text-white/90 underline decoration-white/30 underline-offset-2 transition-colors hover:text-white hover:decoration-white/55"
+                            >
+                              Read the paper
+                              <IconArrowRight className="h-3.5 w-3.5" />
+                            </a>
+                          </p>
+                        ) : null}
+                        <ul className="mt-8 flex flex-wrap gap-2 p-0">
+                          {proj.tags.map((t) => (
+                            <li
+                              key={t}
+                              className="list-none border border-white/20 bg-black/35 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.22em] text-white/72"
+                            >
+                              {t}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <div
-              aria-hidden
-              className={`${sectionIndexCornerAbsoluteWrap} bottom-10 z-20 sm:bottom-12`}
-              style={sectionStaggerStyle(CONNECT_STAGGER_STEPS, 0, connectRevealProgress, reducedMotion, 32)}
-            >
-              <SectionIndexCorner index="04" label="Connect" />
+            {/* Persistent rail header + progress (pinned over the stage) */}
+            <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
+              <SectionIndexCorner index="03" label="Work" />
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center sm:bottom-9">
+              <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/55 px-4 py-2 backdrop-blur-sm">
+                {Array.from({ length: WORK_PANEL_COUNT }).map((_, k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-label={k === 0 ? "Work intro" : `Project ${k}`}
+                    aria-current={activePanel === k ? "true" : undefined}
+                    onClick={() => goToPanel(k)}
+                    className="group flex h-4 items-center"
+                  >
+                    <span
+                      className={`block rounded-full transition-all duration-300 ${
+                        activePanel === k
+                          ? "h-2 w-6 bg-white"
+                          : "h-2 w-2 bg-white/35 group-hover:bg-white/70"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/*
+            Snap markers: one full-viewport block per panel. They create the section's scroll length
+            and a snap stop per project. The negative top margin overlaps them with the pinned stage
+            above so total section height stays WORK_PANEL_COUNT * 100dvh.
+          */}
+          <div aria-hidden className="pointer-events-none -mt-[100dvh]">
+            {Array.from({ length: WORK_PANEL_COUNT }).map((_, k) => (
+              <div key={k} className="h-dvh w-full snap-start" />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ 04 · Connect ════════════════ */}
+      <section
+        id="connect"
+        className={`${SECTION_SHELL} ${revealed.has("connect") ? "is-in" : ""}`}
+        aria-labelledby="connect-heading"
+      >
+        <div className="relative z-10 mx-auto w-full max-w-[1600px]">
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
+            <div className="flex flex-col gap-0 lg:col-span-7">
+              <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
+                04 · Connect
+              </p>
+              <h2
+                id="connect-heading"
+                {...reveal(1)}
+                className={`${reveal(1).className} mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white`}
+              >
+                Let&apos;s
+                <span className="block text-white">talk</span>
+              </h2>
+              <p {...reveal(2)} className={`${reveal(2).className} mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]`}>
+                Questions, collaborations, research, coursework — feel free to reach out. I&apos;m open to
+                opportunities and I read everything.
+              </p>
+              <div {...reveal(3)} className={`${reveal(3).className} mt-10 flex flex-wrap gap-4`}>
+                <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
+                  <IconGitHub className="h-4 w-4" />
+                  GitHub
+                </a>
+                <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" className={linkClass}>
+                  <IconLinkedIn className="h-4 w-4" />
+                  LinkedIn
+                </a>
+                <a href={EMAIL_MAILTO} className={linkClass}>
+                  <IconMail className="h-4 w-4" />
+                  {EMAIL}
+                </a>
+              </div>
+            </div>
+
+            <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
+              <div {...reveal(4)} className={`${reveal(4).className} bg-az-card border border-white/18 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]`}>
+                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Open to</p>
+                <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
+                  Research chats, internships, tooling feedback, or anything you&apos;re curious about on this
+                  site — happy to talk.
+                </p>
+              </div>
+              <div {...reveal(5)} className={`${reveal(5).className} bg-az-card-muted border border-white/14 p-5 sm:p-6`}>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Thanks</p>
+                <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
+                  Thanks for visiting — glad you made it this far.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+        <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
+          <SectionIndexCorner index="04" label="Connect" />
         </div>
       </section>
 
       <style>{`
-        /* Lenis drives smooth wheel scroll; CSS smooth + Lenis fights and feels mushy. */
         html {
-          scroll-behavior: auto;
+          scroll-behavior: smooth;
+          scroll-snap-type: y proximity;
+        }
+        @media (min-width: 1024px) {
+          html { scroll-snap-type: y mandatory; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          html { scroll-behavior: auto; scroll-snap-type: none; }
         }
 
-        .landing-motion .intro-line-inner-h {
-          transform: scaleX(0);
+        /* On-enter reveal for non-hero sections */
+        .reveal-item {
+          opacity: 0;
+          transform: translateY(22px);
+          transition:
+            opacity 0.6s ease,
+            transform 0.6s cubic-bezier(0.26, 0.9, 0.2, 1);
+          transition-delay: calc(var(--ri, 0) * 0.07s);
         }
-        .landing-motion .intro-line-inner-v:not(.intro-line-v-driven) {
-          transform: scaleY(0);
+        .is-in .reveal-item {
+          opacity: 1;
+          transform: none;
         }
+        @media (prefers-reduced-motion: reduce) {
+          .reveal-item { opacity: 1; transform: none; transition: none; }
+        }
+
+        /* ── Hero intro animations (time-based, play once) ── */
+        .landing-motion .intro-line-inner-h { transform: scaleX(0); }
+        .landing-motion .intro-line-inner-v { transform: scaleY(0); }
         .landing-motion[data-intro-step="2"] .intro-line-top .intro-line-inner {
           animation: landing-line-x var(--line-dur) var(--line-ease) forwards;
           animation-delay: 0s;
         }
-        .landing-motion[data-intro-step="2"] .intro-line-v .intro-line-inner:not(.intro-line-v-driven) {
+        .landing-motion[data-intro-step="2"] .intro-line-v .intro-line-inner {
           animation: landing-line-y var(--line-dur) var(--line-ease) forwards;
           animation-delay: var(--line-stagger);
         }
@@ -1496,46 +1036,15 @@ export default function Home() {
           animation: landing-line-x var(--line-dur) var(--line-ease) forwards;
           animation-delay: calc(var(--line-stagger) * 2);
         }
-        .landing-no-motion .intro-line-inner-h {
-          transform: scaleX(1);
-        }
-        .landing-no-motion .intro-line-inner-v {
-          transform: scaleY(1);
-        }
+        .landing-no-motion .intro-line-inner-h { transform: scaleX(1); }
+        .landing-no-motion .intro-line-inner-v { transform: scaleY(1); }
 
-        @keyframes landing-line-x {
-          from {
-            transform: scaleX(0);
-          }
-          to {
-            transform: scaleX(1);
-          }
-        }
-        @keyframes landing-line-y {
-          from {
-            transform: scaleY(0);
-          }
-          to {
-            transform: scaleY(1);
-          }
-        }
+        @keyframes landing-line-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes landing-line-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
-        .landing-motion .landing-el {
-          opacity: 0;
-          transform: translateY(18px);
-        }
-        /* Hero name column: no transform (WebKit + background-clip:text breaks under ancestor transforms). */
-        .landing-name {
-          -webkit-font-smoothing: auto;
-          -moz-osx-font-smoothing: auto;
-        }
-        .landing-motion .landing-name {
-          transform: none;
-        }
-        /**
-         * Pure white glyphs; transparency is on the layer (opacity) so color stays #fff, not gray rgba().
-         * Slight opacity lets the gradient panel show through underneath.
-         */
+        .landing-motion .landing-el { opacity: 0; transform: translateY(18px); }
+        .landing-name { -webkit-font-smoothing: auto; -moz-osx-font-smoothing: auto; }
+        .landing-motion .landing-name { transform: none; }
         .landing-name-fill {
           color: #fff;
           -webkit-text-fill-color: #fff;
@@ -1544,18 +1053,12 @@ export default function Home() {
             0 0.02em 0.07em rgba(0, 0, 0, 0.28),
             0 0.01em 0.03em rgba(0, 0, 0, 0.2);
         }
-        .landing-motion .landing-name-backing {
-          opacity: 1;
-          /* inset() interpolates smoothly (polygon() multi-stop reads stepped in many browsers). */
-          clip-path: inset(0 100% 100% 0);
-        }
+        .landing-motion .landing-name-backing { opacity: 1; clip-path: inset(0 100% 100% 0); }
         .landing-motion[data-intro-step="2"] .landing-name-backing {
           animation: landing-name-panel-in var(--name-panel-dur) cubic-bezier(0.33, 0, 0.18, 1) forwards;
           animation-delay: var(--text-after-lines);
         }
-        .landing-motion .landing-name-letter {
-          opacity: 0;
-        }
+        .landing-motion .landing-name-letter { opacity: 0; }
         .landing-motion[data-intro-step="2"] .landing-name-letter {
           animation: landing-letter-in var(--name-letter-dur) cubic-bezier(0.28, 0.65, 0.18, 1) forwards;
           animation-delay: calc(
@@ -1566,92 +1069,35 @@ export default function Home() {
           animation: landing-rise 0.58s cubic-bezier(0.26, 0.9, 0.2, 1) forwards;
           animation-fill-mode: both;
         }
-        .landing-motion[data-intro-step="2"] .landing-meta {
-          animation-delay: calc(var(--rest-intro-delay) + 0s);
-        }
-        .landing-motion[data-intro-step="2"] .landing-index {
-          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-index));
-        }
-        .landing-motion[data-intro-step="2"] .landing-copy {
-          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-copy));
-        }
-        .landing-motion[data-intro-step="2"] .landing-corner-index {
-          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-corner));
-        }
-        .landing-motion[data-intro-step="2"] .landing-scroll-cue-under {
-          animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-scroll));
-        }
+        .landing-motion[data-intro-step="2"] .landing-meta { animation-delay: calc(var(--rest-intro-delay) + 0s); }
+        .landing-motion[data-intro-step="2"] .landing-index { animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-index)); }
+        .landing-motion[data-intro-step="2"] .landing-copy { animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-copy)); }
+        .landing-motion[data-intro-step="2"] .landing-corner-index { animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-corner)); }
+        .landing-motion[data-intro-step="2"] .landing-scroll-cue-under { animation-delay: calc(var(--rest-intro-delay) + var(--rest-rail-scroll)); }
 
-        .scroll-cue-arrow {
-          animation: scroll-cue-bob 1.35s ease-in-out infinite;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .scroll-cue-arrow {
-            animation: none;
-          }
-        }
-
+        .scroll-cue-arrow { animation: scroll-cue-bob 1.35s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .scroll-cue-arrow { animation: none; } }
         @keyframes scroll-cue-bob {
-          0%,
-          100% {
-            opacity: 0.45;
-            transform: translateY(0);
-          }
-          50% {
-            opacity: 1;
-            transform: translateY(8px);
-          }
+          0%, 100% { opacity: 0.45; transform: translateY(0); }
+          50% { opacity: 1; transform: translateY(8px); }
         }
 
-        .landing-no-motion .landing-el {
-          opacity: 1 !important;
-          transform: none !important;
-          animation: none !important;
-        }
-        .landing-no-motion .landing-name-backing {
-          opacity: 1 !important;
-          clip-path: none !important;
-          animation: none !important;
-        }
-        .landing-no-motion .landing-name-letter {
-          opacity: 1 !important;
-          animation: none !important;
-          transform: none !important;
-        }
-        .landing-no-motion .landing-name-fill {
-          opacity: 1 !important;
-        }
+        .landing-no-motion .landing-el { opacity: 1 !important; transform: none !important; animation: none !important; }
+        .landing-no-motion .landing-name-backing { opacity: 1 !important; clip-path: none !important; animation: none !important; }
+        .landing-no-motion .landing-name-letter { opacity: 1 !important; animation: none !important; transform: none !important; }
+        .landing-no-motion .landing-name-fill { opacity: 1 !important; }
 
-        /* Single continuous reveal: shrink right/bottom insets from TL toward BR (smooth, not stepped). */
         @keyframes landing-name-panel-in {
-          from {
-            clip-path: inset(0 100% 100% 0);
-          }
-          to {
-            clip-path: inset(0 0 0 0);
-          }
+          from { clip-path: inset(0 100% 100% 0); }
+          to { clip-path: inset(0 0 0 0); }
         }
-        /* One curve for opacity + Y — easing does the gradual fade/rise (no mid keyframe “stairs”). */
         @keyframes landing-letter-in {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 0.46em, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
+          from { opacity: 0; transform: translate3d(0, 0.46em, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
-
         @keyframes landing-rise {
-          from {
-            opacity: 0;
-            transform: translateY(18px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

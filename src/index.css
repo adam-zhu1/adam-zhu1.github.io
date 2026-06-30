@@ -94,33 +94,34 @@
       linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.32) 100%);
   }
 
-  /** Hero — subtle auras top-right + bottom-right only */
-  .bg-az-atmos-home {
+  /**
+   * One continuous backdrop for the WHOLE page (rendered as a single full-height layer, not per
+   * section), so there are never seams between sections. Soft color auras are placed down the page
+   * by percentage — navy near the top, purple through the middle (Work), magenta/red toward the
+   * bottom — over a faint vertical wash. Because it's a single element, the color transitions are
+   * perfectly smooth as you scroll.
+   */
+  .bg-az-page {
+    background-color: #000;
     background-image:
-      radial-gradient(ellipse 70% 55% at 96% 6%, rgba(81, 43, 135, 0.11) 0%, transparent 52%),
-      radial-gradient(ellipse 65% 58% at 98% 92%, rgba(216, 5, 21, 0.09) 0%, transparent 52%),
-      linear-gradient(165deg, rgba(5, 5, 5, 0.98) 0%, #000 52%, #080808 100%);
+      radial-gradient(55% 22% at 82% 7%, rgba(81, 43, 135, 0.22) 0%, transparent 62%),
+      radial-gradient(60% 24% at 12% 30%, rgba(0, 42, 121, 0.22) 0%, transparent 62%),
+      radial-gradient(55% 22% at 86% 58%, rgba(81, 43, 135, 0.18) 0%, transparent 62%),
+      radial-gradient(60% 22% at 14% 84%, rgba(137, 20, 70, 0.20) 0%, transparent 62%),
+      radial-gradient(50% 20% at 82% 96%, rgba(174, 12, 0, 0.16) 0%, transparent 62%),
+      linear-gradient(
+        180deg,
+        rgba(0, 42, 121, 0.05) 0%,
+        rgba(81, 43, 135, 0.05) 50%,
+        rgba(137, 20, 70, 0.06) 100%
+      );
   }
 
-  /** Section-wide atmosphere (stacked under grid) */
-  .bg-az-atmos-about {
+  /** Continuous blueprint grid — one full-page layer so the lines never reset/seam between sections. */
+  .bg-az-grid {
     background-image:
-      radial-gradient(ellipse 90% 70% at 48% -28%, rgba(0, 42, 121, 0.32) 0%, transparent 58%),
-      radial-gradient(ellipse 55% 50% at 92% 18%, rgba(81, 43, 135, 0.22) 0%, transparent 52%),
-      linear-gradient(180deg, rgba(6, 6, 6, 0.98) 0%, #000 45%, #080808 100%);
-  }
-
-  .bg-az-atmos-work {
-    background-image:
-      radial-gradient(ellipse 85% 60% at 88% -22%, rgba(81, 43, 135, 0.28) 0%, transparent 55%),
-      radial-gradient(ellipse 45% 55% at 8% 75%, rgba(0, 42, 121, 0.18) 0%, transparent 50%),
-      linear-gradient(200deg, rgba(6, 6, 6, 0.98) 0%, #000 48%, #070707 100%);
-  }
-
-  .bg-az-atmos-connect {
-    background-image:
-      radial-gradient(ellipse 75% 65% at 12% 8%, rgba(137, 20, 70, 0.24) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 50% at 95% 85%, rgba(216, 5, 21, 0.16) 0%, transparent 50%),
-      linear-gradient(165deg, rgba(5, 5, 5, 0.98) 0%, #000 52%, #080808 100%);
+      linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px);
+    background-size: min(3.5rem, 10vw) min(3.5rem, 10vw);
   }
 }
