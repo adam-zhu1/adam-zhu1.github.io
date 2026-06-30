@@ -18,6 +18,16 @@ export type WorkProject = {
 /** Resume-aligned highlights (AdamZhu_draft1.pdf). Tweak copy or links anytime. */
 export const WORK_PROJECTS: WorkProject[] = [
   {
+    id: "laneiq",
+    eyebrow: "Project · Computer vision",
+    title: "LaneIQ",
+    subtitle: "Self-built · bowling analytics from a phone",
+    body:
+      "Turns a single side-mounted phone video into per-shot metrics — ball speed, board at the arrows, breakpoint, and entry angle — with no lane hardware. A six-click homography maps pixels to true lane coordinates; the ball is found with background subtraction, Hough circles, and an optional YOLOv8 model, then tracked through motion blur with a Kalman filter.",
+    tags: ["Python", "OpenCV", "Computer vision", "YOLOv8", "Kalman filter"],
+    links: [{ label: "GitHub", url: "https://github.com/adam-zhu1/bowling-app" }],
+  },
+  {
     id: "csafe",
     eyebrow: "Research · Forensics",
     title: "Camera & handwriting",

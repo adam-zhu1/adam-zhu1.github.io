@@ -20,6 +20,7 @@ const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
 
 /** Short labels for the project panels (used in the intro list + progress dots). */
 const PROJECT_NAV_LABELS: Record<string, string> = {
+  laneiq: "LaneIQ",
   csafe: "CSAFE",
   vrac: "VRAC",
   "cor-robotics": "COR Robotics",
@@ -164,7 +165,7 @@ function ProjectLinks({
 /** Draft skills — edit freely. Grouped for a compact, scannable block in About. */
 const SKILL_GROUPS: { label: string; items: string[] }[] = [
   { label: "Languages", items: ["R", "Python", "SQL", "C", "Java", "MATLAB", "Bash"] },
-  { label: "Libraries", items: ["NumPy", "pandas", "scikit-learn", "tidyverse", "ggplot2"] },
+  { label: "Libraries", items: ["NumPy", "pandas", "scikit-learn", "PyTorch", "OpenCV", "tidyverse", "ggplot2"] },
   { label: "Tools", items: ["Git", "RStudio", "Jupyter", "LaTeX"] },
   {
     label: "Methods",
@@ -175,7 +176,9 @@ const SKILL_GROUPS: { label: string; items: string[] }[] = [
       "GLMs",
       "Experimental design",
       "Machine learning",
+      "Deep learning",
       "Computer vision",
+      "Object detection",
       "Data viz",
     ],
   },
