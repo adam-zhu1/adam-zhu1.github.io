@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
-import { SmoothScroll } from "./components/SmoothScroll";
 import { scrollWindowToY } from "./lenisBridge";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -30,7 +29,6 @@ function ScrollToTopOnLoad() {
 export default function App() {
   return (
     <HashRouter>
-      <SmoothScroll />
       <ScrollToTopOnLoad />
       <Routes>
         <Route path="/" element={<Home />} />
