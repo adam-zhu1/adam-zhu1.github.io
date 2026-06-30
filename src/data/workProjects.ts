@@ -1,5 +1,11 @@
 export type WorkProjectMotion = "wipe" | "depth" | "rise" | "tilt" | "scan";
 
+/** A labeled external link (e.g. GitHub repo, paper, project site) shown as a button. */
+export type WorkLink = {
+  label: string;
+  url: string;
+};
+
 export type WorkProject = {
   id: string;
   eyebrow: string;
@@ -8,8 +14,8 @@ export type WorkProject = {
   body: string;
   tags: string[];
   motion: WorkProjectMotion;
-  /** Optional external link (e.g. journal PDF) rendered below `body`. */
-  paperUrl?: string;
+  /** Optional external links (GitHub, paper, site, …) rendered as buttons below `body`. */
+  links?: WorkLink[];
 };
 
 /**
@@ -27,6 +33,7 @@ export const WORK_PROJECTS: (WorkProject & { segmentWeight: number })[] = [
     tags: ["R", "Image pipelines", "Manuscript"],
     motion: "wipe",
     segmentWeight: 0.2,
+    links: [{ label: "Center site", url: "https://forensicstats.org/" }],
   },
   {
     id: "vrac",
@@ -39,6 +46,7 @@ export const WORK_PROJECTS: (WorkProject & { segmentWeight: number })[] = [
     motion: "depth",
     /** Longer segment: extra scroll on page 2 before the rail advances to page 3. */
     segmentWeight: 0.3,
+    links: [{ label: "Project page", url: "https://www.vrac.iastate.edu/research/asters/" }],
   },
   {
     id: "cor-robotics",
@@ -50,6 +58,7 @@ export const WORK_PROJECTS: (WorkProject & { segmentWeight: number })[] = [
     tags: ["Curriculum", "Drones", "Instruction"],
     motion: "rise",
     segmentWeight: 0.16,
+    links: [{ label: "Org site", url: "https://corrobotics.com/" }],
   },
   {
     id: "first",
@@ -61,6 +70,7 @@ export const WORK_PROJECTS: (WorkProject & { segmentWeight: number })[] = [
     tags: ["Operations", "Outreach", "Mentorship"],
     motion: "tilt",
     segmentWeight: 0.19,
+    links: [{ label: "Team site", url: "https://www.teamneutrino.org/" }],
   },
   {
     id: "publication",
@@ -69,7 +79,7 @@ export const WORK_PROJECTS: (WorkProject & { segmentWeight: number })[] = [
     subtitle: "Mathematics 2024, 12, 741",
     body:
       "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, with application to environmental Salmonella testing in the U.S.",
-    paperUrl: "https://www.mdpi.com/2227-7390/12/5/741",
+    links: [{ label: "Read paper", url: "https://www.mdpi.com/2227-7390/12/5/741" }],
     tags: ["GLMs", "Diagnostics", "Open access"],
     motion: "scan",
     segmentWeight: 0.15,

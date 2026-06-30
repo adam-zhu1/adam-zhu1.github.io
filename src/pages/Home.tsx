@@ -125,6 +125,62 @@ function IconArrowRight({ className }: { className?: string }) {
   );
 }
 
+function IconExternal({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7 17L17 7M9 7h8v8" />
+    </svg>
+  );
+}
+
+const linkPillClass =
+  "group/pill inline-flex items-center gap-2 border border-white/25 bg-black/40 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/85 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+
+/** Project link buttons (GitHub / paper / site …). Renders nothing when there are no links. */
+function ProjectLinks({
+  links,
+  className,
+}: {
+  links?: { label: string; url: string }[];
+  className?: string;
+}) {
+  if (!links || links.length === 0) {
+    return null;
+  }
+  return (
+    <ul className={`flex flex-wrap gap-2.5 p-0 ${className ?? ""}`}>
+      {links.map((l) => (
+        <li key={l.url} className="list-none">
+          <a href={l.url} target="_blank" rel="noreferrer noopener" className={linkPillClass}>
+            {l.label}
+            <IconExternal className="h-3 w-3 opacity-65 transition-opacity group-hover/pill:opacity-100" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Draft skills — edit freely. Grouped for a compact, scannable block in About. */
+const SKILL_GROUPS: { label: string; items: string[] }[] = [
+  { label: "Languages", items: ["R", "Python", "SQL", "C", "Java", "MATLAB", "Bash"] },
+  { label: "Libraries", items: ["NumPy", "pandas", "scikit-learn", "tidyverse", "ggplot2"] },
+  { label: "Tools", items: ["Git", "RStudio", "Jupyter", "LaTeX"] },
+  {
+    label: "Methods",
+    items: [
+      "Statistical inference",
+      "Hypothesis testing",
+      "Regression",
+      "GLMs",
+      "Experimental design",
+      "Machine learning",
+      "Computer vision",
+      "Data viz",
+    ],
+  },
+];
+
 /** 0 = black overlay, 1 = overlay fading, 2 = lines + text sequence */
 type IntroStep = 0 | 1 | 2;
 
@@ -708,32 +764,46 @@ export default function Home() {
                 Learning — I care about applying data-driven thinking to real-world problems and exploring how
                 rigorous analytics can make technology more human and impactful.
               </p>
+
+              <div {...reveal(3)} className={`${reveal(3).className} mt-10`}>
+                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/50">Skills</p>
+                <div className="mt-4 flex flex-col gap-3">
+                  {SKILL_GROUPS.map((g) => (
+                    <div
+                      key={g.label}
+                      className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-4"
+                    >
+                      <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.24em] text-white/45 sm:w-20 sm:pt-1">
+                        {g.label}
+                      </span>
+                      <ul className="flex flex-wrap gap-2 p-0">
+                        {g.items.map((it) => (
+                          <li
+                            key={it}
+                            className="list-none border border-white/18 bg-black/30 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/80 sm:text-[10px]"
+                          >
+                            {it}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <aside className="flex flex-col gap-4 lg:col-span-5 lg:justify-center">
-              <div {...reveal(3)} className={`${reveal(3).className} bg-az-card border border-white/18 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]`}>
+              <div {...reveal(4)} className={`${reveal(4).className} bg-az-card border border-white/18 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]`}>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Now</p>
                 <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-white/90 sm:text-[12px]">
                   CMU · Statistics / ML · research &amp; coursework
                 </p>
               </div>
-              <div {...reveal(4)} className={reveal(4).className}>
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Focus</p>
-                    <ul className="mt-2 list-none space-y-1.5 p-0 font-mono text-[10px] uppercase leading-snug tracking-[0.14em] text-white/80 sm:text-[11px]">
-                      <li>Modeling &amp; inference</li>
-                      <li>Careful evaluation</li>
-                      <li>Clear explanations</li>
-                    </ul>
-                  </div>
-                  <div className="bg-az-card-muted border border-white/14 p-4 sm:p-5">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
-                    <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                      On campus with remote-friendly collaborations when it makes sense.
-                    </p>
-                  </div>
-                </div>
+              <div {...reveal(5)} className={`${reveal(5).className} bg-az-card-muted border border-white/14 p-5 sm:p-6`}>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
+                <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
+                  On campus at CMU · open to remote-friendly collaborations.
+                </p>
               </div>
             </aside>
           </div>
@@ -763,13 +833,7 @@ export default function Home() {
                   <h3 className="mt-3 font-display text-2xl font-bold uppercase tracking-tight text-white sm:text-3xl">{proj.title}</h3>
                   <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-white/65">{proj.subtitle}</p>
                   <p className="mt-4 font-mono text-[12px] uppercase leading-relaxed tracking-[0.12em] text-white/82 sm:text-[13px]">{proj.body}</p>
-                  {proj.paperUrl ? (
-                    <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em]">
-                      <a href={proj.paperUrl} target="_blank" rel="noreferrer noopener" className="text-white/90 underline decoration-white/30 underline-offset-2 hover:text-white">
-                        Read the paper
-                      </a>
-                    </p>
-                  ) : null}
+                  <ProjectLinks links={proj.links} className="mt-5" />
                   <ul className="mt-4 flex flex-wrap gap-2 p-0">
                     {proj.tags.map((t) => (
                       <li key={t} className="list-none border border-white/20 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.2em] text-white/70">{t}</li>
@@ -859,19 +923,7 @@ export default function Home() {
                         <p className="mt-6 max-w-2xl font-mono text-[12px] uppercase leading-relaxed tracking-[0.11em] text-white/82 sm:text-[13px]">
                           {proj.body}
                         </p>
-                        {proj.paperUrl ? (
-                          <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-white/75 sm:text-[12px]">
-                            <a
-                              href={proj.paperUrl}
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="inline-flex items-center gap-2 text-white/90 underline decoration-white/30 underline-offset-2 transition-colors hover:text-white hover:decoration-white/55"
-                            >
-                              Read the paper
-                              <IconArrowRight className="h-3.5 w-3.5" />
-                            </a>
-                          </p>
-                        ) : null}
+                        <ProjectLinks links={proj.links} className="mt-6" />
                         <ul className="mt-8 flex flex-wrap gap-2 p-0">
                           {proj.tags.map((t) => (
                             <li
