@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Adam Zhu">
-  <!-- Chunky bars: reads at 16×16, different silhouette than pole/flag -->
+  <!-- Abstract "A" that also reads as a triangle / delta (Δ, the statistics symbol for change). One bold shape, legible at 16px. -->
   <rect width="64" height="64" rx="14" fill="#000"/>
-  <rect x="12" y="14" width="40" height="10" rx="3" fill="#fff"/>
-  <rect x="12" y="27" width="26" height="10" rx="3" fill="#fff"/>
-  <rect x="12" y="40" width="34" height="10" rx="3" fill="#fff"/>
+  <path fill="#fff" fill-rule="evenodd" d="M32 12 L53 52 L11 52 Z M24 40 L40 40 L32 26 Z M28 52 L36 52 L32 46 Z"/>
 </svg>
