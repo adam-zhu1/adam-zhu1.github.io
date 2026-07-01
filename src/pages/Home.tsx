@@ -12,7 +12,7 @@ import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../component
 import { WORK_PROJECTS } from "../data/workProjects";
 
 const GITHUB_URL = "https://github.com/adam-zhu1";
-const LINKEDIN_URL = "https://www.linkedin.com/in/adamzhu";
+const LINKEDIN_URL = "https://www.linkedin.com/in/adam-zhu-cmu/";
 const EMAIL = "adamzhu@andrew.cmu.edu";
 const EMAIL_MAILTO = `mailto:${EMAIL}`;
 /** Resume PDF in public/. Drop a real file at this name to replace the placeholder. */
@@ -20,7 +20,7 @@ const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
 
 /** Short labels for the project panels (used in the intro list + progress dots). */
 const PROJECT_NAV_LABELS: Record<string, string> = {
-  laneiq: "LaneIQ",
+  trueline: "TrueLine",
   csafe: "CSAFE",
   vrac: "VRAC",
   "cor-robotics": "COR Robotics",
@@ -628,7 +628,10 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(4.5rem,auto)_minmax(0,1fr)] lg:gap-x-10 xl:gap-x-16">
                 <div className="landing-name flex min-w-0 flex-col justify-center lg:min-h-0">
                   <div className="mx-auto w-fit max-w-full">
-                    <div className="relative isolate inline-block w-fit max-w-full select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]">
+                    <h1
+                      aria-label="Adam Zhu"
+                      className="relative isolate m-0 inline-block w-fit max-w-full select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]"
+                    >
                       <div
                         aria-hidden
                         className="pointer-events-none absolute -left-[5%] -right-[5%] -top-[24%] -bottom-[24%] z-0"
@@ -665,7 +668,7 @@ export default function Home() {
                           ))}
                         </div>
                       </div>
-                    </div>
+                    </h1>
                   </div>
                 </div>
 
