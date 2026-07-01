@@ -33,7 +33,7 @@ const SECTIONS = [
   { id: "home", label: "Home" },
   { id: "about", label: "About" },
   { id: "work", label: "Work" },
-  { id: "connect", label: "Connect" },
+  { id: "connect", label: "Contact" },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -219,6 +219,7 @@ export default function Home() {
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
 
+  const heroRef = useRef<HTMLElement | null>(null);
   const workSectionRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const activeScreenRef = useRef<SectionId>("home");
@@ -270,6 +271,47 @@ export default function Home() {
     return () => {
       root.classList.remove("cursor-none");
       document.body.classList.remove("cursor-none");
+    };
+  }, [reducedMotion]);
+
+  /* ── Hero aurora cursor parallax (fine pointers only, motion allowed) ── */
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el || reducedMotion || window.matchMedia("(pointer: coarse)").matches) {
+      return;
+    }
+    let raf = 0;
+    let px = 0;
+    let py = 0;
+    const apply = () => {
+      raf = 0;
+      el.style.setProperty("--hero-px", px.toFixed(3));
+      el.style.setProperty("--hero-py", py.toFixed(3));
+    };
+    const schedule = () => {
+      if (!raf) {
+        raf = window.requestAnimationFrame(apply);
+      }
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      px = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+      py = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
+      schedule();
+    };
+    const reset = () => {
+      px = 0;
+      py = 0;
+      schedule();
+    };
+    el.addEventListener("pointermove", onMove, { passive: true });
+    el.addEventListener("pointerleave", reset, { passive: true });
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", reset);
+      if (raf) {
+        window.cancelAnimationFrame(raf);
+      }
     };
   }, [reducedMotion]);
 
@@ -394,8 +436,6 @@ export default function Home() {
     `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
       activeScreen === id ? "text-white" : "text-white/45 hover:text-white"
     }`;
-  const tocIndexClass = (id: string) =>
-    activeScreen === id ? "text-white" : "text-white/45 group-hover:text-white";
   const topNavLinkClass = (id: string) =>
     `rounded-sm px-2 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-[10px] sm:tracking-[0.22em] ${
       activeScreen === id ? "text-white" : "text-white/50 hover:text-white"
@@ -426,6 +466,10 @@ export default function Home() {
       {/* One continuous backdrop spanning the whole page (color journey + grid) — no per-section seams. */}
       <div aria-hidden className="bg-az-page absolute inset-0 -z-20" />
       <div aria-hidden className="bg-az-grid absolute inset-0 -z-10 opacity-[0.05]" />
+      <div
+        aria-hidden
+        className="bg-az-grain pointer-events-none absolute inset-0 -z-10 opacity-[0.12] mix-blend-soft-light"
+      />
 
       <CustomCursor />
       <ScrollDebugOverlay />
@@ -466,9 +510,6 @@ export default function Home() {
                 className="h-7 w-7 shrink-0 rounded-[8px]"
                 decoding="async"
               />
-              <span className="hidden font-sans text-[12px] font-medium tracking-[0.08em] sm:inline">
-                Adam Zhu
-              </span>
             </a>
 
             <div className="flex min-w-0 items-center gap-1 sm:gap-3">
@@ -518,7 +559,7 @@ export default function Home() {
             className="absolute inset-0 rounded-r-2xl border-y border-r border-white/0 bg-black/0 backdrop-blur-0 transition-all duration-300 group-hover/sn:border-white/10 group-hover/sn:bg-black/65 group-hover/sn:backdrop-blur-md"
           />
           <ul className="relative flex flex-col gap-1 py-4 pl-4 pr-3 sm:pl-5">
-            {SECTIONS.map((s, i) => {
+            {SECTIONS.map((s) => {
               const active = activeScreen === s.id;
               return (
                 <li key={s.id}>
@@ -542,8 +583,7 @@ export default function Home() {
                         active ? "text-white" : "text-white/55"
                       }`}
                     >
-                      <span className="tabular-nums text-white/40">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="ml-2">{s.label}</span>
+                      {s.label}
                     </span>
                   </a>
                 </li>
@@ -554,12 +594,13 @@ export default function Home() {
       </nav>
 
       {/* ════════════════ 01 · Home (hero) ════════════════ */}
-      <section id="home" className="relative snap-start">
+      <section id="home" ref={heroRef} className="relative snap-start">
         <div className="relative isolate flex min-h-dvh flex-col">
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
                 href="#/"
+                aria-label="Adam Zhu — back to top"
                 className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
                   e.preventDefault();
@@ -574,9 +615,6 @@ export default function Home() {
                   className="h-8 w-8 shrink-0 rounded-[10px] sm:h-9 sm:w-9"
                   decoding="async"
                 />
-                <span className="font-sans text-[12px] font-medium tracking-[0.08em] text-inherit sm:text-[13px]">
-                  Adam Zhu
-                </span>
               </a>
               <span>CMU · STAT / ML</span>
             </div>
@@ -593,9 +631,15 @@ export default function Home() {
                     <div className="relative isolate inline-block w-fit max-w-full select-none font-display text-[clamp(5.25rem,24vw,17.5rem)] font-bold uppercase leading-[0.76] tracking-[0.02em]">
                       <div
                         aria-hidden
-                        className="pointer-events-none absolute -left-[0.55rem] -right-[0.55rem] -top-[1.55rem] -bottom-[1.55rem] z-0 sm:-left-[0.72rem] sm:-right-[0.72rem] sm:-top-[1.8rem] sm:-bottom-[1.8rem]"
+                        className="pointer-events-none absolute -left-[5%] -right-[5%] -top-[24%] -bottom-[24%] z-0"
                       >
-                        <div className="landing-name-backing bg-az-name-panel absolute inset-0 rounded-[0.25rem] ring-1 ring-inset ring-[rgba(81,43,135,0.38)]" />
+                        <div className="landing-name-backing absolute inset-0">
+                          <div className="az-aurora absolute inset-0">
+                            <span className="az-aurora__blob az-aurora__blob--a" />
+                            <span className="az-aurora__blob az-aurora__blob--b" />
+                            <span className="az-aurora__blob az-aurora__blob--c" />
+                          </div>
+                        </div>
                       </div>
                       <div className="landing-name-fill relative z-10 w-fit min-w-0">
                         <div className="block w-max">
@@ -660,7 +704,7 @@ export default function Home() {
                     >
                       <span className="text-white/50">Contents</span>
                       <ul className="flex flex-col gap-2.5">
-                        {SECTIONS.map((s, i) => (
+                        {SECTIONS.map((s) => (
                           <li key={s.id}>
                             <a
                               href="#/"
@@ -671,7 +715,6 @@ export default function Home() {
                                 goToScreen(s.id);
                               }}
                             >
-                              <span className={tocIndexClass(s.id)}>{String(i + 1).padStart(2, "0")}</span>{" "}
                               {s.label}
                             </a>
                           </li>
@@ -686,10 +729,10 @@ export default function Home() {
                     </div>
                     <div className="space-y-3">
                       <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-white sm:text-[13px]">
-                        Carnegie Mellon University
+                        Statistics &amp; machine learning · Carnegie Mellon
                       </p>
                       <p className="font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em] text-white/55 sm:text-[13px]">
-                        Statistics &amp; machine learning
+                        Data pipelines, statistical inference, and computer vision.
                       </p>
                     </div>
 
@@ -713,7 +756,7 @@ export default function Home() {
                     aria-hidden
                     className="landing-el landing-corner-index relative z-10 mt-auto w-full self-end overflow-visible pb-3 pt-4 lg:pb-4 lg:pt-6"
                   >
-                    <SectionIndexCorner index="01" label="Home" className="pointer-events-none" />
+                    <SectionIndexCorner label="Home" className="pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -751,7 +794,7 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-0 lg:col-span-7">
               <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
-                02 · About
+                About
               </p>
               <h2
                 id="about-heading"
@@ -812,7 +855,7 @@ export default function Home() {
           </div>
         </div>
         <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
-          <SectionIndexCorner index="02" label="About" />
+          <SectionIndexCorner label="About" />
         </div>
       </section>
 
@@ -825,7 +868,7 @@ export default function Home() {
           aria-labelledby="work-heading"
         >
           <div className="relative z-10 mx-auto w-full max-w-[1600px]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 · Work</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">Work</p>
             <h2 id="work-heading" className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white">
               Selected<span className="block">work</span>
             </h2>
@@ -865,7 +908,7 @@ export default function Home() {
               {/* Panel 0 — intro */}
               <div className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28" style={{ width: `${viewportW}px` }}>
                 <div className="mx-auto w-full max-w-[1600px]">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 · Work</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">Work</p>
                   <h2
                     id="work-heading"
                     className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
@@ -946,7 +989,7 @@ export default function Home() {
 
             {/* Persistent rail header + progress (pinned over the stage) */}
             <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
-              <SectionIndexCorner index="03" label="Work" />
+              <SectionIndexCorner label="Work" />
             </div>
             <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center sm:bottom-9">
               <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/55 px-4 py-2 backdrop-blur-sm">
@@ -995,7 +1038,7 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-0 lg:col-span-7">
               <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
-                04 · Connect
+                Contact
               </p>
               <h2
                 id="connect-heading"
@@ -1043,7 +1086,7 @@ export default function Home() {
           </div>
         </div>
         <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
-          <SectionIndexCorner index="04" label="Connect" />
+          <SectionIndexCorner label="Contact" />
         </div>
       </section>
 
@@ -1108,7 +1151,7 @@ export default function Home() {
             0 0.02em 0.07em rgba(0, 0, 0, 0.28),
             0 0.01em 0.03em rgba(0, 0, 0, 0.2);
         }
-        .landing-motion .landing-name-backing { opacity: 1; clip-path: inset(0 100% 100% 0); }
+        .landing-motion .landing-name-backing { opacity: 0; transform: scale(0.94); }
         .landing-motion[data-intro-step="2"] .landing-name-backing {
           animation: landing-name-panel-in var(--name-panel-dur) cubic-bezier(0.33, 0, 0.18, 1) forwards;
           animation-delay: var(--text-after-lines);
@@ -1138,13 +1181,13 @@ export default function Home() {
         }
 
         .landing-no-motion .landing-el { opacity: 1 !important; transform: none !important; animation: none !important; }
-        .landing-no-motion .landing-name-backing { opacity: 1 !important; clip-path: none !important; animation: none !important; }
+        .landing-no-motion .landing-name-backing { opacity: 1 !important; transform: none !important; animation: none !important; }
         .landing-no-motion .landing-name-letter { opacity: 1 !important; animation: none !important; transform: none !important; }
         .landing-no-motion .landing-name-fill { opacity: 1 !important; }
 
         @keyframes landing-name-panel-in {
-          from { clip-path: inset(0 100% 100% 0); }
-          to { clip-path: inset(0 0 0 0); }
+          from { opacity: 0; transform: scale(0.94); }
+          to { opacity: 1; transform: scale(1); }
         }
         @keyframes landing-letter-in {
           from { opacity: 0; transform: translate3d(0, 0.46em, 0); }

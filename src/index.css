@@ -34,16 +34,81 @@
 }
 
 @layer utilities {
-  /** Hero name backing: cool diagonal wash + faint lift toward white */
-  .bg-az-name-panel {
-    background-image:
-      linear-gradient(
-        152deg,
-        rgba(0, 42, 121, 0.46) 0%,
-        rgba(81, 43, 135, 0.34) 42%,
-        rgba(137, 20, 70, 0.24) 100%
-      ),
-      linear-gradient(198deg, rgba(255, 255, 255, 0.07) 0%, rgba(0, 0, 0, 0.48) 100%);
+  /**
+   * Hero name aurora — soft, blurred color shapes drifting behind the wordmark (replaces the old
+   * rectangular panel for a more abstract look). The container carries a subtle cursor parallax via
+   * --hero-px / --hero-py (set from JS, default 0); each blob also drifts on its own long loop.
+   */
+  .az-aurora {
+    will-change: transform;
+    transform: translate3d(
+      calc(var(--hero-px, 0) * 18px),
+      calc(var(--hero-py, 0) * 14px),
+      0
+    );
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .az-aurora__blob {
+    position: absolute;
+    filter: blur(46px);
+    opacity: 0.6;
+    will-change: transform;
+  }
+  .az-aurora__blob--a {
+    left: -4%;
+    top: -22%;
+    width: 56%;
+    height: 145%;
+    background: radial-gradient(closest-side, rgba(81, 43, 135, 0.95), rgba(81, 43, 135, 0) 72%);
+  }
+  .az-aurora__blob--b {
+    left: 28%;
+    top: -26%;
+    width: 48%;
+    height: 155%;
+    background: radial-gradient(closest-side, rgba(0, 42, 121, 0.9), rgba(0, 42, 121, 0) 72%);
+  }
+  .az-aurora__blob--c {
+    right: -6%;
+    top: -6%;
+    width: 52%;
+    height: 135%;
+    background: radial-gradient(closest-side, rgba(137, 20, 70, 0.85), rgba(137, 20, 70, 0) 72%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .az-aurora__blob--a {
+      animation: az-drift-a 19s ease-in-out infinite alternate;
+    }
+    .az-aurora__blob--b {
+      animation: az-drift-b 24s ease-in-out infinite alternate;
+    }
+    .az-aurora__blob--c {
+      animation: az-drift-c 21s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes az-drift-a {
+    from {
+      transform: translate3d(-3%, -4%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(5%, 3%, 0) scale(1.12);
+    }
+  }
+  @keyframes az-drift-b {
+    from {
+      transform: translate3d(3%, 4%, 0) scale(1.06);
+    }
+    to {
+      transform: translate3d(-4%, -3%, 0) scale(0.96);
+    }
+  }
+  @keyframes az-drift-c {
+    from {
+      transform: translate3d(4%, -3%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(-3%, 5%, 0) scale(1.1);
+    }
   }
 
   /** Contents / TOC rail */
@@ -123,5 +188,11 @@
       linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px);
     background-size: min(3.5rem, 10vw) min(3.5rem, 10vw);
+  }
+
+  /** Subtle film grain — one full-page layer at very low opacity for a filmic, premium texture. */
+  .bg-az-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
   }
 }
