@@ -616,7 +616,20 @@ export default function Home() {
                   decoding="async"
                 />
               </a>
-              <span>CMU · STAT / ML</span>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <span className="hidden sm:inline">CMU · STAT / ML</span>
+                <a
+                  href={RESUME_URL}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Download résumé (PDF)"
+                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-sm border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
+                >
+                  <IconDownload className="h-3.5 w-3.5" />
+                  Resume
+                </a>
+              </div>
             </div>
             <div className="intro-line intro-line-top mt-6 h-px w-full overflow-hidden sm:mt-7">
               <div className="intro-line-inner intro-line-inner-h h-px w-full origin-left bg-white" />
