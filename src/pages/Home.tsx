@@ -209,6 +209,19 @@ function reveal(i: number): { className: string; style: CSSProperties } {
 const SECTION_SHELL =
   "snap-start relative flex min-h-dvh w-full items-center overflow-hidden px-5 py-24 sm:px-10 lg:pl-28";
 
+/**
+ * Scroll runway (desktop, motion allowed): Home and About are 135dvh tall with their content
+ * pinned via sticky, so reaching the next section takes extra scrolling instead of a single
+ * flick. Bump 135dvh to slow the pacing further. The inner keeps its natural min-h-dvh height
+ * (no fixed h-dvh) so content taller than the viewport isn't compressed. The Work rail already
+ * paces itself with one full-viewport snap marker per panel; Contact is last, so no runway.
+ */
+const SECTION_RUNWAY = "lg:h-[135dvh]";
+const SECTION_RUNWAY_INNER = "lg:sticky lg:top-0";
+/** SECTION_SHELL minus snap-start, for the pinned inner of a runway section (snap stays on the outer). */
+const SECTION_INNER =
+  "relative flex min-h-dvh w-full items-center overflow-hidden px-5 py-24 sm:px-10 lg:pl-28";
+
 export default function Home() {
   const [reducedMotion, setReducedMotion] = useState(getInitialReducedMotion);
   const [introStep, setIntroStep] = useState<IntroStep>(getInitialIntroStep);
@@ -594,8 +607,16 @@ export default function Home() {
       </nav>
 
       {/* ════════════════ 01 · Home (hero) ════════════════ */}
-      <section id="home" ref={heroRef} className="relative snap-start">
-        <div className="relative isolate flex min-h-dvh flex-col">
+      <section
+        id="home"
+        ref={heroRef}
+        className={`relative snap-start ${reducedMotion ? "" : SECTION_RUNWAY}`}
+      >
+        <div
+          className={`relative isolate flex min-h-dvh flex-col ${
+            reducedMotion ? "" : SECTION_RUNWAY_INNER
+          }`}
+        >
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
@@ -803,28 +824,33 @@ export default function Home() {
       {/* ════════════════ 02 · About ════════════════ */}
       <section
         id="about"
-        className={`${SECTION_SHELL} ${revealed.has("about") ? "is-in" : ""}`}
+        className={`relative w-full snap-start ${reducedMotion ? "" : SECTION_RUNWAY}`}
         aria-labelledby="about-heading"
       >
+        <div
+          className={`${SECTION_INNER} ${revealed.has("about") ? "is-in" : ""} ${
+            reducedMotion ? "" : SECTION_RUNWAY_INNER
+          }`}
+        >
         <div className="relative z-10 mx-auto w-full max-w-[1600px]">
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-0 lg:col-span-7">
               <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
-                About
+                02 / 04
               </p>
               <h2
                 id="about-heading"
                 {...reveal(1)}
                 className={`${reveal(1).className} mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white`}
               >
-                Curiosity
-                <span className="block text-white">driven by data</span>
+                About
               </h2>
               <p {...reveal(2)} className={`${reveal(2).className} mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]`}>
                 I&apos;m an undergraduate at{" "}
                 <span className="text-white">Carnegie Mellon</span> studying Statistics &amp; Machine
-                Learning — I care about applying data-driven thinking to real-world problems and exploring how
-                rigorous analytics can make technology more human and impactful.
+                Learning. So far that&apos;s meant forensic image research at CSAFE, analysis of VR
+                evacuation studies at Iowa State, a computer-vision side project, and a published paper
+                on diagnostic testing.
               </p>
 
               <div {...reveal(3)} className={`${reveal(3).className} mt-10`}>
@@ -864,7 +890,7 @@ export default function Home() {
               <div {...reveal(5)} className={`${reveal(5).className} bg-az-card-muted border border-white/14 p-5 sm:p-6`}>
                 <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
                 <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                  On campus at CMU · open to remote-friendly collaborations.
+                  Pittsburgh, PA — on campus at Carnegie Mellon.
                 </p>
               </div>
             </aside>
@@ -872,6 +898,7 @@ export default function Home() {
         </div>
         <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
           <SectionIndexCorner label="About" />
+        </div>
         </div>
       </section>
 
@@ -884,9 +911,9 @@ export default function Home() {
           aria-labelledby="work-heading"
         >
           <div className="relative z-10 mx-auto w-full max-w-[1600px]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">Work</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 / 04</p>
             <h2 id="work-heading" className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white">
-              Selected<span className="block">work</span>
+              Work
             </h2>
             <ul className="mt-10 grid max-w-4xl list-none gap-6 p-0">
               {WORK_PROJECTS.map((proj) => (
@@ -924,17 +951,16 @@ export default function Home() {
               {/* Panel 0 — intro */}
               <div className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28" style={{ width: `${viewportW}px` }}>
                 <div className="mx-auto w-full max-w-[1600px]">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">Work</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 / 04</p>
                   <h2
                     id="work-heading"
                     className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
                   >
-                    Selected
-                    <span className="block text-white">work</span>
+                    Work
                   </h2>
                   <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-                    Research, leadership, teaching, and a publication. Keep scrolling — the rail moves sideways,
-                    one project at a time.
+                    Two research roles, a side project, teaching, team leadership, and a publication.
+                    Keep scrolling — the rail moves sideways, one project at a time.
                   </p>
                   <ol className="mt-10 flex max-w-2xl flex-col gap-2 p-0">
                     {WORK_PROJECTS.map((p, i) => (
@@ -1054,19 +1080,17 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-0 lg:col-span-7">
               <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
-                Contact
+                04 / 04
               </p>
               <h2
                 id="connect-heading"
                 {...reveal(1)}
                 className={`${reveal(1).className} mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white`}
               >
-                Let&apos;s
-                <span className="block text-white">talk</span>
+                Contact
               </h2>
               <p {...reveal(2)} className={`${reveal(2).className} mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]`}>
-                Questions, collaborations, research, coursework — feel free to reach out. I&apos;m open to
-                opportunities and I read everything.
+                Email is the fastest way to reach me. GitHub and LinkedIn work too.
               </p>
               <div {...reveal(3)} className={`${reveal(3).className} mt-10 flex flex-wrap gap-4`}>
                 <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={linkClass}>
@@ -1088,14 +1112,19 @@ export default function Home() {
               <div {...reveal(4)} className={`${reveal(4).className} bg-az-card border border-white/18 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]`}>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Open to</p>
                 <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-white/90 sm:text-[12px]">
-                  Research chats, internships, tooling feedback, or anything you&apos;re curious about on this
-                  site — happy to talk.
+                  Research collaborations, internships, and questions about any of the work above.
                 </p>
               </div>
               <div {...reveal(5)} className={`${reveal(5).className} bg-az-card-muted border border-white/14 p-5 sm:p-6`}>
-                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Thanks</p>
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Resume</p>
                 <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                  Thanks for visiting — glad you made it this far.
+                  <a
+                    href={RESUME_URL}
+                    download
+                    className="underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    Download the PDF
+                  </a>
                 </p>
               </div>
             </aside>
