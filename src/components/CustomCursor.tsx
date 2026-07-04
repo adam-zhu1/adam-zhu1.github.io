@@ -18,6 +18,10 @@ export function CustomCursor() {
   const [visible, setVisible] = useState(false);
   const [interactive, setInteractive] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  /** Touch devices get the native experience — no crosshair (taps can fire synthetic mousemove). */
+  const [coarsePointer] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches,
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -28,7 +32,7 @@ export function CustomCursor() {
   }, []);
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || coarsePointer) {
       return;
     }
 
@@ -73,9 +77,9 @@ export function CustomCursor() {
       document.documentElement.removeEventListener("mouseenter", onEnter);
       cancelAnimationFrame(raf.current);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, coarsePointer]);
 
-  if (reducedMotion) {
+  if (reducedMotion || coarsePointer) {
     return null;
   }
 

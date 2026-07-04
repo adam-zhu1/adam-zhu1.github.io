@@ -232,6 +232,9 @@ export default function Home() {
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
 
+  /** Below lg (1024px): vertical Work cards and no scroll snapping; the desktop rail is untouched. */
+  const isMobile = viewportW < 1024;
+
   const heroRef = useRef<HTMLElement | null>(null);
   const workSectionRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -273,9 +276,9 @@ export default function Home() {
     return () => window.clearTimeout(t);
   }, [introStep, reducedMotion]);
 
-  /* ── Hide native cursor while the custom cursor is active ───── */
+  /* ── Hide native cursor while the custom cursor is active (fine pointers only) ───── */
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || window.matchMedia("(pointer: coarse)").matches) {
       return;
     }
     const root = document.documentElement;
@@ -902,8 +905,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ 03 · Work — pinned horizontal rail ════════════════ */}
-      {reducedMotion ? (
+      {/* ════════════════ 03 · Work — pinned horizontal rail (desktop) / card stack (mobile, reduced motion) ════════════════ */}
+      {reducedMotion || isMobile ? (
         <section
           id="work"
           ref={workSectionRef}
@@ -1138,7 +1141,7 @@ export default function Home() {
       <style>{`
         html {
           scroll-behavior: smooth;
-          scroll-snap-type: y proximity;
+          scroll-snap-type: none;
         }
         @media (min-width: 1024px) {
           html { scroll-snap-type: y mandatory; }
