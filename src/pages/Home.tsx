@@ -7,6 +7,7 @@ import {
   type TransitionEvent,
 } from "react";
 import { CustomCursor } from "../components/CustomCursor";
+import { WorkGraph } from "../components/WorkGraph";
 import { ScrollDebugOverlay } from "../components/ScrollDebugOverlay";
 import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
 import { WORK_PROJECTS } from "../data/workProjects";
@@ -951,38 +952,38 @@ export default function Home() {
               className="flex h-full will-change-transform"
               style={{ width: `${WORK_PANEL_COUNT * viewportW}px` }}
             >
-              {/* Panel 0 — intro */}
+              {/* Panel 0 — intro: heading + directions on the left, project map filling the right */}
               <div className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28" style={{ width: `${viewportW}px` }}>
                 <div className="mx-auto w-full max-w-[1600px]">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 / 04</p>
-                  <h2
-                    id="work-heading"
-                    className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
-                  >
-                    Work
-                  </h2>
-                  <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-                    Two research roles, a side project, teaching, team leadership, and a publication.
-                    Keep scrolling — the rail moves sideways, one project at a time.
-                  </p>
-                  <ol className="mt-10 flex max-w-2xl flex-col gap-2 p-0">
-                    {WORK_PROJECTS.map((p, i) => (
-                      <li key={p.id} className="list-none">
-                        <button
-                          type="button"
-                          onClick={() => goToPanel(i + 1)}
-                          className="group inline-flex items-center gap-3 font-mono text-[12px] uppercase tracking-[0.16em] text-white/55 transition-colors hover:text-white"
-                        >
-                          <span className="text-white/35 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                          {PROJECT_NAV_LABELS[p.id] ?? p.title}
-                          <IconArrowRight className="h-3.5 w-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                  <p className="mt-10 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-white/40">
-                    Scroll <IconArrowRight className="h-3.5 w-3.5" />
-                  </p>
+                  <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
+                    <div className="lg:col-span-5">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 / 04</p>
+                      <h2
+                        id="work-heading"
+                        className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
+                      >
+                        Work
+                      </h2>
+                      <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
+                        Two research roles, a side project, teaching, team leadership, and a
+                        publication.
+                      </p>
+                      <div className="mt-10 flex flex-col gap-3">
+                        <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60">
+                          <span className="tabular-nums text-white/35">01</span>
+                          Click a point on the map to preview it
+                        </p>
+                        <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60">
+                          <span className="tabular-nums text-white/35">02</span>
+                          Scroll to see each project in full
+                          <IconArrowRight className="h-3.5 w-3.5" />
+                        </p>
+                      </div>
+                    </div>
+                    <div className="lg:col-span-7">
+                      <WorkGraph labels={PROJECT_NAV_LABELS} onOpenProject={(i) => goToPanel(i + 1)} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
