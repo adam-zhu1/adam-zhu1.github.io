@@ -524,7 +524,7 @@ export default function Home() {
                 alt=""
                 width={28}
                 height={28}
-                className="h-7 w-7 shrink-0 rounded-[8px]"
+                className="h-7 w-7 shrink-0 rounded-sm"
                 decoding="async"
               />
             </a>
@@ -637,7 +637,7 @@ export default function Home() {
                   alt=""
                   width={36}
                   height={36}
-                  className="h-8 w-8 shrink-0 rounded-[10px] sm:h-9 sm:w-9"
+                  className="h-8 w-8 shrink-0 rounded-sm sm:h-9 sm:w-9"
                   decoding="async"
                 />
               </a>
