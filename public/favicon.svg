@@ -1,5 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Adam Zhu">
-  <!-- Abstract "A" that also reads as a triangle / delta (Δ, the statistics symbol for change). One bold shape, legible at 16px. -->
-  <rect width="64" height="64" rx="14" fill="#000"/>
-  <path fill="#fff" fill-rule="evenodd" d="M32 12 L53 52 L11 52 Z M24 40 L40 40 L32 26 Z M28 52 L36 52 L32 46 Z"/>
+  <!--
+    AZ monogram: the A's left leg doubles as the Z's diagonal. The Z (top bar, shared
+    diagonal, bottom bar) wears the aurora blue-purple-magenta gradient; the A's right
+    leg and crossbar stay white so the mark still reads as an "A" at a glance.
+  -->
+  <defs>
+    <linearGradient id="az-z" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#1D4ED8"/>
+      <stop offset="0.6" stop-color="#512B87"/>
+      <stop offset="1" stop-color="#891446"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="4" fill="#000"/>
+  <path fill="url(#az-z)" d="M8 7 L40 7 L36 15 L8 15 Z"/>
+  <path fill="url(#az-z)" d="M30 7 L40 7 L16 57 L6 57 Z"/>
+  <path fill="url(#az-z)" d="M9.8 49 L38 49 L34 57 L6 57 Z"/>
+  <path fill="#fff" d="M32 7 L42 7 L60 57 L50 57 Z"/>
+  <path fill="#fff" d="M27 40 L44 40 L47 47 L30 47 Z"/>
 </svg>
