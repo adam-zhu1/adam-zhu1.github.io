@@ -213,13 +213,13 @@ const SECTION_SHELL =
   "snap-start relative flex min-h-dvh w-full items-center overflow-hidden px-5 py-24 sm:px-10 lg:pl-28";
 
 /**
- * Scroll runway (desktop, motion allowed): Home and About are 135dvh tall with their content
+ * Scroll runway (desktop, motion allowed): runway sections are 118dvh tall with their content
  * pinned via sticky, so reaching the next section takes extra scrolling instead of a single
- * flick. Bump 135dvh to slow the pacing further. The inner keeps its natural min-h-dvh height
+ * flick. Bump 118dvh to slow the pacing further. The inner keeps its natural min-h-dvh height
  * (no fixed h-dvh) so content taller than the viewport isn't compressed. The Work rail already
  * paces itself with one full-viewport snap marker per panel; Contact is last, so no runway.
  */
-const SECTION_RUNWAY = "lg:h-[135dvh]";
+const SECTION_RUNWAY = "lg:h-[118dvh]";
 const SECTION_RUNWAY_INNER = "lg:sticky lg:top-0";
 /** SECTION_SHELL minus snap-start, for the pinned inner of a runway section (snap stays on the outer). */
 const SECTION_INNER =
@@ -529,7 +529,7 @@ export default function Home() {
               ?.scrollIntoView({ behavior: "instant" as ScrollBehavior, block: "start" });
             window.setTimeout(
               () => setWipe((w) => (w ? { ...w, phase: "exit" } : w)),
-              140,
+              60,
             );
           }}
           onDone={() => setWipe(null)}
@@ -1206,8 +1206,9 @@ export default function Home() {
           scroll-behavior: smooth;
           scroll-snap-type: none;
         }
+        /* Proximity (not mandatory) so momentum isn't yanked to a stop at every boundary. */
         @media (min-width: 1024px) {
-          html { scroll-snap-type: y mandatory; }
+          html { scroll-snap-type: y proximity; }
         }
         @media (prefers-reduced-motion: reduce) {
           html { scroll-behavior: auto; scroll-snap-type: none; }
