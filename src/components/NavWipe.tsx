@@ -55,7 +55,7 @@ export function NavWipe({
       style={{
         background: WIPE_BACKGROUND,
         transform: `translate3d(0, ${y}, 0)`,
-        transition: "transform 0.52s cubic-bezier(0.76, 0, 0.24, 1)",
+        transition: "transform 0.44s cubic-bezier(0.76, 0, 0.24, 1)",
       }}
     >
       <span className="select-none font-display text-[clamp(3.5rem,12vw,9rem)] font-bold uppercase leading-[0.9] text-white/95">

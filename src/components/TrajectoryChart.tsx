@@ -93,9 +93,25 @@ function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
+/**
+ * Sequence timeline. Progress runs from the moment the section's top enters the viewport
+ * (p = 0, points already settling while the section slides in after the hero) to the end of its
+ * scroll runway (p = 1). Phases overlap so there is no dead scroll between them; with a 280dvh
+ * runway the entry itself covers roughly the first third of p.
+ */
+const SETTLE_END = 0.62;
+const LINE_START = 0.5;
+const LINE_END = 0.72;
+/* Hold (0.72–0.85): the finished chart — line, waypoints, annotation — stays fully lit for a
+   stretch of scroll before the hand-off begins. */
+const DIM_START = 0.85;
+const DIM_END = 0.94;
+const CONTENT_START = 0.87;
+const CONTENT_END = 0.98;
+
 /** Line-draw progress for a given overall progress p. */
 function lineQ(p: number): number {
-  return easeInOutCubic(clamp01((p - 0.48) / 0.2));
+  return easeInOutCubic(clamp01((p - LINE_START) / (LINE_END - LINE_START)));
 }
 
 function draw(canvas: HTMLCanvasElement, points: Point[], p: number) {
@@ -110,7 +126,7 @@ function draw(canvas: HTMLCanvasElement, points: Point[], p: number) {
   ctx.clearRect(0, 0, w, h);
 
   /* Points: chaos → settled cloud. Radius/alpha rise slightly as structure appears. */
-  const t = easeInOutCubic(clamp01(p / 0.55));
+  const t = easeInOutCubic(clamp01(p / SETTLE_END));
   const alpha = 0.45 + 0.3 * t;
   const radius = 1.6 + 0.6 * t;
   ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
@@ -204,8 +220,13 @@ export function TrajectoryChart({
       const overlay = overlayRef.current;
       const vh = window.innerHeight;
       const rect = section.getBoundingClientRect();
-      const total = section.offsetHeight - vh;
-      const p = clamp01(total > 0 ? -rect.top / total : 1);
+      /* p = 0 once the section has risen ENTRY_LEAD of the viewport (not the instant it enters),
+         1 at the runway's end — animating during the scroll-in from the hero, but not from the
+         very first pixel. Raise ENTRY_LEAD to start later, lower it to start earlier. */
+      const ENTRY_LEAD = 0.35;
+      const start = vh * (1 - ENTRY_LEAD);
+      const span = section.offsetHeight - vh * ENTRY_LEAD;
+      const p = clamp01(span > 0 ? (start - rect.top) / span : 1);
       if (p === progressRef.current) {
         return;
       }
@@ -214,8 +235,8 @@ export function TrajectoryChart({
       /* Hand-off: content rises via --about-in while the chart dims underneath it. The dim ramp
          starts earlier and cuts deeper than the content ramp so labels are gone before text is
          readable on top of them. */
-      const contentIn = clamp01((p - 0.76) / 0.18);
-      const dim = clamp01((p - 0.72) / 0.16);
+      const contentIn = clamp01((p - CONTENT_START) / (CONTENT_END - CONTENT_START));
+      const dim = clamp01((p - DIM_START) / (DIM_END - DIM_START));
       section.style.setProperty("--about-in", contentIn.toFixed(4));
       canvas.style.opacity = (1 - 0.78 * dim).toFixed(4);
       if (overlay) {
