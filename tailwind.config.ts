@@ -23,6 +23,8 @@ export default {
           magenta: "#891446",
           red: "#AE0C00",
           bright: "#D80515",
+          /** Quiet accent — lightened tint of navy for active states and small marks on black. */
+          indigo: "#8FA8F0",
         },
       },
       maxWidth: {
