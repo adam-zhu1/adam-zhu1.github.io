@@ -10,6 +10,8 @@ import { CustomCursor } from "../components/CustomCursor";
 import { WorkGraph } from "../components/WorkGraph";
 import { ScrollDebugOverlay } from "../components/ScrollDebugOverlay";
 import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../components/SectionIndexCorner";
+import { NavWipe } from "../components/NavWipe";
+import { TrajectoryChart } from "../components/TrajectoryChart";
 import { WORK_PROJECTS } from "../data/workProjects";
 
 const GITHUB_URL = "https://github.com/adam-zhu1";
@@ -237,6 +239,7 @@ export default function Home() {
   const isMobile = viewportW < 1024;
 
   const heroRef = useRef<HTMLElement | null>(null);
+  const aboutSectionRef = useRef<HTMLElement | null>(null);
   const workSectionRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const activeScreenRef = useRef<SectionId>("home");
@@ -419,6 +422,31 @@ export default function Home() {
     [reducedMotion],
   );
 
+  /* ── Ink wipe navigation: cover the page, jump instantly while hidden, then exit up. ── */
+  const [wipe, setWipe] = useState<{ label: string; target: SectionId; phase: "cover" | "exit" } | null>(null);
+
+  /** Safety: never leave the wipe mounted longer than one full cycle, even if transitionend is lost. */
+  useEffect(() => {
+    if (!wipe) {
+      return;
+    }
+    const t = window.setTimeout(() => setWipe(null), 2600);
+    return () => window.clearTimeout(t);
+  }, [wipe]);
+
+  const navigateTo = useCallback(
+    (id: SectionId) => {
+      if (reducedMotion || activeScreenRef.current === id || wipe) {
+        goToScreen(id);
+        return;
+      }
+      const label = SECTIONS.find((s) => s.id === id)?.label ?? id;
+      setWipe({ label, target: id, phase: "cover" });
+    },
+    [reducedMotion, goToScreen, wipe],
+  );
+
+
   /** Jump to a specific work panel (k=0 intro, k>=1 projects) by mapping to its vertical snap slot. */
   const goToPanel = useCallback(
     (k: number) => {
@@ -491,6 +519,23 @@ export default function Home() {
       <CustomCursor />
       <ScrollDebugOverlay />
 
+      {wipe && (
+        <NavWipe
+          label={wipe.label}
+          phase={wipe.phase}
+          onCovered={() => {
+            document
+              .getElementById(wipe.target)
+              ?.scrollIntoView({ behavior: "instant" as ScrollBehavior, block: "start" });
+            window.setTimeout(
+              () => setWipe((w) => (w ? { ...w, phase: "exit" } : w)),
+              140,
+            );
+          }}
+          onDone={() => setWipe(null)}
+        />
+      )}
+
       {showOverlay && (
         <div
           className={`pointer-events-none fixed inset-0 z-50 bg-black transition-opacity duration-[700ms] ease-out ${
@@ -516,7 +561,7 @@ export default function Home() {
               aria-label="Adam Zhu — back to top"
               onClick={(e) => {
                 e.preventDefault();
-                goToScreen("home");
+                navigateTo("home");
               }}
             >
               <img
@@ -540,7 +585,7 @@ export default function Home() {
                       aria-current={activeScreen === s.id ? "page" : undefined}
                       onClick={(e) => {
                         e.preventDefault();
-                        goToScreen(s.id);
+                        navigateTo(s.id);
                       }}
                     >
                       {s.label}
@@ -585,14 +630,14 @@ export default function Home() {
                     aria-current={active ? "page" : undefined}
                     onClick={(e) => {
                       e.preventDefault();
-                      goToScreen(s.id);
+                      navigateTo(s.id);
                     }}
                     className="group/item flex items-center gap-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     <span
                       aria-hidden
                       className={`h-px shrink-0 transition-all duration-300 ${
-                        active ? "w-7 bg-white" : "w-4 bg-white/40 group-hover/item:bg-white/80"
+                        active ? "w-7 bg-az-indigo" : "w-4 bg-white/40 group-hover/item:bg-white/80"
                       }`}
                     />
                     <span
@@ -753,7 +798,7 @@ export default function Home() {
                               aria-current={activeScreen === s.id ? "page" : undefined}
                               onClick={(e) => {
                                 e.preventDefault();
-                                goToScreen(s.id);
+                                navigateTo(s.id);
                               }}
                             >
                               {s.label}
@@ -825,10 +870,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ 02 · About ════════════════ */}
+      {/* ════════════════ 02 · About — chaos → trajectory → content (scroll-scrubbed) ════════════════ */}
       <section
         id="about"
-        className={`relative w-full snap-start ${reducedMotion ? "" : SECTION_RUNWAY}`}
+        ref={aboutSectionRef}
+        className={`relative w-full snap-start ${
+          reducedMotion ? "" : isMobile ? SECTION_RUNWAY : "lg:h-[280dvh]"
+        }`}
         aria-labelledby="about-heading"
       >
         <div
@@ -836,10 +884,24 @@ export default function Home() {
             reducedMotion ? "" : SECTION_RUNWAY_INNER
           }`}
         >
-        <div className="relative z-10 mx-auto w-full max-w-[1600px]">
+        <TrajectoryChart
+          sectionRef={aboutSectionRef}
+          mode={reducedMotion || isMobile ? "static" : "scroll"}
+        />
+        <div
+          className="relative z-10 mx-auto w-full max-w-[1600px]"
+          style={
+            reducedMotion || isMobile
+              ? undefined
+              : {
+                  opacity: "var(--about-in, 0)",
+                  transform: "translateY(calc((1 - var(--about-in, 0)) * 28px))",
+                }
+          }
+        >
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-0 lg:col-span-7">
-              <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
+              <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-az-indigo/90 sm:text-[11px]`}>
                 02 / 04
               </p>
               <h2
@@ -915,7 +977,7 @@ export default function Home() {
           aria-labelledby="work-heading"
         >
           <div className="relative z-10 mx-auto w-full max-w-[1600px]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 / 04</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-az-indigo/90 sm:text-[11px]">03 / 04</p>
             <h2 id="work-heading" className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white">
               Work
             </h2>
@@ -957,7 +1019,7 @@ export default function Home() {
                 <div className="mx-auto w-full max-w-[1600px]">
                   <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
                     <div className="lg:col-span-5">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]">03 / 04</p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-az-indigo/90 sm:text-[11px]">03 / 04</p>
                       <h2
                         id="work-heading"
                         className="mt-5 font-display text-[clamp(2.5rem,7.5vw,4.75rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-white"
@@ -1051,7 +1113,7 @@ export default function Home() {
                     <span
                       className={`block rounded-full transition-all duration-300 ${
                         activePanel === k
-                          ? "h-2 w-6 bg-white"
+                          ? "h-2 w-6 bg-az-indigo"
                           : "h-2 w-2 bg-white/35 group-hover:bg-white/70"
                       }`}
                     />
@@ -1083,7 +1145,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto w-full max-w-[1600px]">
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col gap-0 lg:col-span-7">
-              <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-white/50 sm:text-[11px]`}>
+              <p {...reveal(0)} className={`${reveal(0).className} font-mono text-[10px] uppercase tracking-[0.32em] text-az-indigo/90 sm:text-[11px]`}>
                 04 / 04
               </p>
               <h2
