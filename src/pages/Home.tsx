@@ -43,6 +43,13 @@ type SectionId = (typeof SECTIONS)[number]["id"];
 /** Work panels: an intro panel (index 0) followed by one panel per project. */
 const WORK_PANEL_COUNT = WORK_PROJECTS.length + 1;
 
+/**
+ * Vertical scroll (dvh) that advances the work rail by one panel. >100 slows the rail so a flick
+ * doesn't jump a whole panel. The last panel's marker must stay 100dvh so the rail lands exactly
+ * on the final panel at the end of the section.
+ */
+const WORK_PANEL_SCROLL_DVH = 145;
+
 function clamp01(n: number): number {
   return Math.min(Math.max(n, 0), 1);
 }
@@ -219,7 +226,7 @@ const SECTION_SHELL =
  * (no fixed h-dvh) so content taller than the viewport isn't compressed. The Work rail already
  * paces itself with one full-viewport snap marker per panel; Contact is last, so no runway.
  */
-const SECTION_RUNWAY = "lg:h-[118dvh]";
+const SECTION_RUNWAY = "lg:h-[128dvh]";
 const SECTION_RUNWAY_INNER = "lg:sticky lg:top-0";
 /** SECTION_SHELL minus snap-start, for the pinned inner of a runway section (snap stays on the outer). */
 const SECTION_INNER =
@@ -461,7 +468,10 @@ export default function Home() {
         return;
       }
       const top = sec.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + k * window.innerHeight, behavior: "smooth" });
+      window.scrollTo({
+        top: top + k * window.innerHeight * (WORK_PANEL_SCROLL_DVH / 100),
+        behavior: "smooth",
+      });
     },
     [reducedMotion],
   );
@@ -1124,13 +1134,21 @@ export default function Home() {
           </div>
 
           {/*
-            Snap markers: one full-viewport block per panel. They create the section's scroll length
-            and a snap stop per project. The negative top margin overlaps them with the pinned stage
-            above so total section height stays WORK_PANEL_COUNT * 100dvh.
+            Snap markers: one block per panel (WORK_PANEL_SCROLL_DVH tall, so the rail advances
+            slower than 1 panel per viewport). They create the section's scroll length and a snap
+            stop per project. The last marker stays 100dvh so scroll progress hits exactly 1.0 at
+            the final panel. The negative top margin overlaps them with the pinned stage above.
           */}
           <div aria-hidden className="pointer-events-none -mt-[100dvh]">
             {Array.from({ length: WORK_PANEL_COUNT }).map((_, k) => (
-              <div key={k} className="h-dvh w-full snap-start" />
+              <div
+                key={k}
+                className="w-full snap-start"
+                style={{
+                  height:
+                    k === WORK_PANEL_COUNT - 1 ? "100dvh" : `${WORK_PANEL_SCROLL_DVH}dvh`,
+                }}
+              />
             ))}
           </div>
         </section>
