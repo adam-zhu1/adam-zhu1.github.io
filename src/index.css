@@ -4,17 +4,6 @@
 
 @layer base {
   :root {
-    --paper: 0 0% 0%;
-    --ink: 0 0% 100%;
-    --muted: 0 0% 62%;
-    --accent: 0 0% 100%;
-    --line: 0 0% 22%;
-    /* Accent palette — navy → purple → magenta → red (subtle UI only) */
-    --az-navy: #002a79;
-    --az-purple: #512b87;
-    --az-magenta: #891446;
-    --az-red: #ae0c00;
-    --az-bright: #d80515;
     color-scheme: dark;
   }
 
@@ -144,19 +133,6 @@
         rgba(0, 0, 0, 0.32) 100%
       ),
       linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(0, 0, 0, 0.28) 100%);
-  }
-
-  /** Work horizontal slides */
-  .bg-az-work-slide {
-    background-image:
-      linear-gradient(
-        128deg,
-        rgba(0, 42, 121, 0.22) 0%,
-        rgba(81, 43, 135, 0.16) 45%,
-        rgba(137, 20, 70, 0.13) 85%
-      ),
-      linear-gradient(220deg, rgba(174, 12, 0, 0.12) 0%, transparent 52%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.32) 100%);
   }
 
   /**

@@ -13,6 +13,7 @@ import { SectionIndexCorner, sectionIndexCornerAbsoluteWrap } from "../component
 import { NavWipe } from "../components/NavWipe";
 import { TrajectoryChart } from "../components/TrajectoryChart";
 import { WORK_PROJECTS } from "../data/workProjects";
+import { SECTIONS, type SectionId } from "../data/sections";
 
 const GITHUB_URL = "https://github.com/adam-zhu1";
 const LINKEDIN_URL = "https://www.linkedin.com/in/adam-zhu-cmu/";
@@ -31,14 +32,13 @@ const PROJECT_NAV_LABELS: Record<string, string> = {
   publication: "Publication",
 };
 
-/** Main sections (side nav + top nav). Work is a single entry even though it holds the project rail. */
-const SECTIONS = [
-  { id: "home", label: "Home" },
-  { id: "about", label: "About" },
-  { id: "work", label: "Work" },
-  { id: "connect", label: "Contact" },
-] as const;
-type SectionId = (typeof SECTIONS)[number]["id"];
+/**
+ * `inert` spread for React 18: `""` sets the attribute, omitting it clears it. (Passing a boolean
+ * would render `inert="false"`, which the browser still treats as inert.)
+ */
+function inertWhen(inactive: boolean): Record<string, unknown> {
+  return inactive ? { inert: "" } : {};
+}
 
 /** Work panels: an intro panel (index 0) followed by one panel per project. */
 const WORK_PANEL_COUNT = WORK_PROJECTS.length + 1;
@@ -378,6 +378,14 @@ export default function Home() {
       if (current !== activeScreenRef.current) {
         activeScreenRef.current = current;
         setActiveScreen(current);
+        /* Keep the URL shareable: reflect the active section as a #hash (bare path on home). */
+        window.history.replaceState(
+          null,
+          "",
+          current === "home"
+            ? window.location.pathname + window.location.search
+            : `#${current}`,
+        );
       }
 
       /* Reveal sections once their top crosses into view. */
@@ -566,7 +574,7 @@ export default function Home() {
         <div className="border-b border-white/10 bg-black/70 backdrop-blur-md">
           <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-5 py-3 sm:px-10">
             <a
-              href="#/"
+              href="#home"
               className="inline-flex shrink-0 items-center gap-2.5 normal-case text-white transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               aria-label="Adam Zhu — back to top"
               onClick={(e) => {
@@ -590,7 +598,7 @@ export default function Home() {
                 {SECTIONS.map((s) => (
                   <li key={s.id}>
                     <a
-                      href="#/"
+                      href={`#${s.id}`}
                       className={topNavLinkClass(s.id)}
                       aria-current={activeScreen === s.id ? "page" : undefined}
                       onClick={(e) => {
@@ -636,7 +644,7 @@ export default function Home() {
               return (
                 <li key={s.id}>
                   <a
-                    href="#/"
+                    href={`#${s.id}`}
                     aria-current={active ? "page" : undefined}
                     onClick={(e) => {
                       e.preventDefault();
@@ -679,7 +687,7 @@ export default function Home() {
           <div className="px-5 pt-6 sm:px-10 sm:pt-8">
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
-                href="#/"
+                href="#home"
                 aria-label="Adam Zhu — back to top"
                 className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
@@ -700,10 +708,9 @@ export default function Home() {
                 <span className="hidden sm:inline">CMU · STAT / ML</span>
                 <a
                   href={RESUME_URL}
-                  download
                   target="_blank"
                   rel="noreferrer"
-                  aria-label="Download résumé (PDF)"
+                  aria-label="Résumé (PDF)"
                   className="group inline-flex shrink-0 items-center gap-1.5 rounded-sm border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
                 >
                   <IconDownload className="h-3.5 w-3.5" />
@@ -803,7 +810,7 @@ export default function Home() {
                         {SECTIONS.map((s) => (
                           <li key={s.id}>
                             <a
-                              href="#/"
+                              href={`#${s.id}`}
                               className={tocLinkClass(s.id)}
                               aria-current={activeScreen === s.id ? "page" : undefined}
                               onClick={(e) => {
@@ -1025,7 +1032,11 @@ export default function Home() {
               style={{ width: `${WORK_PANEL_COUNT * viewportW}px` }}
             >
               {/* Panel 0 — intro: heading + directions on the left, project map filling the right */}
-              <div className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28" style={{ width: `${viewportW}px` }}>
+              <div
+                className="flex h-full shrink-0 items-center px-5 sm:px-10 lg:pl-28"
+                style={{ width: `${viewportW}px` }}
+                {...inertWhen(activePanel !== 0)}
+              >
                 <div className="mx-auto w-full max-w-[1600px]">
                   <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
                     <div className="lg:col-span-5">
@@ -1072,6 +1083,7 @@ export default function Home() {
                       opacity: isActive ? 1 : 0.25,
                       transition: "opacity 0.5s ease",
                     }}
+                    {...inertWhen(!isActive)}
                   >
                     <div className="mx-auto w-full max-w-[1600px]">
                       <div className="max-w-3xl">
