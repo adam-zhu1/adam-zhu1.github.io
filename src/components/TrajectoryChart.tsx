@@ -20,10 +20,11 @@ const LINE_Y0 = 0.72;
 const LINE_Y1 = 0.3;
 
 /** Real milestones placed along the fit; x also sets when each lights up as the line draws. */
+/* Dates from the master resume: CSAFE Jun 2023–Aug 2024, VRAC Jan–Jun 2024, paper Mar 2024. */
 const WAYPOINTS = [
-  { x: 0.14, year: "2023", label: "VR research · Iowa State" },
-  { x: 0.33, year: "2024", label: "First publication" },
-  { x: 0.52, year: "2024", label: "Forensics research · CSAFE" },
+  { x: 0.14, year: "2023", label: "Forensics research · CSAFE" },
+  { x: 0.33, year: "2024", label: "VR research · Iowa State" },
+  { x: 0.52, year: "2024", label: "First publication" },
   { x: 0.7, year: "2025", label: "Carnegie Mellon · Stat & ML" },
   { x: 0.88, year: "Now", label: "NIST · SURF research intern" },
 ] as const;

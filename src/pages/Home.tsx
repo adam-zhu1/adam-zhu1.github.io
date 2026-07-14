@@ -19,8 +19,12 @@ const GITHUB_URL = "https://github.com/adam-zhu1";
 const LINKEDIN_URL = "https://www.linkedin.com/in/adam-zhu-cmu/";
 const EMAIL = "adamzhu@andrew.cmu.edu";
 const EMAIL_MAILTO = `mailto:${EMAIL}`;
-/** Resume PDF in public/. Drop a real file at this name to replace the placeholder. */
-const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
+/**
+ * Resume PDF in public/ — copied from the master at
+ * ~/Internships/2027 Internships/00 MASTER RESUME/resume.pdf.
+ * Bump ?v= whenever the PDF changes so cached copies refresh.
+ */
+const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf?v=20260714`;
 
 /** Short labels for the project panels (used in the intro list + progress dots). */
 const PROJECT_NAV_LABELS: Record<string, string> = {
