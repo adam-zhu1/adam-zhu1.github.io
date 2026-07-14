@@ -24,6 +24,7 @@ const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf`;
 
 /** Short labels for the project panels (used in the intro list + progress dots). */
 const PROJECT_NAV_LABELS: Record<string, string> = {
+  nist: "NIST",
   trueline: "TrueLine",
   csafe: "CSAFE",
   vrac: "VRAC",
@@ -174,8 +175,8 @@ function ProjectLinks({
 
 /** Draft skills — edit freely. Grouped for a compact, scannable block in About. */
 const SKILL_GROUPS: { label: string; items: string[] }[] = [
-  { label: "Languages", items: ["R", "Python", "SQL", "C", "Java", "MATLAB", "Bash"] },
-  { label: "Libraries", items: ["NumPy", "pandas", "scikit-learn", "PyTorch", "OpenCV", "tidyverse", "ggplot2"] },
+  { label: "Languages", items: ["Python", "R", "SQL", "Swift", "C", "Java", "MATLAB", "Bash"] },
+  { label: "Libraries", items: ["NumPy", "pandas", "scikit-learn", "PyTorch", "OpenCV", "Core ML", "SwiftUI", "tidyverse", "ggplot2"] },
   { label: "Tools", items: ["Git", "RStudio", "Jupyter", "LaTeX"] },
   {
     label: "Methods",
@@ -931,9 +932,9 @@ export default function Home() {
               <p {...reveal(2)} className={`${reveal(2).className} mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]`}>
                 I&apos;m an undergraduate at{" "}
                 <span className="text-white">Carnegie Mellon</span> studying Statistics &amp; Machine
-                Learning. So far that&apos;s meant forensic image research at CSAFE, analysis of VR
-                evacuation studies at Iowa State, a computer-vision side project, and a published paper
-                on diagnostic testing.
+                Learning. So far that&apos;s meant usage-analytics research at NIST, an iOS
+                computer-vision app, forensic image research at CSAFE, analysis of VR evacuation
+                studies at Iowa State, and a co-authored publication on diagnostic testing.
               </p>
 
               <div {...reveal(3)} className={`${reveal(3).className} mt-10`}>
@@ -967,13 +968,13 @@ export default function Home() {
               <div {...reveal(4)} className={`${reveal(4).className} bg-az-card border border-white/18 p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]`}>
                 <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/55">Now</p>
                 <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.2em] text-white/90 sm:text-[12px]">
-                  CMU · Statistics / ML · research &amp; coursework
+                  NIST · SURF research intern · Research Data &amp; Computing Office
                 </p>
               </div>
               <div {...reveal(5)} className={`${reveal(5).className} bg-az-card-muted border border-white/14 p-5 sm:p-6`}>
                 <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
                 <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                  Pittsburgh, PA — on campus at Carnegie Mellon.
+                  Gaithersburg, MD this summer — Carnegie Mellon, Pittsburgh, during the year.
                 </p>
               </div>
             </aside>
@@ -1048,8 +1049,8 @@ export default function Home() {
                         Work
                       </h2>
                       <p className="mt-8 max-w-xl font-mono text-sm uppercase leading-relaxed tracking-[0.14em] text-white/85 sm:text-[15px]">
-                        Two research roles, a side project, teaching, team leadership, and a
-                        publication.
+                        Three research roles, an iOS computer-vision app, teaching, team
+                        leadership, and a publication.
                       </p>
                       <div className="mt-10 flex flex-col gap-3">
                         <p className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60">

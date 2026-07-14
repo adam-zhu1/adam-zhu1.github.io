@@ -17,7 +17,7 @@
     <title>Adam Zhu — Statistics &amp; Machine Learning, Carnegie Mellon</title>
     <meta
       name="description"
-      content="Adam Zhu — Statistics & Machine Learning undergrad at Carnegie Mellon. Forensic-statistics research, VR evacuation analysis, a published paper on diagnostic proportion tests, and FIRST robotics leadership."
+      content="Adam Zhu — Statistics & Machine Learning undergrad at Carnegie Mellon. Usage-analytics research at NIST, TrueLine (an iOS computer-vision bowling tracker), forensic-statistics research, and a co-authored publication on diagnostic proportion tests."
     />
     <meta name="author" content="Adam Zhu" />
     <meta name="theme-color" content="#000000" />
@@ -26,7 +26,7 @@
     <meta property="og:title" content="Adam Zhu — Statistics &amp; Machine Learning, Carnegie Mellon" />
     <meta
       property="og:description"
-      content="Statistics & Machine Learning undergrad at Carnegie Mellon. Forensic-statistics research, VR evacuation analysis, a published paper, and FIRST robotics leadership."
+      content="Statistics & Machine Learning undergrad at Carnegie Mellon. NIST research intern, builder of TrueLine (iOS computer-vision bowling tracker), forensic-statistics research, and a co-authored publication."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://adam-zhu1.github.io/" />
@@ -43,7 +43,7 @@
     <meta name="twitter:title" content="Adam Zhu — Statistics &amp; Machine Learning, Carnegie Mellon" />
     <meta
       name="twitter:description"
-      content="Statistics & Machine Learning undergrad at Carnegie Mellon. Forensic-statistics research, VR evacuation analysis, a published paper, and FIRST robotics leadership."
+      content="Statistics & Machine Learning undergrad at Carnegie Mellon. NIST research intern, builder of TrueLine (iOS computer-vision bowling tracker), forensic-statistics research, and a co-authored publication."
     />
     <meta name="twitter:image" content="https://adam-zhu1.github.io/og-image.png" />
     <meta name="twitter:image:alt" content="Adam Zhu — Statistics & Machine Learning, Carnegie Mellon" />
@@ -68,6 +68,7 @@
         "knowsAbout": [
           "Statistics",
           "Machine Learning",
+          "Computer vision",
           "Forensic statistics",
           "Experimental design",
           "Statistical inference"
@@ -95,21 +96,42 @@
       <h1>Adam Zhu</h1>
       <p>
         Adam Zhu is an undergraduate at Carnegie Mellon University studying Statistics
-        and Machine Learning. His work includes forensic image research at CSAFE,
-        statistical analysis of VR evacuation studies, a computer-vision side project,
-        and a published paper on matched binary diagnostic data.
+        and Machine Learning. His work includes usage-analytics research at NIST,
+        TrueLine (an iOS computer-vision bowling tracker), forensic image research at
+        CSAFE, statistical analysis of VR evacuation studies, and a co-authored
+        publication on matched binary diagnostic data.
       </p>
       <h2>Selected work</h2>
       <ul>
         <li>
-          CSAFE, Iowa State — forensic analysis on 24,000+ camera images for device
-          fingerprinting and handwriting similarity datasets; co-author on work under
-          review in forensic sciences.
+          NIST, Research Data and Computing Office (SURF research intern, summer 2026) —
+          built a reproducible five-stage Python pipeline (pandas, scikit-learn)
+          recovering reliable usage metrics for NIST's public data portal: per-IP
+          behavioral feature engineering and four classifiers (best F1 = 0.95). Found
+          51% of 190,687 logged requests were automated, exposed a disguised scraper
+          behind 50,000+ spoofed requests via a second-pass behavioral detection rule,
+          and showed 23% of 20,790 human searches returned no results.
         </li>
         <li>
-          VR Applications Center (VRAC), Iowa State — statistical analysis of automated
-          communication strategies in simulated school-shooting evacuations; co-author
-          on a manuscript in preparation.
+          TrueLine (2025–present) — iOS app that turns one iPhone into a bowling ball
+          tracker: per-throw launch speed, board at the arrows, breakpoint, and entry
+          angle. Fine-tuned YOLOv8 exported to Core ML, Kalman-filter tracking with
+          Savitzky–Golay smoothing, four-corner calibration homography; board position
+          verified within ~1 board and speed within 1–2% against the Python/OpenCV
+          prototype. Swift, SwiftUI, Core ML, AVFoundation, PyTorch.
+          <a href="https://github.com/adam-zhu1/trueline">GitHub repo</a>. App Store
+          launch in preparation.
+        </li>
+        <li>
+          CSAFE, Iowa State — forensic analysis on 24,000+ camera images for device
+          fingerprinting and handwriting similarity datasets; co-author on a manuscript
+          under review at Forensic Sciences.
+        </li>
+        <li>
+          VR Applications Center (VRAC), Iowa State — regression models of evacuation
+          time across 454 trials and 227 participants, testing automated communication
+          strategies in simulated school-shooting evacuations; co-author on a manuscript
+          in preparation.
         </li>
         <li>
           COR Robotics — co-designed curriculum and taught hands-on robotics (drones,
@@ -121,9 +143,11 @@
           qualifications.
         </li>
         <li>
-          Publication — "Statistical tests for proportion difference in one-to-two
-          matched binary diagnostic data," Mathematics 2024, 12, 741.
-          <a href="https://www.mdpi.com/2227-7390/12/5/741">Read the paper</a>.
+          Publication — Lin, H., Zhu, A., Wang, C. (2024). "Statistical Tests for
+          Proportion Difference in One-to-Two Matched Binary Diagnostic Data:
+          Application to Environmental Testing of Salmonella in the United States."
+          Mathematics 12(5), 741.
+          <a href="https://doi.org/10.3390/math12050741">doi.org/10.3390/math12050741</a>.
         </li>
       </ul>
       <h2>Contact</h2>
