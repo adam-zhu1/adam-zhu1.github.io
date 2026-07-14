@@ -1,16 +1,26 @@
 import { useEffect } from "react";
-import { HashRouter, Route, Routes } from "react-router-dom";
-import { scrollWindowToY } from "./scroll";
+import { SECTION_IDS } from "./data/sections";
 import Home from "./pages/Home";
-import NotFound from "./pages/NotFound";
 
-/** Full reload: always start at the top of the landing page (no restored scroll / hash jump). */
-function ScrollToTopOnLoad() {
+/**
+ * Full reload: start at the top of the landing page (no restored scroll), unless the URL carries
+ * a section hash (e.g. /#work) — then land on that section so links stay shareable. The repeated
+ * timers re-assert the position while fonts/layout settle, mirroring the old scroll-to-top guard.
+ */
+function ScrollToHashOnLoad() {
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
-    const go = () => scrollWindowToY(0, { immediate: true });
+    const hash = window.location.hash.replace(/^#/, "");
+    const targetId = (SECTION_IDS as readonly string[]).includes(hash) ? hash : null;
+    const go = () => {
+      if (targetId && targetId !== "home") {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: "auto", block: "start" });
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+    };
     go();
     const raf = window.requestAnimationFrame(go);
     const t = window.setTimeout(go, 0);
@@ -28,12 +38,9 @@ function ScrollToTopOnLoad() {
 
 export default function App() {
   return (
-    <HashRouter>
-      <ScrollToTopOnLoad />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </HashRouter>
+    <>
+      <ScrollToHashOnLoad />
+      <Home />
+    </>
   );
 }
