@@ -32,7 +32,11 @@ export const WORK_PROJECTS: WorkProject[] = [
       "A reproducible five-stage Python pipeline recovering reliable usage metrics for NIST's public data portal. Per-IP behavioral features feed four classifiers (best F1 = 0.95); 51% of 190,687 logged requests turned out to be automated, including a disguised scraper behind 50,000+ spoofed requests that user-agent rules had passed as human — caught by a second-pass behavioral rule that corrected the ground-truth labels. Also surfaced unmet demand: 23% of 20,790 human searches returned no results, informing NIST's search and dataset-acquisition priorities.",
     tags: ["Python", "pandas", "scikit-learn", "Classification"],
     links: [{ label: "NIST SURF", url: "https://www.nist.gov/surf" }],
-    // TODO(adam): verify the years below — they set each point's x-position on the map.
+    /*
+     * Graph years come from the master resume (each point sits mid-tenure):
+     * NIST May–Aug 2026 · TrueLine 2025–present · COR summers 2024–25 ·
+     * CSAFE Jun 2023–Aug 2024 · paper Mar 2024 · VRAC Jan–Jun 2024 · Neutrino Jun 2021–Jun 2025.
+     */
     graph: { year: 2026.3, domain: "Research" },
   },
   {
@@ -70,7 +74,7 @@ export const WORK_PROJECTS: WorkProject[] = [
       "Forensic analysis on 24,000+ camera images for device fingerprinting; degraded and compared handwriting samples for similarity datasets. Co-author on a manuscript under review at Forensic Sciences.",
     tags: ["R", "Image pipelines", "Manuscript"],
     links: [{ label: "Center site", url: "https://forensicstats.org/" }],
-    graph: { year: 2024.4, domain: "Research" },
+    graph: { year: 2023.8, domain: "Research" },
   },
   {
     id: "publication",
@@ -92,7 +96,7 @@ export const WORK_PROJECTS: WorkProject[] = [
       "Regression models of evacuation time across 454 trials and 227 participants, testing automated communication strategies in simulated school-shooting evacuations. Co-author on a manuscript in preparation.",
     tags: ["Experimental design", "Regression", "VR studies"],
     links: [{ label: "Project page", url: "https://www.vrac.iastate.edu/research/asters/" }],
-    graph: { year: 2023.5, domain: "Research" },
+    graph: { year: 2024.25, domain: "Research" },
   },
   {
     id: "first",
@@ -103,6 +107,6 @@ export const WORK_PROJECTS: WorkProject[] = [
       "Coordinated seven sub-teams and 40+ members across outreach, fundraising, and operations. Ran the inaugural FLL Blastoff Camp; multiple NASA Engineering Inspiration Awards and Worlds qualifications.",
     tags: ["Operations", "Outreach", "Mentorship"],
     links: [{ label: "Team site", url: "https://www.teamneutrino.org/" }],
-    graph: { year: 2023, domain: "Lead" },
+    graph: { year: 2023.5, domain: "Lead" },
   },
 ];
