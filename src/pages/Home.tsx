@@ -179,9 +179,28 @@ function ProjectLinks({
 
 /** Draft skills — edit freely. Grouped for a compact, scannable block in About. */
 const SKILL_GROUPS: { label: string; items: string[] }[] = [
-  { label: "Languages", items: ["Python", "R", "SQL", "Swift", "C", "Java", "MATLAB", "Bash"] },
-  { label: "Libraries", items: ["NumPy", "pandas", "scikit-learn", "PyTorch", "OpenCV", "Core ML", "SwiftUI", "tidyverse", "ggplot2"] },
-  { label: "Tools", items: ["Git", "RStudio", "Jupyter", "LaTeX"] },
+  { label: "Languages", items: ["Python", "Swift", "R", "SQL", "C", "Java", "MATLAB", "Bash"] },
+  {
+    label: "Libraries",
+    items: [
+      "NumPy",
+      "pandas",
+      "scikit-learn",
+      "PyTorch",
+      "OpenCV",
+      "Core ML",
+      "SwiftUI",
+      "AVFoundation",
+      "FastAPI",
+      "matplotlib",
+      "tidyverse",
+      "ggplot2",
+    ],
+  },
+  {
+    label: "Tools",
+    items: ["Git", "Jupyter", "RStudio", "LaTeX", "MongoDB", "REST APIs", "JSON/JSON-LD", "Regex"],
+  },
   {
     label: "Methods",
     items: [
@@ -189,6 +208,10 @@ const SKILL_GROUPS: { label: string; items: string[] }[] = [
       "Hypothesis testing",
       "Regression",
       "GLMs",
+      "ANOVA",
+      "Classification",
+      "Feature engineering",
+      "Model evaluation",
       "Experimental design",
       "Machine learning",
       "Deep learning",
