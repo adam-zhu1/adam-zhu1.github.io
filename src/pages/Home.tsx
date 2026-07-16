@@ -24,7 +24,7 @@ const EMAIL_MAILTO = `mailto:${EMAIL}`;
  * ~/Internships/2027 Internships/00 MASTER RESUME/resume.pdf.
  * Bump ?v= whenever the PDF changes so cached copies refresh.
  */
-const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf?v=20260714`;
+const RESUME_URL = `${import.meta.env.BASE_URL}Adam-Zhu-Resume.pdf?v=20260716`;
 
 /** Short labels for the project panels (used in the intro list + progress dots). */
 const PROJECT_NAV_LABELS: Record<string, string> = {
