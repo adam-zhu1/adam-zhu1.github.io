@@ -116,7 +116,7 @@ export function WorkGraph({ labels, onOpenProject }: WorkGraphProps) {
                   type="button"
                   data-graph-point
                   aria-expanded={isOpen}
-                  aria-label={`${proj.title} — details`}
+                  aria-label={`${proj.title}: details`}
                   onClick={() => setActive(isOpen ? null : proj.id)}
                   className="group/pt peer absolute -translate-x-1/2 -translate-y-1/2 p-2.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >

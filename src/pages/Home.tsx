@@ -604,7 +604,7 @@ export default function Home() {
             <a
               href="#home"
               className="inline-flex shrink-0 items-center gap-2.5 normal-case text-white transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              aria-label="Adam Zhu — back to top"
+              aria-label="Adam Zhu, back to top"
               onClick={(e) => {
                 e.preventDefault();
                 navigateTo("home");
@@ -716,7 +716,7 @@ export default function Home() {
             <div className="landing-el landing-meta flex justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-[11px]">
               <a
                 href="#home"
-                aria-label="Adam Zhu — back to top"
+                aria-label="Adam Zhu, back to top"
                 className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
                   e.preventDefault();
@@ -1001,7 +1001,7 @@ export default function Home() {
               <div {...reveal(5)} className={`${reveal(5).className} bg-az-card-muted border border-white/14 p-5 sm:p-6`}>
                 <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/55">Based</p>
                 <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-white/80 sm:text-[11px]">
-                  Gaithersburg, MD this summer — Carnegie Mellon, Pittsburgh, during the year.
+                  Gaithersburg, MD this summer. Carnegie Mellon, Pittsburgh, during the year.
                 </p>
               </div>
             </aside>
