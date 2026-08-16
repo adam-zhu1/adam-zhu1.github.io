@@ -29,7 +29,7 @@ export const WORK_PROJECTS: WorkProject[] = [
     title: "Data portal analytics",
     subtitle: "NIST · SURF research intern · Gaithersburg, MD · Summer 2026",
     body:
-      "A reproducible five-stage Python pipeline recovering reliable usage metrics for NIST's public data portal. Per-IP behavioral features feed four classifiers (best F1 = 0.95); 51% of 190,687 logged requests turned out to be automated, including a disguised scraper behind 50,000+ spoofed requests that user-agent rules had passed as human. A second-pass behavioral rule caught it and corrected the ground-truth labels. Also surfaced unmet demand: 23% of 20,790 human searches returned no results, informing NIST's search and dataset-acquisition priorities.",
+      "A reproducible five-stage Python pipeline recovering reliable usage metrics for NIST's public data portal: 1.04M requests over 271 days from 117K unique IPs. Per-IP behavioral features feed a behavior-only random forest (F1 = 0.94), and rules built from a disguised scraper it helped catch, one that ran monthly from fresh IPs and spoofed hundreds of browser user-agents, raised the measured automated share of traffic from 21.7% to 41.9%. Also surfaced unmet demand: 21.5% of 109K human searches returned no results, and a query-failure classifier (accuracy 0.88) fed recommendations for NIST's search and dataset-acquisition priorities.",
     tags: ["Python", "pandas", "scikit-learn", "Classification"],
     links: [{ label: "NIST SURF", url: "https://www.nist.gov/surf" }],
     /*
