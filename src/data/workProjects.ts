@@ -43,7 +43,7 @@ export const WORK_PROJECTS: WorkProject[] = [
     id: "trueline",
     eyebrow: "Project · Computer vision",
     title: "TrueLine",
-    subtitle: "iOS app · Jan 2026–present · App Store launch in preparation",
+    subtitle: "iOS app · Jan 2026–present · submitted for App Store review, Aug 2026",
     body:
       "Turns one iPhone into a bowling ball tracker: per-throw launch speed, board at the arrows, breakpoint, and entry angle, metrics that otherwise need a $10k+ in-lane installation. A fine-tuned YOLOv8 detector runs on-device via Core ML, with Kalman-filter tracking and Savitzky–Golay smoothing and zero third-party dependencies; a four-corner calibration homography maps any camera angle to true lane coordinates. Verified against the Python/OpenCV prototype clip by clip: board position within ~1 board, launch speed within 1–2%.",
     tags: ["Swift", "SwiftUI", "Core ML", "YOLOv8", "PyTorch", "OpenCV"],
