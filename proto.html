@@ -5,38 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
-      rel="stylesheet"
-    />
-    <title>Prototype: one object, the whole page</title>
+    <link rel="preconnect" href="https://api.fontshare.com" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500&display=swap" rel="stylesheet" />
+    <title>Prototype: hub first, then the show</title>
   </head>
   <body>
     <canvas id="field" aria-hidden="true"></canvas>
 
-    <div class="corner corner-tl"><span class="name">Adam Zhu</span></div>
-    <div class="corner corner-br"><span class="hint">Scroll</span></div>
+    <header class="mark">
+      <span class="wordmark">Adam Zhu</span>
+      <span class="place">Pittsburgh <time id="clock" datetime="">00:00:00</time></span>
+    </header>
+
+    <!-- The dock: the hub, always one glance away once you have scrolled past the first screen. -->
+    <nav class="dock" aria-label="Links">
+      <a href="https://github.com/adam-zhu1" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/in/adam-zhu-cmu/" target="_blank" rel="noreferrer">LinkedIn</a>
+      <a href="mailto:adamzhu@andrew.cmu.edu">Email</a>
+      <a href="/Adam-Zhu-Resume.pdf" target="_blank" rel="noreferrer">Resume</a>
+    </nav>
 
     <main id="page">
-      <section class="beat beat-load" aria-label="Intro"></section>
+      <section class="beat beat-hero" aria-label="Adam Zhu">
+        <div class="statement">
+          <p class="line">
+            <span class="fixed">I build things that</span><span class="rotator" aria-live="off">
+              <span class="word is-on">look closely.</span>
+              <span class="word">measure.</span>
+              <span class="word">notice.</span>
+              <span class="word">tell you what they saw.</span>
+            </span>
+          </p>
+          <p class="sub">Statistics and machine learning at Carnegie Mellon.</p>
+        </div>
+        <nav class="links" aria-label="Links">
+          <a href="https://github.com/adam-zhu1" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://www.linkedin.com/in/adam-zhu-cmu/" target="_blank" rel="noreferrer">LinkedIn</a>
+          <a href="mailto:adamzhu@andrew.cmu.edu">Email</a>
+          <a href="/Adam-Zhu-Resume.pdf" target="_blank" rel="noreferrer">Resume</a>
+          <a href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797" target="_blank" rel="noreferrer">TrueLine</a>
+          <a href="https://doi.org/10.3390/math12050741" target="_blank" rel="noreferrer">Paper</a>
+        </nav>
+        <div class="foot"><span class="hint">Scroll</span></div>
+      </section>
 
       <section class="beat beat-who" data-reveal>
         <p class="who-line">I'm Adam. I study statistics and machine learning at Carnegie Mellon.</p>
         <p class="who-line">I like building things that look closely at the world and tell you what they saw.</p>
       </section>
 
-      <section class="beat beat-hub" aria-label="Find me">
-        <nav id="hub" class="hub" aria-label="Links">
-          <p class="hub-title">Find me</p>
-          <a class="node" data-node="0" href="https://github.com/adam-zhu1" target="_blank" rel="noreferrer"><span>GitHub</span></a>
-          <a class="node" data-node="1" href="https://www.linkedin.com/in/adam-zhu-cmu/" target="_blank" rel="noreferrer"><span>LinkedIn</span></a>
-          <a class="node" data-node="2" href="mailto:adamzhu@andrew.cmu.edu"><span>Email</span></a>
-          <a class="node" data-node="3" href="/Adam-Zhu-Resume.pdf" target="_blank" rel="noreferrer"><span>Resume</span></a>
-          <a class="node" data-node="4" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797" target="_blank" rel="noreferrer"><span>TrueLine on the App Store</span></a>
-          <a class="node" data-node="5" href="https://doi.org/10.3390/math12050741" target="_blank" rel="noreferrer"><span>The paper</span></a>
-        </nav>
+      <section class="beat beat-made" aria-label="Made">
+        <p class="beat-title" data-reveal>Made</p>
+        <ul class="rail" data-reveal>
+          <li class="piece">
+            <a href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797" target="_blank" rel="noreferrer">
+              <span class="piece-title">TrueLine</span>
+              <span class="piece-line">One iPhone as a bowling ball tracker. Speed, board, breakpoint, entry angle.</span>
+              <span class="piece-meta" id="trueline-meta">On the App Store</span>
+            </a>
+          </li>
+          <li class="piece">
+            <a href="https://www.nist.gov/surf" target="_blank" rel="noreferrer">
+              <span class="piece-title">Data portal analytics</span>
+              <span class="piece-line">A summer at NIST recovering real usage from a year of public data portal traffic.</span>
+              <span class="piece-meta">Research, 2026</span>
+            </a>
+          </li>
+          <li class="piece">
+            <a href="https://doi.org/10.3390/math12050741" target="_blank" rel="noreferrer">
+              <span class="piece-title">Diagnostic proportion tests</span>
+              <span class="piece-line">Second author on a paper about matched binary diagnostic data. Joined at the revision stage.</span>
+              <span class="piece-meta">Mathematics, 2024</span>
+            </a>
+          </li>
+        </ul>
       </section>
 
       <section class="beat beat-now" data-reveal>
