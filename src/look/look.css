@@ -29,7 +29,7 @@ html[data-variant="b"] {
   --ink: #efe9df;
   --ink-dim: #8c857a;
   --line: rgba(239, 233, 223, 0.16);
-  --font-display: "Kihim", "Times New Roman", serif;
+  --font-display: "Boska", "Times New Roman", serif;
   --font-text: "General Sans", "Helvetica Neue", Arial, sans-serif;
   --name-size: clamp(64px, 10vw, 140px);
   --name-weight: 400;
@@ -120,9 +120,10 @@ html[data-variant="a"] .line { font-family: var(--font-display); }
 .rotator {
   position: relative;
   display: inline-grid;
-  vertical-align: top;
+  align-items: baseline;
+  vertical-align: baseline;
   margin-left: 0.26em;
-  overflow: hidden;
+  clip-path: inset(0 0 -0.12em 0);
 }
 /* Studio sets the statement large, so the rotating phrase takes its own line and never reflows. */
 html[data-variant="a"] .rotator { display: grid; margin-left: 0; }
@@ -210,7 +211,9 @@ html[data-variant="a"] .rotator { display: grid; margin-left: 0; }
 .study-btn:focus-visible { outline: 1px solid var(--ink); }
 
 @media (max-width: 720px) {
+  .study { top: auto; bottom: 14px; }
   .statement { max-width: 100%; }
+  .foot { padding-bottom: 52px; }
   html[data-variant="b"] { --name-size: 64px; }
   html[data-variant="c"] { --name-size: 56px; }
   .links { gap: 16px 22px; }
