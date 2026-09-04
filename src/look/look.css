@@ -1,0 +1,221 @@
+/* Look study: screen one of "hub first, then the show", in three type directions.
+   Layout is fixed; type, tone and object color change per variant. */
+
+:root {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --pad: clamp(24px, 5vw, 72px);
+}
+
+/* A. Studio: one neutral grotesk, small wordmark, the statement carries the screen. */
+html[data-variant="a"] {
+  --bg: #060606;
+  --ink: #f1f1ee;
+  --ink-dim: #8a8a86;
+  --line: rgba(241, 241, 238, 0.16);
+  --font-display: "Switzer", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Switzer", "Helvetica Neue", Arial, sans-serif;
+  --name-size: 0;                      /* name hidden; wordmark carries it */
+  --name-weight: 300;
+  --name-track: -0.03em;
+  --line-size: clamp(30px, 4.2vw, 60px);
+  --line-weight: 300;
+  --line-track: -0.025em;
+  --links-size: 13px;
+}
+
+/* B. Editorial: a display serif for the name, a quiet grotesk for everything else. */
+html[data-variant="b"] {
+  --bg: #0a0908;
+  --ink: #efe9df;
+  --ink-dim: #8c857a;
+  --line: rgba(239, 233, 223, 0.16);
+  --font-display: "Kihim", "Times New Roman", serif;
+  --font-text: "General Sans", "Helvetica Neue", Arial, sans-serif;
+  --name-size: clamp(64px, 10vw, 140px);
+  --name-weight: 400;
+  --name-track: -0.02em;
+  --line-size: clamp(20px, 2vw, 28px);
+  --line-weight: 400;
+  --line-track: -0.01em;
+  --links-size: 14px;
+}
+
+/* C. Geometric: a geometric display grotesk for the name, Switzer for the rest. */
+html[data-variant="c"] {
+  --bg: #05070a;
+  --ink: #e9edf3;
+  --ink-dim: #7f8791;
+  --line: rgba(233, 237, 243, 0.16);
+  --font-display: "Clash Display", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Switzer", "Helvetica Neue", Arial, sans-serif;
+  --name-size: clamp(56px, 8.4vw, 118px);
+  --name-weight: 500;
+  --name-track: -0.035em;
+  --line-size: clamp(20px, 2vw, 28px);
+  --line-weight: 400;
+  --line-track: -0.012em;
+  --links-size: 13px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  transition: background 0.6s var(--ease-out), color 0.6s var(--ease-out);
+}
+
+#field { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+
+.screen {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  padding: var(--pad);
+  gap: 0;
+}
+
+.mark {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  color: var(--ink-dim);
+}
+.mark .wordmark { color: var(--ink); }
+.mark time { font-variant-numeric: tabular-nums; margin-left: 10px; color: var(--ink-dim); }
+html[data-variant="a"] .mark .wordmark { color: var(--ink); }
+
+.statement {
+  align-self: end;
+  max-width: min(58vw, 760px);
+  padding-bottom: clamp(24px, 4vh, 48px);
+}
+.name {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: var(--name-size);
+  font-weight: var(--name-weight);
+  letter-spacing: var(--name-track);
+  line-height: 0.95;
+}
+html[data-variant="a"] .name { display: none; }
+.line {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: var(--line-size);
+  font-weight: var(--line-weight);
+  letter-spacing: var(--line-track);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+html[data-variant="a"] .line { font-family: var(--font-display); }
+.rotator {
+  position: relative;
+  display: inline-grid;
+  vertical-align: top;
+  margin-left: 0.26em;
+  overflow: hidden;
+}
+/* Studio sets the statement large, so the rotating phrase takes its own line and never reflows. */
+html[data-variant="a"] .rotator { display: grid; margin-left: 0; }
+.rotator .word {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(105%);
+  transition: opacity 0.7s var(--ease-out), transform 0.9s var(--ease-out);
+  color: var(--ink);
+}
+.rotator .word.is-on { opacity: 1; transform: translateY(0); }
+.rotator .word.is-off { opacity: 0; transform: translateY(-105%); }
+.sub {
+  margin: 14px 0 0;
+  font-size: 15px;
+  color: var(--ink-dim);
+  letter-spacing: 0.005em;
+}
+
+.links {
+  display: flex;
+  gap: clamp(18px, 2.4vw, 36px);
+  flex-wrap: wrap;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+  font-size: var(--links-size);
+  letter-spacing: 0.01em;
+}
+.links a {
+  color: var(--ink-dim);
+  text-decoration: none;
+  position: relative;
+  padding: 4px 0;
+  transition: color 0.4s var(--ease-out);
+}
+.links a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 100%;
+  bottom: 0;
+  height: 1px;
+  background: var(--ink);
+  transition: right 0.5s var(--ease-out);
+}
+.links a:hover, .links a:focus-visible { color: var(--ink); outline: none; }
+.links a:hover::after, .links a:focus-visible::after { right: 0; }
+
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 13px;
+  color: var(--ink-dim);
+  padding-top: 10px;
+}
+.foot .hint { opacity: 0.8; }
+
+/* Study controls */
+.study {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+.study-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.study-btn[aria-pressed="true"] { background: rgba(255, 255, 255, 0.12); color: var(--ink); }
+.study-btn:focus-visible { outline: 1px solid var(--ink); }
+
+@media (max-width: 720px) {
+  .statement { max-width: 100%; }
+  html[data-variant="b"] { --name-size: 64px; }
+  html[data-variant="c"] { --name-size: 56px; }
+  .links { gap: 16px 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotator .word, .links a, .links a::after, body { transition: none; }
+}
