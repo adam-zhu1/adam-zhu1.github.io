@@ -20,6 +20,7 @@ export const vertexShader = /* glsl */ `
   uniform vec2 uMouse;          // NDC
   uniform vec3 uHover;          // world position of hovered node
   uniform float uHoverStrength;
+  uniform float uPulse;         // 0 idle; 0..1 sweeps a brightness band through the mass
 
   varying float vAlpha;
   varying float vGlow;
@@ -74,6 +75,10 @@ export const vertexShader = /* glsl */ `
     vGlow = exp(-md * md * 5.0);
 
     vAlpha = (0.25 + 0.75 * ip) * (0.55 + 0.45 * aRand);
+    // Idle pulse: a thin band of particles (by aRand) brightens as uPulse sweeps 0 -> 1.
+    float band = smoothstep(0.07, 0.0, abs(aRand - uPulse)) * step(0.001, uPulse) * (1.0 - step(0.999, uPulse));
+    vAlpha += band * 0.9;
+    vGlow += band * 0.5;
     vRand = aRand;
   }
 `;

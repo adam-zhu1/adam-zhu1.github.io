@@ -72,9 +72,12 @@ export function buildShapes(count: number, seed = 7): Shapes {
       const dx = gauss(), dy = gauss(), dz = gauss();
       const len = Math.hypot(dx, dy, dz) || 1;
       const nx = dx / len, ny = dy / len, nz = dz / len;
-      const n = noise(nx * 1.5, ny * 1.5, nz * 1.5);
-      const shell = 1.45 * (0.78 + 0.26 * n);
-      const depth = 0.55 + 0.45 * Math.sqrt(rnd());
+      const n1 = noise(nx * 1.2, ny * 1.2, nz * 1.2);
+      const n2 = noise(nx * 2.7 + 5.0, ny * 2.7, nz * 2.7);
+      const shell = 1.45 * (0.86 + 0.12 * n1 + 0.06 * n2);
+      // Dense core, soft edge: most points inside, a sparse halo drifting well outside.
+      const halo = rnd() < 0.06;
+      const depth = halo ? 1.15 + rnd() * 0.8 : Math.pow(rnd(), 0.55);
       blob[i3] = nx * shell * depth;
       blob[i3 + 1] = ny * shell * depth;
       blob[i3 + 2] = nz * shell * depth;

@@ -54,6 +54,7 @@ const uniforms = {
   uMouse: { value: new THREE.Vector2(10, 10) },
   uHover: { value: new THREE.Vector3(0, 0, 0) },
   uHoverStrength: { value: 0 },
+  uPulse: { value: 0 },
   uColorA: { value: new THREE.Color(0.70, 0.77, 0.94) },
   uColorB: { value: new THREE.Color(0.96, 0.89, 0.78) },
 };
