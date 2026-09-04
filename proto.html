@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <title>Prototype: one object, the whole page</title>
+  </head>
+  <body>
+    <canvas id="field" aria-hidden="true"></canvas>
+
+    <div class="corner corner-tl"><span class="name">Adam Zhu</span></div>
+    <div class="corner corner-br"><span class="hint">Scroll</span></div>
+
+    <main id="page">
+      <section class="beat beat-load" aria-label="Intro"></section>
+
+      <section class="beat beat-who" data-reveal>
+        <p class="who-line">I'm Adam. I study statistics and machine learning at Carnegie Mellon.</p>
+        <p class="who-line">I like building things that look closely at the world and tell you what they saw.</p>
+      </section>
+
+      <section class="beat beat-hub" aria-label="Find me">
+        <nav id="hub" class="hub" aria-label="Links">
+          <p class="hub-title">Find me</p>
+          <a class="node" data-node="0" href="https://github.com/adam-zhu1" target="_blank" rel="noreferrer"><span>GitHub</span></a>
+          <a class="node" data-node="1" href="https://www.linkedin.com/in/adam-zhu-cmu/" target="_blank" rel="noreferrer"><span>LinkedIn</span></a>
+          <a class="node" data-node="2" href="mailto:adamzhu@andrew.cmu.edu"><span>Email</span></a>
+          <a class="node" data-node="3" href="/Adam-Zhu-Resume.pdf" target="_blank" rel="noreferrer"><span>Resume</span></a>
+          <a class="node" data-node="4" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797" target="_blank" rel="noreferrer"><span>TrueLine on the App Store</span></a>
+          <a class="node" data-node="5" href="https://doi.org/10.3390/math12050741" target="_blank" rel="noreferrer"><span>The paper</span></a>
+        </nav>
+      </section>
+
+      <section class="beat beat-now" data-reveal>
+        <p class="beat-title">Now</p>
+        <p class="now-line">Back in Pittsburgh for the fall.</p>
+        <p class="now-line">TrueLine is on the App Store. Working on what it should learn next.</p>
+        <p class="now-line">Bowling on Thursdays. Bassoon when the neighbors are out.</p>
+      </section>
+
+      <section class="beat beat-end">
+        <p class="end-line" data-reveal>Say hi.</p>
+        <button class="email" id="copy-email" type="button" data-reveal>
+          <span class="email-text">adamzhu@andrew.cmu.edu</span>
+          <span class="email-status" aria-live="polite"></span>
+        </button>
+      </section>
+    </main>
+
+    <script type="module" src="/src/proto/main.ts"></script>
+  </body>
+</html>
