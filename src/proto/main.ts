@@ -176,7 +176,7 @@ async function setupReveals() {
     const textEls = el.matches("section")
       ? Array.from(el.querySelectorAll<HTMLElement>("p"))
       : el.matches("ul") ? Array.from(el.querySelectorAll<HTMLElement>(".piece-title, .piece-line, .piece-meta")) : [el];
-    const split = SplitText.create(textEls, { type: "lines", mask: "lines", linesClass: "line" });
+    const split = SplitText.create(textEls, { type: "lines", mask: "lines", linesClass: "sl" });
     gsap.from(split.lines, {
       yPercent: 115, duration: 1.1, ease: "power3.out", stagger: 0.07,
       scrollTrigger: { trigger: el, start: "top 75%", once: true },

@@ -49,7 +49,7 @@ body.ready .mark { opacity: 1; }
 
 .dock {
   position: fixed;
-  left: var(--pad);
+  right: var(--pad);
   bottom: calc(var(--pad) * 0.6);
   z-index: 3;
   display: flex;
@@ -97,7 +97,10 @@ body.scrolled .dock { opacity: 1; transform: none; pointer-events: auto; }
   height: 100vh;
   height: 100svh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr auto auto;
+  justify-content: stretch;
+  justify-items: start;
   padding-top: var(--pad);
   padding-bottom: var(--pad);
 }
@@ -131,6 +134,7 @@ body.scrolled .dock { opacity: 1; transform: none; pointer-events: auto; }
 .sub { margin: 14px 0 0; font-size: 15px; color: var(--ink-dim); }
 
 .links {
+  width: 100%;
   display: flex;
   gap: clamp(18px, 2.4vw, 36px);
   flex-wrap: wrap;
@@ -139,7 +143,7 @@ body.scrolled .dock { opacity: 1; transform: none; pointer-events: auto; }
   font-size: 13px;
   letter-spacing: 0.01em;
 }
-.foot { display: flex; justify-content: flex-end; font-size: 13px; color: var(--ink-dim); padding-top: 10px; }
+.foot { width: 100%; display: flex; justify-content: flex-end; font-size: 13px; color: var(--ink-dim); padding-top: 10px; }
 .foot .hint { transition: opacity 0.6s var(--ease-out); }
 body.scrolled .foot .hint { opacity: 0; }
 
@@ -207,7 +211,7 @@ body.scrolled .foot .hint { opacity: 0; }
 .email:hover, .email:focus-visible { border-color: var(--ink); outline: none; }
 .email-status { color: var(--ink-dim); font-size: 13px; }
 
-[data-reveal] .line { will-change: transform; }
+[data-reveal] .sl { will-change: transform; }
 
 @media (max-width: 720px) {
   .statement { max-width: 100%; }
