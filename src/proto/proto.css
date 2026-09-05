@@ -46,6 +46,8 @@ html.lenis, html.lenis body { height: auto; }
 .mark .wordmark { color: var(--ink); }
 .mark time { font-variant-numeric: tabular-nums; margin-left: 10px; }
 body.ready .mark { opacity: 1; }
+.mark .wordmark { opacity: 0; transition: opacity 0.6s var(--ease-out); }
+body.scrolled .mark .wordmark { opacity: 1; }
 
 .dock {
   position: fixed;
@@ -111,27 +113,12 @@ body.scrolled .dock { opacity: 1; transform: none; pointer-events: auto; }
 }
 .line {
   margin: 0;
-  font-size: clamp(30px, 4.2vw, 60px);
+  font-size: clamp(40px, 5.6vw, 84px);
   font-weight: 300;
   letter-spacing: -0.025em;
   line-height: 1.12;
 }
-.rotator {
-  position: relative;
-  display: grid;
-  align-items: baseline;
-  clip-path: inset(0 0 -0.12em 0);
-}
-.rotator .word {
-  grid-area: 1 / 1;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateY(105%);
-  transition: opacity 0.7s var(--ease-out), transform 0.9s var(--ease-out);
-}
-.rotator .word.is-on { opacity: 1; transform: translateY(0); }
-.rotator .word.is-off { opacity: 0; transform: translateY(-105%); }
-.sub { margin: 14px 0 0; font-size: 15px; color: var(--ink-dim); }
+.sub { margin: 16px 0 0; font-size: clamp(15px, 1.2vw, 18px); color: var(--ink-dim); max-width: 40ch; }
 
 .links {
   width: 100%;
@@ -221,5 +208,5 @@ body.scrolled .foot .hint { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mark, .dock, .dock a, .links a, .rotator .word, .email, .piece a, .foot .hint { transition: none; }
+  .mark, .mark .wordmark, .dock, .dock a, .links a, .email, .piece a, .foot .hint { transition: none; }
 }

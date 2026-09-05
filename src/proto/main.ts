@@ -129,20 +129,6 @@ for (const a of document.querySelectorAll<HTMLAnchorElement>(".links a, .dock a"
   a.addEventListener("focus", pulse);
 }
 
-const words = Array.from(document.querySelectorAll<HTMLElement>(".rotator .word"));
-let wordIndex = 0;
-if (!reduceMotion && words.length > 1) {
-  gsap.delayedCall(4.5, function rotate() {
-    const prev = words[wordIndex];
-    wordIndex = (wordIndex + 1) % words.length;
-    const next = words[wordIndex];
-    prev.classList.remove("is-on"); prev.classList.add("is-off");
-    next.classList.remove("is-off"); next.classList.add("is-on");
-    gsap.delayedCall(1.0, () => prev.classList.remove("is-off"));
-    gsap.delayedCall(5.2, rotate);
-  });
-}
-
 const clock = document.getElementById("clock") as HTMLTimeElement;
 const fmt = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "America/New_York" });
 function tick() { const now = new Date(); clock.textContent = fmt.format(now); clock.dateTime = now.toISOString(); }
