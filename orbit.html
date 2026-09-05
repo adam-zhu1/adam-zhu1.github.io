@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://api.fontshare.com" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500&display=swap" rel="stylesheet" />
+    <title>Prototype: the orbit hub</title>
+  </head>
+  <body>
+    <canvas id="field" aria-hidden="true"></canvas>
+
+    <header class="mark">
+      <span class="wordmark">Adam Zhu</span>
+      <span class="place">Pittsburgh <time id="clock" datetime="">00:00:00</time></span>
+    </header>
+
+    <!-- Everything about Adam, as rings around the object. JS positions the nodes; the content is real DOM. -->
+    <div id="rings" class="rings">
+      <a class="node" data-level="0" href="https://github.com/adam-zhu1" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">GitHub</span></a>
+      <a class="node" data-level="0" href="https://www.linkedin.com/in/adam-zhu-cmu/" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">LinkedIn</span></a>
+      <a class="node" data-level="0" href="mailto:adamzhu@andrew.cmu.edu"><span class="dot"></span><span class="label">Email</span></a>
+      <a class="node" data-level="0" href="/Adam-Zhu-Resume.pdf" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">Resume</span></a>
+      <a class="node" data-level="0" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">App Store</span></a>
+      <a class="node" data-level="0" href="https://doi.org/10.3390/math12050741" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">Paper</span></a>
+
+      <a class="node" data-level="1" href="https://github.com/adam-zhu1/trueline" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">TrueLine</span><span class="desc">An iPhone as a bowling ball tracker. Speed, board, breakpoint, entry angle. On the App Store.</span></a>
+      <a class="node" data-level="1" href="https://www.nist.gov/surf" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">Data portal analytics</span><span class="desc">A summer at NIST recovering real usage from a year of public data portal traffic.</span></a>
+      <a class="node" data-level="1" href="https://doi.org/10.3390/math12050741" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">Diagnostic proportion tests</span><span class="desc">Second author. Statistical tests for matched binary diagnostic data. Mathematics, 2024.</span></a>
+      <a class="node" data-level="1" href="https://www.vrac.iastate.edu/research/asters/" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">Evacuation simulation</span><span class="desc">Regression models of evacuation time across 454 VR trials at Iowa State.</span></a>
+      <a class="node" data-level="1" href="https://forensicstats.org/" target="_blank" rel="noreferrer"><span class="dot"></span><span class="label">Camera and handwriting</span><span class="desc">Forensic image and handwriting analysis at CSAFE. Manuscript under review.</span></a>
+
+      <span class="node still" data-level="2"><span class="dot"></span><span class="label">Pittsburgh, fall 2026</span></span>
+      <span class="node still" data-level="2"><span class="dot"></span><span class="label">TrueLine 1.0 shipped Aug 24</span></span>
+      <span class="node still" data-level="2"><span class="dot"></span><span class="label">Looking for a summer 2027 internship</span></span>
+
+      <button class="node core" data-level="3" id="copy-email" type="button"><span class="label">adamzhu@andrew.cmu.edu</span><span class="desc" id="copy-status">Click to copy</span></button>
+    </div>
+
+    <nav class="levels" aria-label="Depth">
+      <button class="level is-on" data-level="0" type="button">Links</button>
+      <button class="level" data-level="1" type="button">Work</button>
+      <button class="level" data-level="2" type="button">Now</button>
+      <button class="level" data-level="3" type="button">Contact</button>
+    </nav>
+
+    <p class="hint">Scroll to go deeper</p>
+
+    <!-- Scroll runway: gives the page height; nothing is laid out here. -->
+    <div id="runway" aria-hidden="true"></div>
+
+    <script type="module" src="/src/orbit/main.ts"></script>
+  </body>
+</html>
