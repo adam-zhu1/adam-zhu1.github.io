@@ -113,7 +113,7 @@ function ringRadius(d: number) {
   return d >= 0 ? RING_R * Math.pow(0.42, d) : RING_R * Math.pow(2.6, -d);
 }
 function ringOpacity(d: number) {
-  if (d >= 0) return Math.max(0, 1 - d * 0.72);
+  if (d >= 0) return Math.max(0, 1 - d * 0.85);   // the next ring shows faintly inside, as a map of what is deeper
   return Math.max(0, 1 + d * 1.6);
 }
 
@@ -123,7 +123,7 @@ function layoutRings(time: number) {
   for (const n of nodes) {
     const d = n.level - dep;
     const r = ringRadius(d);
-    const alpha = ringOpacity(d);
+    const alpha = n.level === LEVELS - 1 && d > 0.6 ? 0 : ringOpacity(d);  // the core only appears near the end
     const live = Math.abs(d) < 0.5;
     n.el.classList.toggle("is-live", live);
     if (alpha <= 0.01) { n.el.style.opacity = "0"; continue; }
