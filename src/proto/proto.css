@@ -131,13 +131,16 @@ body.scrolled .dock { opacity: 1; transform: none; pointer-events: auto; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 var(--pad);
+  padding: 0 var(--pad) 0 var(--content-left);
 }
+:root { --content-left: var(--pad); }
+@media (min-width: 721px) { :root { --content-left: calc(var(--pad) + 104px); } }
 
 /* Screen one: the hub. */
 .beat-hero {
   height: 100vh;
   height: 100svh;
+  padding-left: var(--content-left);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr auto auto;
