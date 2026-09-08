@@ -66,8 +66,23 @@ const material = new THREE.ShaderMaterial({
 const points = new THREE.Points(geometry, material);
 scene.add(points);
 
-/** Where the object sits at rest on screen one (beside the statement), by viewport. */
-const REST = { x: isSmall ? 0 : 1.9, y: isSmall ? 1.1 : 0.15, s: isSmall ? 0.72 : 0.9 };
+/** Where the object sits at rest on screen one: centered in the viewfinder frame (desktop) or above the text (phone). */
+const REST = { x: isSmall ? 0 : 1.9, y: isSmall ? 1.1 : 0.15, s: isSmall ? 0.72 : 0.78 };
+const frameEl = document.getElementById("frame") as HTMLElement;
+const HALF_H = Math.tan((42 / 2) * Math.PI / 180) * 7; // world half-height at z = 0 for this camera
+function syncFrame(toCenter: number) {
+  if (isSmall) return;
+  const r = frameEl.getBoundingClientRect();
+  const w = window.innerWidth, h = window.innerHeight;
+  const cx = (r.left + r.width / 2) / w * 2 - 1;
+  const cy = -((r.top + r.height / 2) / h * 2 - 1);
+  REST.x = cx * HALF_H * (w / h);
+  REST.y = cy * HALF_H;
+  // Clip the canvas to the frame, opening to full screen as the object breaks out.
+  const k = 1 - toCenter;
+  const top = r.top * k, right = (w - r.right) * k, bottom = (h - r.bottom) * k, left = r.left * k;
+  canvas.style.clipPath = k < 0.002 ? "none" : `inset(${top.toFixed(1)}px ${right.toFixed(1)}px ${bottom.toFixed(1)}px ${left.toFixed(1)}px round ${(10 * k).toFixed(1)}px)`;
+}
 
 // ---------------------------------------------------------------------------
 // Scroll: Lenis smooths, ScrollTrigger scrubs the morph.
@@ -92,14 +107,78 @@ ScrollTrigger.create({
   onLeaveBack: () => document.body.classList.remove("scrolled"),
 });
 
+// The page turns light for Work and Now, and back to dark for Contact.
+const LIGHT_BG = new THREE.Color(0xd8dbde), DARK_BG = new THREE.Color(0x060606);
+const LIGHT_A = new THREE.Color(0.10, 0.11, 0.13), LIGHT_B = new THREE.Color(0.22, 0.23, 0.26);
+const DARK_A = uniforms.uColorA.value.clone(), DARK_B = uniforms.uColorB.value.clone();
+const bgNow = DARK_BG.clone();
+function setLight(on: boolean) {
+  document.body.classList.toggle("light", on);
+  const a = on ? LIGHT_A : DARK_A, b = on ? LIGHT_B : DARK_B, bg = on ? LIGHT_BG : DARK_BG;
+  gsap.to(uniforms.uColorA.value, { r: a.r, g: a.g, b: a.b, duration: 0.9, ease: "power2.inOut" });
+  gsap.to(uniforms.uColorB.value, { r: b.r, g: b.g, b: b.b, duration: 0.9, ease: "power2.inOut" });
+  gsap.to(bgNow, { r: bg.r, g: bg.g, b: bg.b, duration: 0.9, ease: "power2.inOut", onUpdate: () => renderer.setClearColor(bgNow, 1) });
+  material.blending = on ? THREE.NormalBlending : THREE.AdditiveBlending;
+  material.needsUpdate = true;
+}
+ScrollTrigger.create({ trigger: "#made", start: "top 55%", endTrigger: "#contact", end: "top 55%",
+  onEnter: () => setLight(true), onEnterBack: () => setLight(true), onLeave: () => setLight(false), onLeaveBack: () => setLight(false) });
+
+// Progress index follows the section in view.
+const indexItems = Array.from(document.querySelectorAll<HTMLLIElement>(".index li"));
+for (const li of indexItems) {
+  const id = li.dataset.beat!;
+  ScrollTrigger.create({ trigger: `#${id}`, start: "top 50%", end: "bottom 50%",
+    onToggle: (st) => { if (st.isActive) for (const x of indexItems) x.classList.toggle("is-on", x === li); } });
+  li.addEventListener("click", () => { const el = document.getElementById(id)!; if (lenis) lenis.scrollTo(el, { duration: 1.4 }); else el.scrollIntoView(); });
+}
+for (const a of document.querySelectorAll<HTMLAnchorElement>('.topnav a[href^="#"]')) {
+  a.addEventListener("click", (e) => { const el = document.querySelector<HTMLElement>(a.getAttribute("href")!); if (!el) return; e.preventDefault(); if (lenis) lenis.scrollTo(el, { duration: 1.4 }); else el.scrollIntoView(); });
+}
+
 // ---------------------------------------------------------------------------
-// Intro
+// Boot: one line fills while assets load, then shrinks into the horizon the object arrives on.
+// First visit per session only. Scroll, click or a key skips it. Reduced motion skips it entirely.
 // ---------------------------------------------------------------------------
-if (reduceMotion) {
+const bootEl = document.getElementById("boot") as HTMLElement;
+const bootFill = bootEl.querySelector<HTMLElement>(".boot-fill")!;
+const bootLine = bootEl.querySelector<HTMLElement>(".boot-line")!;
+let bootedThisSession = false;
+try { bootedThisSession = sessionStorage.getItem("booted") === "1"; } catch { /* ignore */ }
+
+function arrive(fast: boolean) {
   document.body.classList.add("ready");
+  gsap.to(uniforms.uIntro, { value: 1, duration: fast ? 1.4 : 2.6, ease: "power2.inOut" });
+}
+function endBoot(fast: boolean) {
+  if (bootEl.classList.contains("is-done")) return;
+  try { sessionStorage.setItem("booted", "1"); } catch { /* ignore */ }
+  gsap.killTweensOf(bootFill);
+  gsap.to(bootLine, { scaleX: 0, duration: fast ? 0.3 : 0.7, ease: "power3.inOut" });
+  bootEl.classList.add("is-done");
+  arrive(fast);
+}
+if (reduceMotion || bootedThisSession) {
+  bootEl.classList.add("is-done");
+  bootEl.style.transition = "none";
+  if (reduceMotion) { document.body.classList.add("ready"); } else { arrive(true); }
 } else {
-  gsap.to(uniforms.uIntro, { value: 1, duration: 3.0, ease: "power2.inOut", delay: 0.3 });
-  gsap.delayedCall(1.4, () => document.body.classList.add("ready"));
+  const t0 = performance.now();
+  const MIN_MS = 1700;
+  // Fill tracks real readiness: fonts plus the first rendered frame. Eases toward 90 percent, snaps to 100 when ready.
+  const fill = gsap.to(bootFill, { width: "90%", duration: 2.4, ease: "power1.out" });
+  let firstFrame = false;
+  const ready = Promise.all([document.fonts.ready, new Promise<void>((r) => { const check = () => (firstFrame ? r() : requestAnimationFrame(check)); check(); })]);
+  ready.then(() => {
+    const wait = Math.max(0, MIN_MS - (performance.now() - t0));
+    gsap.delayedCall(wait / 1000, () => { fill.kill(); gsap.to(bootFill, { width: "100%", duration: 0.35, ease: "power2.out", onComplete: () => gsap.delayedCall(0.15, () => endBoot(false)) }); });
+  });
+  const skip = () => endBoot(true);
+  window.addEventListener("wheel", skip, { once: true, passive: true });
+  window.addEventListener("pointerdown", skip, { once: true });
+  window.addEventListener("keydown", skip, { once: true });
+  window.addEventListener("touchstart", skip, { once: true, passive: true });
+  gsap.ticker.add(function markFirstFrame() { firstFrame = true; gsap.ticker.remove(markFirstFrame); });
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +293,7 @@ gsap.ticker.add((time) => {
   // The object rests beside the statement on screen one, then moves to center as the show starts.
   const p = uniforms.uP.value;
   const toCenter = smooth(0.03, 0.2, p);
+  syncFrame(toCenter);
   points.position.set(REST.x * (1 - toCenter), REST.y * (1 - toCenter), 0);
   points.scale.setScalar(REST.s + (1 - REST.s) * toCenter);
 

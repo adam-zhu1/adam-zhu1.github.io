@@ -13,10 +13,24 @@
   <body>
     <canvas id="field" aria-hidden="true"></canvas>
 
+    <!-- Boot: one line loads, then becomes the horizon the object arrives on. First visit per session only. -->
+    <div id="boot" class="boot" aria-hidden="true"><div class="boot-line"><div class="boot-fill"></div></div></div>
+
     <header class="mark">
       <span class="wordmark">Adam Zhu</span>
+      <nav class="topnav" aria-label="Sections">
+        <a href="#made">Work</a><a href="#now">Now</a><a href="#contact">Contact</a>
+      </nav>
       <span class="place">Pittsburgh <time id="clock" datetime="">00:00:00</time></span>
     </header>
+
+    <!-- Progress index: where you are, always visible. -->
+    <ol class="index" aria-label="Progress">
+      <li data-beat="hero" class="is-on"><span class="n">01</span><span class="t">Adam</span></li>
+      <li data-beat="made"><span class="n">02</span><span class="t">Work</span></li>
+      <li data-beat="now"><span class="n">03</span><span class="t">Now</span></li>
+      <li data-beat="contact"><span class="n">04</span><span class="t">Contact</span></li>
+    </ol>
 
     <!-- The dock: the hub, always one glance away once you have scrolled past the first screen. -->
     <nav class="dock" aria-label="Links">
@@ -27,7 +41,8 @@
     </nav>
 
     <main id="page">
-      <section class="beat beat-hero" aria-label="Adam Zhu">
+      <section class="beat beat-hero" id="hero" aria-label="Adam Zhu">
+        <div class="frame" id="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div class="statement">
           <h1 class="line">Adam Zhu</h1>
           <p class="sub">Statistics and machine learning at Carnegie Mellon. Building TrueLine.</p>
@@ -48,7 +63,7 @@
         <p class="who-line">Research at NIST, CSAFE, and the Virtual Reality Applications Center at Iowa State. One iOS app on the App Store.</p>
       </section>
 
-      <section class="beat beat-made" aria-label="Made">
+      <section class="beat beat-made" id="made" aria-label="Made">
         <p class="beat-title" data-reveal>Made</p>
         <ul class="rail" data-reveal>
           <li class="piece">
@@ -75,14 +90,14 @@
         </ul>
       </section>
 
-      <section class="beat beat-now" data-reveal>
+      <section class="beat beat-now" id="now" data-reveal>
         <p class="beat-title">Now</p>
         <p class="now-line">Back in Pittsburgh for the fall.</p>
         <p class="now-line">TrueLine is on the App Store. Working on what it should learn next.</p>
         <p class="now-line">Bowling on Thursdays. Bassoon when the neighbors are out.</p>
       </section>
 
-      <section class="beat beat-end">
+      <section class="beat beat-end" id="contact">
         <p class="end-line" data-reveal>Say hi.</p>
         <button class="email" id="copy-email" type="button" data-reveal>
           <span class="email-text">adamzhu@andrew.cmu.edu</span>

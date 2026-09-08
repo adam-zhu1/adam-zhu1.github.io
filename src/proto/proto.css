@@ -5,6 +5,7 @@
   --ink: #f1f1ee;
   --ink-dim: #8a8a86;
   --line: rgba(241, 241, 238, 0.16);
+  --swap: 0.9s;
   --font: "Switzer", "Helvetica Neue", Arial, sans-serif;
   --ease-out: cubic-bezier(0.2, 0.7, 0.1, 1);
   --pad: clamp(24px, 5vw, 72px);
@@ -19,6 +20,44 @@ html, body {
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
 }
+/* The page turns light partway down, like a room with the blinds opened. */
+body.light {
+  --bg: #d8dbde;
+  --ink: #101214;
+  --ink-dim: #5f6570;
+  --line: rgba(16, 18, 20, 0.18);
+}
+body { transition: background var(--swap) var(--ease-out), color var(--swap) var(--ease-out); }
+
+/* Boot ------------------------------------------------------------------- */
+.boot { position: fixed; inset: 0; z-index: 10; background: #060606; display: grid; place-items: center; transition: opacity 0.9s var(--ease-out); }
+.boot.is-done { opacity: 0; pointer-events: none; }
+.boot-line { width: min(46vw, 620px); height: 2px; background: rgba(241, 241, 238, 0.14); position: relative; transform-origin: 50% 50%; }
+.boot-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--ink); }
+
+/* Frame: the object lives inside this on screen one; corner marks like a viewfinder. */
+.frame { position: absolute; right: var(--pad); top: calc(var(--pad) + 40px); width: min(44vw, 640px); aspect-ratio: 4 / 3; pointer-events: none; opacity: 1; transition: opacity 0.6s var(--ease-out); }
+.frame i { position: absolute; width: 14px; height: 14px; border: 1px solid var(--ink-dim); }
+.frame i:nth-child(1) { left: -1px; top: -1px; border-right: 0; border-bottom: 0; }
+.frame i:nth-child(2) { right: -1px; top: -1px; border-left: 0; border-bottom: 0; }
+.frame i:nth-child(3) { left: -1px; bottom: -1px; border-right: 0; border-top: 0; }
+.frame i:nth-child(4) { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
+.frame::after { content: ""; position: absolute; inset: 0; border: 1px solid var(--line); border-radius: 10px; }
+body.scrolled .frame { opacity: 0; }
+#field { transition: clip-path 0s; }
+
+/* Top nav and index --------------------------------------------------------- */
+.topnav { display: flex; gap: 22px; pointer-events: auto; }
+.topnav a { color: var(--ink-dim); text-decoration: none; transition: color 0.4s var(--ease-out); }
+.topnav a:hover, .topnav a:focus-visible { color: var(--ink); outline: none; }
+.index { position: fixed; left: var(--pad); top: 50%; transform: translateY(-50%); z-index: 3; list-style: none; margin: 0; padding: 0 0 0 14px; display: grid; gap: 18px; border-left: 1px solid var(--line); font-size: 12px; letter-spacing: 0.02em; color: var(--ink-dim); opacity: 0; transition: opacity 1.2s var(--ease-out); }
+body.ready .index { opacity: 1; }
+.index li { display: grid; gap: 2px; position: relative; transition: color 0.4s var(--ease-out); }
+.index li::before { content: ""; position: absolute; left: -15px; top: 0; bottom: 0; width: 1px; background: var(--ink); transform: scaleY(0); transition: transform 0.5s var(--ease-out); }
+.index li.is-on { color: var(--ink); }
+.index li.is-on::before { transform: scaleY(1); }
+.index .n { font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .index { display: none; } .frame { display: none; } .topnav { display: none; } }
 
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
@@ -29,6 +68,7 @@ html.lenis, html.lenis body { height: auto; }
 
 /* Fixed chrome ------------------------------------------------------------ */
 .mark {
+  transition: color var(--swap) var(--ease-out), opacity 1.2s var(--ease-out);
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 3;
@@ -208,5 +248,6 @@ body.scrolled .foot .hint { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body, .boot, .index, .index li, .frame,
   .mark, .mark .wordmark, .dock, .dock a, .links a, .email, .piece a, .foot .hint { transition: none; }
 }
