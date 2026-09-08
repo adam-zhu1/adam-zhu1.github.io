@@ -287,8 +287,8 @@ export function TrajectoryChart({
               key={wp.label}
               className={`absolute w-max ${
                 i === WAYPOINTS.length - 1
-                  ? "-translate-x-[85%] -translate-y-[135%] text-right"
-                  : "-translate-x-1/2 -translate-y-[135%] text-center"
+                  ? "translate-x-[-85%] translate-y-[-135%] text-right"
+                  : "-translate-x-1/2 translate-y-[-135%] text-center"
               }`}
               style={waypointStyle(wp.x)}
             >

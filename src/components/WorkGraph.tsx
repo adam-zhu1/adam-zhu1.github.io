@@ -118,7 +118,7 @@ export function WorkGraph({ labels, onOpenProject }: WorkGraphProps) {
                   aria-expanded={isOpen}
                   aria-label={`${proj.title}: details`}
                   onClick={() => setActive(isOpen ? null : proj.id)}
-                  className="group/pt peer absolute -translate-x-1/2 -translate-y-1/2 p-2.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="group/pt peer absolute -translate-x-1/2 -translate-y-1/2 p-2.5 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   <span
                     className={`block h-2.5 w-2.5 rounded-full transition-all duration-200 group-hover/pt:scale-125 ${
@@ -140,7 +140,7 @@ export function WorkGraph({ labels, onOpenProject }: WorkGraphProps) {
                     data-graph-popup
                     aria-label={proj.title}
                     className={`${popupCardClass} ${px > 55 ? "right-5" : "left-5"} ${
-                      py > 55 ? "bottom-[-0.75rem]" : "top-[-0.75rem]"
+                      py > 55 ? "-bottom-3" : "-top-3"
                     }`}
                   >
                     <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/50">
@@ -158,7 +158,7 @@ export function WorkGraph({ labels, onOpenProject }: WorkGraphProps) {
                         setActive(null);
                         onOpenProject(i);
                       }}
-                      className="mt-4 inline-flex items-center gap-2 border border-white/30 bg-white/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/60 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      className="mt-4 inline-flex items-center gap-2 border border-white/30 bg-white/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/60 hover:bg-white/20 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       Open panel →
                     </button>

@@ -33,7 +33,7 @@ export function ScrollDebugOverlay() {
 
   return (
     <div
-      className="pointer-events-auto fixed right-4 top-4 z-[200] max-w-[min(100vw-2rem,22rem)] rounded border border-amber-500/60 bg-black/90 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-amber-100 shadow-lg backdrop-blur-sm"
+      className="pointer-events-auto fixed right-4 top-4 z-200 max-w-[min(100vw-2rem,22rem)] rounded-sm border border-amber-500/60 bg-black/90 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-amber-100 shadow-lg backdrop-blur-xs"
       aria-live="polite"
     >
       <p className="mb-1.5 text-amber-400/90">Scroll debug</p>
@@ -45,7 +45,7 @@ export function ScrollDebugOverlay() {
       </dl>
       <button
         type="button"
-        className="mt-2 w-full rounded border border-white/20 bg-white/5 py-1.5 text-[9px] text-white/80 hover:bg-white/10"
+        className="mt-2 w-full rounded-sm border border-white/20 bg-white/5 py-1.5 text-[9px] text-white/80 hover:bg-white/10"
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(String(y));

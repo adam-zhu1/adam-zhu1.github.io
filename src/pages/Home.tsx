@@ -82,7 +82,7 @@ function HoverLetter({ char, reducedMotion }: { char: string; reducedMotion: boo
   const [jitter, setJitter] = useState<{ x: number; y: number } | null>(null);
   return (
     <span
-      className="inline-block origin-center transition-transform duration-[480ms] ease-[cubic-bezier(0.25,0.85,0.35,1)]"
+      className="inline-block origin-center transition-transform duration-480 ease-[cubic-bezier(0.25,0.85,0.35,1)]"
       style={{
         transform:
           jitter && !reducedMotion ? `translate(${jitter.x}px, ${jitter.y}px)` : undefined,
@@ -150,7 +150,7 @@ function IconExternal({ className }: { className?: string }) {
 }
 
 const linkPillClass =
-  "group/pill inline-flex items-center gap-2 border border-white/25 bg-black/40 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/85 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+  "group/pill inline-flex items-center gap-2 border border-white/25 bg-black/40 px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/85 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 /** Project link buttons (GitHub / paper / site …). Renders nothing when there are no links. */
 function ProjectLinks({
@@ -237,7 +237,7 @@ function getInitialIntroStep(): IntroStep {
 }
 
 const linkClass =
-  "group inline-flex items-center gap-2 border border-white/25 bg-black/55 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+  "group inline-flex items-center gap-2 border border-white/25 bg-black/55 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-white/95 transition-colors hover:border-white/55 hover:bg-white/10 hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 /** Reusable on-enter reveal: fades/slides in once an ancestor has `is-in`. */
 function reveal(i: number): { className: string; style: CSSProperties } {
@@ -524,11 +524,11 @@ export default function Home() {
   const navVisible = introStep >= 2 && activeScreen !== "home";
 
   const tocLinkClass = (id: string) =>
-    `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+    `group block w-full text-left font-mono text-[10px] uppercase tracking-[0.22em] transition-colors focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
       activeScreen === id ? "text-white" : "text-white/45 hover:text-white"
     }`;
   const topNavLinkClass = (id: string) =>
-    `rounded-sm px-2 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-[10px] sm:tracking-[0.22em] ${
+    `rounded-xs px-2 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] transition-colors focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-[10px] sm:tracking-[0.22em] ${
       activeScreen === id ? "text-white" : "text-white/50 hover:text-white"
     }`;
 
@@ -584,7 +584,7 @@ export default function Home() {
 
       {showOverlay && (
         <div
-          className={`pointer-events-none fixed inset-0 z-50 bg-black transition-opacity duration-[700ms] ease-out ${
+          className={`pointer-events-none fixed inset-0 z-50 bg-black transition-opacity duration-700 ease-out ${
             introStep === 1 ? "opacity-0" : "opacity-100"
           }`}
           aria-hidden
@@ -603,7 +603,7 @@ export default function Home() {
           <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-5 py-3 sm:px-10">
             <a
               href="#home"
-              className="inline-flex shrink-0 items-center gap-2.5 normal-case text-white transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="inline-flex shrink-0 items-center gap-2.5 normal-case text-white transition-colors hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               aria-label="Adam Zhu, back to top"
               onClick={(e) => {
                 e.preventDefault();
@@ -615,7 +615,7 @@ export default function Home() {
                 alt=""
                 width={28}
                 height={28}
-                className="h-7 w-7 shrink-0 rounded-sm"
+                className="h-7 w-7 shrink-0 rounded-xs"
                 decoding="async"
               />
             </a>
@@ -643,7 +643,7 @@ export default function Home() {
                 href={RESUME_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="group inline-flex shrink-0 items-center gap-1.5 rounded-sm border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
+                className="group inline-flex shrink-0 items-center gap-1.5 rounded-xs border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
               >
                 <IconDownload className="h-3.5 w-3.5" />
                 Resume
@@ -678,7 +678,7 @@ export default function Home() {
                       e.preventDefault();
                       navigateTo(s.id);
                     }}
-                    className="group/item flex items-center gap-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    className="group/item flex items-center gap-3 py-1.5 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     <span
                       aria-hidden
@@ -687,7 +687,7 @@ export default function Home() {
                       }`}
                     />
                     <span
-                      className={`max-w-0 overflow-hidden whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.2em] opacity-0 transition-all duration-300 group-hover/sn:max-w-[12rem] group-hover/sn:opacity-100 ${
+                      className={`max-w-0 overflow-hidden whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.2em] opacity-0 transition-all duration-300 group-hover/sn:max-w-48 group-hover/sn:opacity-100 ${
                         active ? "text-white" : "text-white/55"
                       }`}
                     >
@@ -717,7 +717,7 @@ export default function Home() {
               <a
                 href="#home"
                 aria-label="Adam Zhu, back to top"
-                className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex items-center gap-2.5 normal-case text-white/50 transition-colors hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 onClick={(e) => {
                   e.preventDefault();
                   goToScreen("home");
@@ -728,7 +728,7 @@ export default function Home() {
                   alt=""
                   width={36}
                   height={36}
-                  className="h-8 w-8 shrink-0 rounded-sm sm:h-9 sm:w-9"
+                  className="h-8 w-8 shrink-0 rounded-xs sm:h-9 sm:w-9"
                   decoding="async"
                 />
               </a>
@@ -739,7 +739,7 @@ export default function Home() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Résumé (PDF)"
-                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-sm border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
+                  className="group inline-flex shrink-0 items-center gap-1.5 rounded-xs border border-white/40 bg-white/10 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white transition-colors hover:border-white/70 hover:bg-white/20 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3.5 sm:text-[10px] sm:tracking-[0.2em]"
                 >
                   <IconDownload className="h-3.5 w-3.5" />
                   Resume
@@ -762,7 +762,7 @@ export default function Home() {
                     >
                       <div
                         aria-hidden
-                        className="pointer-events-none absolute -left-[5%] -right-[5%] -top-[24%] -bottom-[24%] z-0"
+                        className="pointer-events-none absolute left-[-5%] right-[-5%] top-[-24%] bottom-[-24%] z-0"
                       >
                         <div className="landing-name-backing absolute inset-0">
                           <div className="az-aurora absolute inset-0">
@@ -809,7 +809,7 @@ export default function Home() {
                     <div className="intro-line-inner intro-line-inner-v min-h-[min(40vh,24rem)] w-px min-w-px flex-1 origin-top bg-white" />
                   </div>
                   <div
-                    className="landing-el landing-scroll-cue-under mt-auto flex min-h-[5.25rem] shrink-0 flex-col items-center justify-end gap-0 pt-5 pb-2 sm:min-h-[5.75rem] sm:pt-6 sm:pb-3"
+                    className="landing-el landing-scroll-cue-under mt-auto flex min-h-21 shrink-0 flex-col items-center justify-end gap-0 pt-5 pb-2 sm:min-h-23 sm:pt-6 sm:pb-3"
                     aria-hidden={activeScreen !== "home"}
                   >
                     <div
@@ -894,7 +894,7 @@ export default function Home() {
 
               {/* Mobile scroll cue */}
               <div
-                className="landing-el landing-scroll-cue-under mt-16 flex min-h-[3.5rem] flex-col items-center justify-center gap-0 lg:hidden"
+                className="landing-el landing-scroll-cue-under mt-16 flex min-h-14 flex-col items-center justify-center gap-0 lg:hidden"
                 aria-hidden={activeScreen !== "home"}
               >
                 <div
@@ -1007,7 +1007,7 @@ export default function Home() {
             </aside>
           </div>
         </div>
-        <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
+        <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 z-0 opacity-70 sm:bottom-10`}>
           <SectionIndexCorner label="About" />
         </div>
         </div>
@@ -1146,11 +1146,11 @@ export default function Home() {
             </div>
 
             {/* Persistent rail header + progress (pinned over the stage) */}
-            <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
+            <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 z-0 opacity-70 sm:bottom-10`}>
               <SectionIndexCorner label="Work" />
             </div>
             <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center sm:bottom-9">
-              <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/55 px-4 py-2 backdrop-blur-sm">
+              <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/55 px-4 py-2 backdrop-blur-xs">
                 {Array.from({ length: WORK_PANEL_COUNT }).map((_, k) => (
                   <button
                     key={k}
@@ -1179,7 +1179,7 @@ export default function Home() {
             stop per project. The last marker stays 100dvh so scroll progress hits exactly 1.0 at
             the final panel. The negative top margin overlaps them with the pinned stage above.
           */}
-          <div aria-hidden className="pointer-events-none -mt-[100dvh]">
+          <div aria-hidden className="pointer-events-none mt-[-100dvh]">
             {Array.from({ length: WORK_PANEL_COUNT }).map((_, k) => (
               <div
                 key={k}
@@ -1245,7 +1245,7 @@ export default function Home() {
                   <a
                     href={RESUME_URL}
                     download
-                    className="underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    className="underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     Download the PDF
                   </a>
@@ -1254,7 +1254,7 @@ export default function Home() {
             </aside>
           </div>
         </div>
-        <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 -z-0 opacity-70 sm:bottom-10`}>
+        <div aria-hidden className={`${sectionIndexCornerAbsoluteWrap} bottom-8 z-0 opacity-70 sm:bottom-10`}>
           <SectionIndexCorner label="Contact" />
         </div>
       </section>

@@ -1,6 +1,200 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Bebas Neue', Impact, ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  --color-az-indigo: #8fa8f0;
+
+  --container-measure: 42rem;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility az-aurora {
+  /**
+   * Hero name aurora — soft, blurred color shapes drifting behind the wordmark (replaces the old
+   * rectangular panel for a more abstract look). The container carries a subtle cursor parallax via
+   * --hero-px / --hero-py (set from JS, default 0); each blob also drifts on its own long loop.
+   */
+  will-change: transform;
+  transform: translate3d(
+    calc(var(--hero-px, 0) * 18px),
+    calc(var(--hero-py, 0) * 14px),
+    0
+  );
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility az-aurora__blob {
+  position: absolute;
+  filter: blur(46px);
+  opacity: 0.6;
+  will-change: transform;
+}
+
+@utility az-aurora__blob--a {
+  left: -4%;
+  top: -22%;
+  width: 56%;
+  height: 145%;
+  background: radial-gradient(
+    closest-side,
+    rgba(81, 43, 135, 0.95),
+    rgba(81, 43, 135, 0) 72%
+  );
+  @media (prefers-reduced-motion: no-preference) {
+    animation: az-drift-a 19s ease-in-out infinite alternate;
+  }
+}
+
+@utility az-aurora__blob--b {
+  left: 28%;
+  top: -26%;
+  width: 48%;
+  height: 155%;
+  background: radial-gradient(
+    closest-side,
+    rgba(0, 42, 121, 0.9),
+    rgba(0, 42, 121, 0) 72%
+  );
+  @media (prefers-reduced-motion: no-preference) {
+    animation: az-drift-b 24s ease-in-out infinite alternate;
+  }
+}
+
+@utility az-aurora__blob--c {
+  right: -6%;
+  top: -6%;
+  width: 52%;
+  height: 135%;
+  background: radial-gradient(
+    closest-side,
+    rgba(137, 20, 70, 0.85),
+    rgba(137, 20, 70, 0) 72%
+  );
+  @media (prefers-reduced-motion: no-preference) {
+    animation: az-drift-c 21s ease-in-out infinite alternate;
+  }
+}
+
+@utility bg-az-toc-panel {
+  /** Contents / TOC rail */
+  background-image:
+    linear-gradient(
+      168deg,
+      rgba(0, 42, 121, 0.24) 0%,
+      rgba(81, 43, 135, 0.17) 50%,
+      rgba(0, 0, 0, 0.38) 100%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
+}
+
+@utility bg-az-card {
+  /** Primary content cards (About / Connect) */
+  background-image:
+    linear-gradient(
+      142deg,
+      rgba(0, 42, 121, 0.22) 0%,
+      rgba(81, 43, 135, 0.14) 38%,
+      rgba(137, 20, 70, 0.11) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.055) 0%,
+      rgba(0, 0, 0, 0.34) 100%
+    );
+}
+
+@utility bg-az-card-muted {
+  background-image:
+    linear-gradient(
+      160deg,
+      rgba(81, 43, 135, 0.15) 0%,
+      rgba(137, 20, 70, 0.11) 55%,
+      rgba(0, 0, 0, 0.32) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.045) 0%,
+      rgba(0, 0, 0, 0.28) 100%
+    );
+}
+
+@utility bg-az-page {
+  /**
+   * One continuous backdrop for the WHOLE page (rendered as a single full-height layer, not per
+   * section), so there are never seams between sections. Soft color auras are placed down the page
+   * by percentage — navy near the top, purple through the middle (Work), magenta/red toward the
+   * bottom — over a faint vertical wash. Because it's a single element, the color transitions are
+   * perfectly smooth as you scroll.
+   */
+  background-color: #000;
+  background-image:
+    radial-gradient(
+      55% 22% at 82% 7%,
+      rgba(81, 43, 135, 0.22) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      60% 24% at 12% 30%,
+      rgba(0, 42, 121, 0.22) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      55% 22% at 86% 58%,
+      rgba(81, 43, 135, 0.18) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      60% 22% at 14% 84%,
+      rgba(137, 20, 70, 0.2) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      50% 20% at 82% 96%,
+      rgba(174, 12, 0, 0.16) 0%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(0, 42, 121, 0.05) 0%,
+      rgba(81, 43, 135, 0.05) 50%,
+      rgba(137, 20, 70, 0.06) 100%
+    );
+}
+
+@utility bg-az-grid {
+  /** Continuous blueprint grid — one full-page layer so the lines never reset/seam between sections. */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px);
+  background-size: min(3.5rem, 10vw) min(3.5rem, 10vw);
+}
+
+@utility bg-az-grain {
+  /** Subtle film grain — one full-page layer at very low opacity for a filmic, premium texture. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
 
 @layer base {
   :root {
@@ -23,58 +217,6 @@
 }
 
 @layer utilities {
-  /**
-   * Hero name aurora — soft, blurred color shapes drifting behind the wordmark (replaces the old
-   * rectangular panel for a more abstract look). The container carries a subtle cursor parallax via
-   * --hero-px / --hero-py (set from JS, default 0); each blob also drifts on its own long loop.
-   */
-  .az-aurora {
-    will-change: transform;
-    transform: translate3d(
-      calc(var(--hero-px, 0) * 18px),
-      calc(var(--hero-py, 0) * 14px),
-      0
-    );
-    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .az-aurora__blob {
-    position: absolute;
-    filter: blur(46px);
-    opacity: 0.6;
-    will-change: transform;
-  }
-  .az-aurora__blob--a {
-    left: -4%;
-    top: -22%;
-    width: 56%;
-    height: 145%;
-    background: radial-gradient(closest-side, rgba(81, 43, 135, 0.95), rgba(81, 43, 135, 0) 72%);
-  }
-  .az-aurora__blob--b {
-    left: 28%;
-    top: -26%;
-    width: 48%;
-    height: 155%;
-    background: radial-gradient(closest-side, rgba(0, 42, 121, 0.9), rgba(0, 42, 121, 0) 72%);
-  }
-  .az-aurora__blob--c {
-    right: -6%;
-    top: -6%;
-    width: 52%;
-    height: 135%;
-    background: radial-gradient(closest-side, rgba(137, 20, 70, 0.85), rgba(137, 20, 70, 0) 72%);
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .az-aurora__blob--a {
-      animation: az-drift-a 19s ease-in-out infinite alternate;
-    }
-    .az-aurora__blob--b {
-      animation: az-drift-b 24s ease-in-out infinite alternate;
-    }
-    .az-aurora__blob--c {
-      animation: az-drift-c 21s ease-in-out infinite alternate;
-    }
-  }
   @keyframes az-drift-a {
     from {
       transform: translate3d(-3%, -4%, 0) scale(1);
@@ -98,77 +240,5 @@
     to {
       transform: translate3d(-3%, 5%, 0) scale(1.1);
     }
-  }
-
-  /** Contents / TOC rail */
-  .bg-az-toc-panel {
-    background-image:
-      linear-gradient(
-        168deg,
-        rgba(0, 42, 121, 0.24) 0%,
-        rgba(81, 43, 135, 0.17) 50%,
-        rgba(0, 0, 0, 0.38) 100%
-      ),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 65%);
-  }
-
-  /** Primary content cards (About / Connect) */
-  .bg-az-card {
-    background-image:
-      linear-gradient(
-        142deg,
-        rgba(0, 42, 121, 0.22) 0%,
-        rgba(81, 43, 135, 0.14) 38%,
-        rgba(137, 20, 70, 0.11) 100%
-      ),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.34) 100%);
-  }
-
-  .bg-az-card-muted {
-    background-image:
-      linear-gradient(
-        160deg,
-        rgba(81, 43, 135, 0.15) 0%,
-        rgba(137, 20, 70, 0.11) 55%,
-        rgba(0, 0, 0, 0.32) 100%
-      ),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(0, 0, 0, 0.28) 100%);
-  }
-
-  /**
-   * One continuous backdrop for the WHOLE page (rendered as a single full-height layer, not per
-   * section), so there are never seams between sections. Soft color auras are placed down the page
-   * by percentage — navy near the top, purple through the middle (Work), magenta/red toward the
-   * bottom — over a faint vertical wash. Because it's a single element, the color transitions are
-   * perfectly smooth as you scroll.
-   */
-  .bg-az-page {
-    background-color: #000;
-    background-image:
-      radial-gradient(55% 22% at 82% 7%, rgba(81, 43, 135, 0.22) 0%, transparent 62%),
-      radial-gradient(60% 24% at 12% 30%, rgba(0, 42, 121, 0.22) 0%, transparent 62%),
-      radial-gradient(55% 22% at 86% 58%, rgba(81, 43, 135, 0.18) 0%, transparent 62%),
-      radial-gradient(60% 22% at 14% 84%, rgba(137, 20, 70, 0.20) 0%, transparent 62%),
-      radial-gradient(50% 20% at 82% 96%, rgba(174, 12, 0, 0.16) 0%, transparent 62%),
-      linear-gradient(
-        180deg,
-        rgba(0, 42, 121, 0.05) 0%,
-        rgba(81, 43, 135, 0.05) 50%,
-        rgba(137, 20, 70, 0.06) 100%
-      );
-  }
-
-  /** Continuous blueprint grid — one full-page layer so the lines never reset/seam between sections. */
-  .bg-az-grid {
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px);
-    background-size: min(3.5rem, 10vw) min(3.5rem, 10vw);
-  }
-
-  /** Subtle film grain — one full-page layer at very low opacity for a filmic, premium texture. */
-  .bg-az-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 160px 160px;
   }
 }

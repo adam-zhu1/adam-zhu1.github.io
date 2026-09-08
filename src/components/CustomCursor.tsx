@@ -87,7 +87,7 @@ export function CustomCursor() {
 
   return (
     <div
-      className="pointer-events-none fixed left-0 top-0 z-[100]"
+      className="pointer-events-none fixed left-0 top-0 z-100"
       style={{
         transform: `translate3d(${render.x}px, ${render.y}px, 0) translate(-50%, -50%)`,
         opacity: visible ? 1 : 0,

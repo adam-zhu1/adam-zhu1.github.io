@@ -51,7 +51,7 @@ export function NavWipe({
     <div
       aria-hidden
       onTransitionEnd={onEnd}
-      className="pointer-events-none fixed inset-0 z-[70] flex items-end px-5 pb-8 sm:px-10 sm:pb-10"
+      className="pointer-events-none fixed inset-0 z-70 flex items-end px-5 pb-8 sm:px-10 sm:pb-10"
       style={{
         background: WIPE_BACKGROUND,
         transform: `translate3d(0, ${y}, 0)`,
