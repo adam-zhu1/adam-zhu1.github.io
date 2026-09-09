@@ -1,11 +1,23 @@
 # adam-zhu1.github.io
 
-Personal site built with **Vite**, **React**, **TypeScript**, and **Tailwind CSS**.
+Personal site. Vite, React, TypeScript, Tailwind CSS v4, Three.js, GSAP.
+
+## Layout
+
+```
+index.html        entry for the real site
+src/              the real site (React). Being rebuilt from scratch on `redesign`.
+public/           static files served as-is: favicon, resume PDF, robots, sitemap
+prototypes/       throwaway vanilla Three.js + GSAP studies, not part of the build
+  proto.html      direction A: boot line, framed object, progress index, dark-to-light
+  archive/        rejected studies (look study, orbit hub), kept for reference
+docs/             planning docs. DESIGN.md is tracked; the brief and research are not.
+```
 
 ## Branches
 
-- **`main`** — what GitHub Pages deploys today.
-- **`restart`** — clean rebuild: minimal dependencies, custom typography, no UI kit. Merge to `main` when you’re ready to go live.
+- `main` is what GitHub Pages deploys.
+- `redesign` is the rebuild. Merge to `main` in small steps once screens are real.
 
 ## Development
 
@@ -14,25 +26,14 @@ npm install
 npm run dev
 ```
 
-App runs at [http://localhost:8080](http://localhost:8080) (see `vite.config.ts`).
+The site runs at http://localhost:8080. Prototypes are served from the same dev
+server, for example http://localhost:8080/prototypes/proto.html.
 
-### Scroll debug overlay
-
-Live panel for `scroll Y`, native `window Y`, and `max Y` (px).
-
-- Toggle in `src/config/site.ts` via `SCROLL_DEBUG_OVERLAY`.
-- Default is `false` (off).
-
-## Build
+## Build and deploy
 
 ```bash
 npm run build
 ```
 
-Output: `dist/`. CI copies `index.html` to `404.html` for client-side routing on GitHub Pages.
-
-## Deploy
-
-GitHub Actions (`.github/workflows/deploy.yml`) deploys on pushes to **`main`** only.
-
-To preview the restart work **without** switching production: push the `restart` branch and use GitHub’s branch preview / open locally. When satisfied, merge `restart` → `main`.
+Output goes to `dist/`. Only `index.html` is built; prototypes are dev-only.
+GitHub Actions (`.github/workflows/deploy.yml`) deploys on pushes to `main`.
