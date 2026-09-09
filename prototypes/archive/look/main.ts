@@ -5,8 +5,8 @@
 import * as THREE from "three";
 import gsap from "gsap";
 import "./look.css";
-import { buildShapes } from "../proto/shapes";
-import { fragmentShader, vertexShader } from "../proto/shaders";
+import { buildShapes } from "../../proto/shapes";
+import { fragmentShader, vertexShader } from "../../proto/shaders";
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const isSmall = window.innerWidth < 720;

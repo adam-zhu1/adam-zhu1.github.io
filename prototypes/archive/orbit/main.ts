@@ -8,8 +8,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import "./orbit.css";
-import { buildShapes } from "../proto/shapes";
-import { fragmentShader, vertexShader } from "../proto/shaders";
+import { buildShapes } from "../../proto/shapes";
+import { fragmentShader, vertexShader } from "../../proto/shaders";
 
 gsap.registerPlugin(ScrollTrigger);
 
