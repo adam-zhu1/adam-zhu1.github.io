@@ -1,22 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Adam Zhu">
-  <!--
-    AZ monogram: the A's left leg doubles as the Z's diagonal. The Z (top bar, shared
-    diagonal, bottom bar) wears a blue-violet gradient; the A's right leg and crossbar
-    stay white so the mark reads as an "A" at a glance and works in one color.
-    Geometry: even 6-unit margins, symmetric leg slopes, uniform ~8-unit perpendicular
-    stroke weight, crossbar at ~65% height with >=4-unit gaps so nothing fuses at 16px.
-    Gradient stops are >=3.5:1 on the black tile (WCAG 1.4.11).
-  -->
-  <defs>
-    <linearGradient id="az-z" x1="0" y1="0" x2="0.6" y2="1">
-      <stop offset="0" stop-color="#2563EB"/>
-      <stop offset="1" stop-color="#7C3AED"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="4" fill="#000"/>
-  <path fill="url(#az-z)" d="M6 6 L36.4 6 L33.1 14 L6 14 Z"/>
-  <path fill="url(#az-z)" d="M27.6 6 L36.4 6 L14.8 58 L6 58 Z"/>
-  <path fill="url(#az-z)" d="M9.3 50 L38 50 L34.7 58 L6 58 Z"/>
-  <path fill="#fff" d="M27.6 6 L36.4 6 L58 58 L49.2 58 Z"/>
-  <path fill="#fff" d="M28 36 L46 36 L49.3 44 L24.7 44 Z"/>
+  <rect width="64" height="64" rx="12" fill="#070708"/>
+  <path d="M32.00 9.00 A23 23 0 1 1 23.53 53.38" fill="none" stroke="#8d8d96" stroke-width="3.4" stroke-linecap="round"/>
+  <g fill="#f4f4f2" transform="translate(32 33) scale(0.66) translate(-33 -31)">
+    <path d="M12 44 L20.5 18 L27.5 18 L36 44 L29.4 44 L27.7 38.2 L20.3 38.2 L18.6 44 Z M21.9 32.6 L26.1 32.6 L24 25.4 Z"/>
+    <path d="M36.5 18 L54 18 L54 23.6 L44.2 38.4 L54 38.4 L54 44 L36 44 L36 38.4 L45.8 23.6 L36.5 23.6 Z"/>
+  </g>
+  <circle cx="32" cy="9" r="4.6" fill="#40e69e"/>
 </svg>

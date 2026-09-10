@@ -71,7 +71,6 @@ export default function App() {
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
-  const soonRef = useReveal<HTMLDivElement>();
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
   const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
@@ -115,7 +114,17 @@ export default function App() {
       </nav>
 
       <div className="bar">
-        <span>Adam Zhu</span>
+        <a className="mark" href="#adam" aria-label="Adam Zhu, back to the top">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path className="arc" d="M12 3.4 A8.6 8.6 0 1 1 8.83 19.6" fill="none" stroke="var(--frame)" strokeWidth="1.7" strokeLinecap="round" />
+            <g className="az" fill="currentColor" transform="translate(12 12.6) scale(.236) translate(-33 -31)">
+              <path d="M12 44 L20.5 18 L27.5 18 L36 44 L29.4 44 L27.7 38.2 L20.3 38.2 L18.6 44 Z M21.9 32.6 L26.1 32.6 L24 25.4 Z" />
+              <path d="M36.5 18 L54 18 L54 23.6 L44.2 38.4 L54 38.4 L54 44 L36 44 L36 38.4 L45.8 23.6 L36.5 23.6 Z" />
+            </g>
+            <circle className="today" cx="12" cy="3.4" r="1.8" />
+          </svg>
+          <span>Adam Zhu</span>
+        </a>
         <span className="clock">Pittsburgh {clock}</span>
       </div>
 
@@ -145,20 +154,8 @@ export default function App() {
           </section>
 
           <section className="sec" id="projects">
-            <div className="sechead in" ref={headProjects}><h2>Projects</h2><span>2 of 2</span></div>
+            <div className="sechead in" ref={headProjects}><h2>Projects</h2><span>1 shipped</span></div>
             <TrueLine />
-            <div className="proj soon" ref={soonRef}>
-              <div className="in">
-                <h3>Next project</h3>
-                <p className="desc">
-                  A hackathon entry, this week. It gets the same treatment as TrueLine: what it is, how it
-                  works, animated from its real data, in this frame.
-                </p>
-              </div>
-              <Frame className="slot in" seed={2} tag="02 Hackathon" label={<><b>September 2026</b> · in progress</>}>
-                <i />Frame reserved
-              </Frame>
-            </div>
           </section>
 
           <section className="sec" id="more">
