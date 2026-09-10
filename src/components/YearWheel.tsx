@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import commits from "../data/commits.json";
 import { prefersReducedMotion } from "../lib/useReveal";
 
@@ -14,7 +14,7 @@ export type WheelHandle = { play: () => void; total: number };
  * day is a spoke from the rim inward, longer for more commits. Rebuilt from commits.json,
  * which a GitHub Action refreshes daily, so the wheel grows on its own.
  */
-export function YearWheel({ onReady }: { onReady?: (h: WheelHandle) => void }) {
+export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandle) => void; intro?: boolean }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tip, setTip] = useState<{ x: number; y: number; head: string; body: string } | null>(null);
 
@@ -45,6 +45,16 @@ export function YearWheel({ onReady }: { onReady?: (h: WheelHandle) => void }) {
       months.push({ a: angOf(m), label: MON[m.getMonth()], year: m.getMonth() === 0 ? m.getFullYear() : undefined });
     return { days, months, total: list.length, repos: new Set(list.map(c => c.r)).size, start };
   }, []);
+
+  /* hidden before the first paint, so the intro starts from an empty rim */
+  useLayoutEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || !intro || prefersReducedMotion()) return;
+    svg.querySelectorAll<SVGElement>(".rim, .spoke").forEach(n => {
+      n.style.strokeDasharray = "1"; n.style.strokeDashoffset = "1";
+    });
+    svg.querySelectorAll<SVGElement>(".mon, .mtick, .center, .sub, .todaydot").forEach(n => { n.style.opacity = "0"; });
+  }, [intro]);
 
   /* the sweep turns once every two minutes and brightens spokes as it passes */
   useEffect(() => {

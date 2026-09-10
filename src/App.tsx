@@ -4,7 +4,6 @@ import { YearWheel, type WheelHandle } from "./components/YearWheel";
 import { TrueLine } from "./components/TrueLine";
 import { WorkCard } from "./components/WorkCard";
 import { Ambience } from "./components/Ambience";
-import { Boot, seen } from "./components/Boot";
 import { useReveal, prefersReducedMotion } from "./lib/useReveal";
 
 const SECTIONS = [
@@ -60,35 +59,52 @@ export default function App() {
   const clock = useClock();
   const cur = useCurrentSection();
   const wheel = useRef<WheelHandle | null>(null);
-  const booting = !prefersReducedMotion() && !seen.get();
-  const [showBoot, setShowBoot] = useState(booting);
-  const [revealed, setRevealed] = useState(!booting);
+  /* The intro plays on every load. It is the site's opening, not a one-time gate:
+     the wheel assembles, the name rises out of its own baseline, then the page follows. */
+  const reduce = prefersReducedMotion();
+  const [step, setStep] = useState(reduce ? 3 : 0);
+  const [revealed, setRevealed] = useState(reduce);
+  const [wheelReady, setWheelReady] = useState(false);
+  const [swipe, setSwipe] = useState(false);
 
   const nameFrame = useRef<FrameHandle>(null);
-  const sideRef = useReveal<HTMLDivElement>({ skip: booting });
+  const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const soonRef = useReveal<HTMLDivElement>();
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
-  const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; }, []);
-  const playBoot = useCallback(() => wheel.current?.play(), []);
-  const finishBoot = useCallback(() => {
-    setRevealed(true);
-    nameFrame.current?.show();
-    const el = sideRef.current;
-    if (el) {
-      el.classList.add("on");
-      el.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${220 + i * 90}ms`; b.classList.add("on"); });
-    }
-  }, [sideRef]);
+  const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
 
-  const replay = () => { setShowBoot(false); requestAnimationFrame(() => setShowBoot(true)); };
+  const runIntro = useCallback(() => {
+    if (reduce) return;
+    setStep(0); setSwipe(false); setRevealed(false);
+    const el = sideRef.current;
+    el?.classList.remove("on");
+    el?.querySelectorAll<HTMLElement>(".in").forEach(b => { b.classList.remove("on"); b.style.transitionDelay = ""; });
+    scrollTo(0, 0);
+    wheel.current?.play();
+    const ts = [
+      setTimeout(() => { setStep(1); nameFrame.current?.show(); }, 2300),   // the frame draws round the name
+      setTimeout(() => { setStep(2); setSwipe(true); }, 2650),              // the name rises, the rule sweeps
+      setTimeout(() => {                                                    // the rest of the page follows
+        setStep(3);
+        const e = sideRef.current;
+        if (e) {
+          e.classList.add("on");
+          e.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${i * 110}ms`; b.classList.add("on"); });
+        }
+      }, 3250),
+      setTimeout(() => setRevealed(true), 3800),
+    ];
+    return () => ts.forEach(clearTimeout);
+  }, [reduce]);
+
+  useEffect(() => { if (wheelReady) return runIntro(); }, [wheelReady, runIntro]);
 
   return (
     <>
       <Ambience active={revealed} />
-      {showBoot && <Boot key={String(showBoot)} play={playBoot} onDone={finishBoot} />}
 
       <nav className="idx" aria-label="Sections">
         {SECTIONS.map(s => (
@@ -98,7 +114,7 @@ export default function App() {
 
       <div className="bar">
         <span>Adam Zhu</span>
-        <button className="replay" type="button" onClick={replay}>Replay intro</button>
+        <button className="replay" type="button" onClick={runIntro}>Replay intro</button>
         <span className="clock">Pittsburgh {clock}</span>
       </div>
 
@@ -107,8 +123,9 @@ export default function App() {
           <section className="sec hero" id="adam">
             <div className="grid1">
               <div className="side" ref={sideRef}>
-                <Frame label={<><b>name</b></>} hold={booting} handleRef={nameFrame}>
-                  <h1 className="in">Adam Zhu</h1>
+                <Frame label={<><b>name</b></>} hold={!reduce} handleRef={nameFrame}>
+                  <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
+                  <i className={`swipe${swipe ? " go" : ""}`} />
                 </Frame>
                 <p className="kick in">Statistics and machine learning, Carnegie Mellon</p>
                 <p className="lede in">
@@ -122,7 +139,7 @@ export default function App() {
                   <li><a href="/Adam-Zhu-Resume.pdf">Resume</a></li>
                 </ul>
               </div>
-              <div className="wheel"><YearWheel onReady={onWheelReady} /></div>
+              <div className="wheel"><YearWheel onReady={onWheelReady} intro={!reduce} /></div>
             </div>
           </section>
 

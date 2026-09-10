@@ -5,14 +5,36 @@ Personal site. Vite, React, TypeScript, Tailwind CSS v4, Three.js, GSAP.
 ## Layout
 
 ```
-index.html        entry for the real site
-src/              the real site (React). Being rebuilt from scratch on `redesign`.
-public/           static files served as-is: favicon, resume PDF, robots, sitemap
-prototypes/       throwaway vanilla Three.js + GSAP studies, not part of the build
-  proto.html      direction A: boot line, framed object, progress index, dark-to-light
-  archive/        rejected studies (look study, orbit hub), kept for reference
-docs/             planning docs. DESIGN.md is tracked; the brief and research are not.
+index.html            entry, plus the SEO head and the crawler fallback
+src/
+  App.tsx             the page: hero, projects, more work, contact
+  index.css           the whole design system
+  components/         Frame, YearWheel, TrueLine, WorkCard, Ambience, Boot
+  lib/                reveal hooks, and the TrueLine drawing engine
+  data/               commits.json, and TrueLine's track and lane geometry
+public/media/         the TrueLine clip (mp4 + webm) and its poster
+scripts/
+  fetch-commits.mjs   rewrites src/data/commits.json from the GitHub API
+prototypes/           throwaway studies, dev-server only, not in the build
+docs/                 planning docs; the brief, research and handoff are untracked
 ```
+
+## How the moving parts work
+
+- **The year wheel** on the home page is every commit across the public repos, plotted by
+  day around a year with today at the top. It is built from `src/data/commits.json`, which
+  `scripts/fetch-commits.mjs` rewrites on every deploy and once a day on a cron, so the
+  wheel grows on its own without anyone editing the site.
+- **The TrueLine sequence** is driven by the real analysis of one throw:
+  `trueline-track.json` holds 70 tracked frames and `trueline-lane.json` holds the app's own
+  lane geometry. The overlay on the video uses the app's video-surface model and the plan
+  view uses its lane-view model, because TrueLine itself draws those two surfaces
+  differently. Do not "unify" them.
+- **Frames** draw their own four edges and watch themselves, so `.on` always lands on the
+  element the CSS targets. Animations start when a thing is properly on screen, and the
+  TrueLine sequence waits until its window is centred.
+- **Storage access is always wrapped.** A sandboxed frame throws on `sessionStorage`, and an
+  uncaught throw there stops every animation on the page.
 
 ## Branches
 

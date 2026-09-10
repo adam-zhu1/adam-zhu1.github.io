@@ -32,7 +32,7 @@ a { color: inherit; }
 /* ---------- shell ---------- */
 .site { position: relative; z-index: 1; }
 .wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px 0 96px; }
-section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 120px 0 80px; scroll-margin-top: 72px; }
+section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-content: safe center; padding: 88px 0 64px; scroll-margin-top: 72px; }
 
 .bar { position: fixed; left: 0; right: 0; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 40px 18px 96px; font-size: 13.5px; color: var(--ink2); pointer-events: none; }
 .bar > * { pointer-events: auto; }
@@ -110,7 +110,20 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 /* ---------- 01 hero ---------- */
 .hero .grid1 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 72px; align-items: center; }
 .hero .win { display: inline-block; padding: 20px 30px 16px 26px; }
-.hero h1 { margin: 0; font-size: clamp(52px, 7.4vw, 112px); font-weight: 500; letter-spacing: -.045em; line-height: .95; }
+.hero h1 { margin: 0; font-size: clamp(52px, 7.4vw, 112px); font-weight: 500; letter-spacing: -.045em; line-height: .95;
+  clip-path: inset(0 0 -20% 0); transform: none;
+  transition: clip-path 1.05s cubic-bezier(.22,1,.36,1), transform 1.05s cubic-bezier(.22,1,.36,1); }
+.hero h1.pre { clip-path: inset(108% 0 -20% 0); transform: translateY(.14em); }
+/* a mint rule sweeps under the name as it lands, then fades to the frame's own edge */
+.hero .swipe { position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--mint);
+  transform: scaleX(0); transform-origin: left; opacity: 0; }
+.hero .swipe.go { animation: swipe 1.5s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes swipe {
+  0% { transform: scaleX(0); opacity: 1 }
+  55% { transform: scaleX(1); opacity: 1; transform-origin: left }
+  56% { transform-origin: right }
+  100% { transform: scaleX(1); opacity: 0 }
+}
 .hero .kick { font-size: 14px; color: var(--mute); margin: 26px 0 0; }
 .hero .side p.lede { margin: 22px 0 0; font-size: 19px; color: var(--ink2); max-width: 44ch; line-height: 1.55; }
 .hero ul { display: flex; flex-wrap: wrap; gap: 26px; margin: 30px 0 0; padding: 0; list-style: none; }
@@ -137,10 +150,10 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .tip em { font-style: normal; color: var(--mute); }
 
 /* ---------- 02 projects ---------- */
-.sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 34px; }
+.sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; }
 .sechead h2 { margin: 0; font-size: 13.5px; font-weight: 500; color: var(--ink2); }
 .sechead span { font-family: var(--mono); font-size: 11px; color: var(--mute); }
-.proj { display: grid; grid-template-columns: minmax(220px,.8fr) minmax(0,1.9fr) minmax(200px,.75fr); gap: 40px; align-items: start; margin-bottom: 120px; }
+.proj { display: grid; grid-template-columns: minmax(210px,.8fr) minmax(0,1.7fr) minmax(190px,.75fr); gap: 36px; align-items: start; margin-bottom: 110px; }
 .proj h3 { font-size: clamp(30px,3vw,42px); font-weight: 500; letter-spacing: -.035em; line-height: 1; margin: 0; }
 .proj .desc { margin: 16px 0 0; font-size: 16px; color: var(--ink2); }
 .facts { margin: 22px 0 0; font-size: 14.5px; }
@@ -157,17 +170,19 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .ctl { display: flex; gap: 8px; margin-top: 22px; }
 .ctl button { font: inherit; font-size: 12.5px; color: var(--ink2); background: none; border: 1px solid var(--line2); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
 .ctl button:hover { color: var(--ink); border-color: var(--ink2); }
-.appwin { padding: 22px; }
-.app { position: relative; width: 100%; aspect-ratio: 1; }
+.appwin { padding: 18px; }
+/* the block must fit one screen: the animation is sized from what is left after the
+   section heading, the caption and the metrics row, so the numbers are never cut off */
+.app { position: relative; width: 100%; max-width: min(100%, calc(100vh - 400px)); margin-inline: auto; aspect-ratio: 1; }
 .app video { position: absolute; left: 0; top: 0; width: 44.29%; height: 96.8%; object-fit: fill; display: block; background: #000; border-radius: 6px; }
 .app svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.cap { margin-top: 12px; font-size: 13px; color: var(--mute); display: flex; justify-content: space-between; gap: 16px; }
+.cap { margin-top: 10px; font-size: 13px; color: var(--mute); display: flex; justify-content: space-between; gap: 16px; }
 .cap b { color: var(--ink2); font-weight: 400; }
-.nums { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 46px; }
-.num { padding: 12px 12px 10px; border-top: 1px solid var(--line2); opacity: 0; transform: translateY(8px); transition: opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1); }
+.nums { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 24px; }
+.num { padding: 10px 10px 8px; border-top: 1px solid var(--line2); opacity: 0; transform: translateY(8px); transition: opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1); }
 .num.on { opacity: 1; transform: none; }
-.num small { display: block; font-size: 11.5px; color: var(--mute); margin-bottom: 6px; }
-.num b { font-size: 26px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.num small { display: block; font-size: 11px; color: var(--mute); margin-bottom: 4px; }
+.num b { font-size: 23px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .num b.mint { color: var(--mint); }
 .num i { font-style: normal; font-size: 11.5px; color: var(--mute); margin-left: 4px; }
 .proj.soon { grid-template-columns: minmax(0,1fr) 480px; margin-bottom: 0; padding-top: 64px; border-top: 1px solid var(--line); }
@@ -203,9 +218,16 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 @media (max-width: 1180px) { .proj { grid-template-columns: 1fr } .nums { grid-template-columns: repeat(3,1fr) } }
 @media (max-width: 980px) {
   .wrap { padding-left: 64px; padding-right: 24px }
-  .bar { padding-left: 64px; padding-right: 24px }
+  .bar { padding-left: 64px; padding-right: 24px; font-size: 12.5px; white-space: nowrap }
+  .bar .replay { margin-right: 12px; padding: 4px 10px; font-size: 11.5px }
   .proj.soon, .hero .grid1 { grid-template-columns: 1fr }
   .wheel { max-width: 420px; margin: 24px auto 0 }
+}
+@media (max-width: 560px) {
+  .wrap { padding-left: 52px; padding-right: 18px }
+  .bar { padding-left: 52px; padding-right: 18px }
+  .bar .replay { display: none }
+  .nums { grid-template-columns: repeat(2, 1fr) }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto }
