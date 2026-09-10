@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Frame, type FrameHandle } from "./components/Frame";
 import { YearWheel, type WheelHandle } from "./components/YearWheel";
 import { TrueLine } from "./components/TrueLine";
@@ -13,19 +13,26 @@ const SECTIONS = [
   { id: "contact", label: "Contact" },
 ];
 
+/* The site itself is monochrome. Colour belongs to the projects: each one names its accent
+   here, the section paints itself in it, and the chrome that is always on screen (the index
+   dot, the mark's today dot, focus rings) takes the accent of the section you are in. Mint is
+   TrueLine's own, the colour its overlay draws the pocket in. */
+const SITE_ACCENT = "#f4f4f2";
+const ACCENTS: Record<string, string> = { projects: "#40e69e" };
+
 const WORK = [
   { href: "https://github.com/adam-zhu1", mark: "hist" as const, title: "NIST usage analytics",
     blurb: "A five-stage Python pipeline that separated people from robots in a public data portal's logs.",
-    stat: <><b>51%</b> automated · <b>0.95</b> best F1</>, cta: "GitHub", label: <><b>190,687</b> requests</> },
+    stat: <><b>51%</b> automated · <b>0.95</b> best F1</>, cta: "GitHub" },
   { href: "https://doi.org/10.3390/math12050741", mark: "tail" as const, title: "Matched binary diagnostic tests",
     blurb: "Statistical tests for proportion difference in one-to-two matched binary data. Co-author.",
-    stat: <><b>2024</b> · Mathematics 12(5), 741</>, cta: "DOI", label: <><b>Mathematics</b> 12(5), 741</> },
+    stat: <><b>2024</b> · Mathematics 12(5), 741</>, cta: "DOI" },
   { href: "https://github.com/adam-zhu1/march-madness-2026", mark: "bracket" as const, title: "March Madness predictor",
     blurb: "Year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
-    stat: <><b>63 games</b> · win probability each</>, cta: "GitHub", label: <><b>Round</b> of 64</> },
+    stat: <><b>63 games</b> · win probability each</>, cta: "GitHub" },
   { href: "https://github.com/adam-zhu1/fantasy-football-draft", mark: "ladder" as const, title: "Fantasy draft assistant",
     blurb: "Floor-adjusted value over replacement from three seasons of weekly variance, plus a live draft board.",
-    stat: <><b>Floor-first</b> VBD · tiers · backtested</>, cta: "GitHub", label: <><b>12</b> teams, full PPR</> },
+    stat: <><b>Floor-first</b> VBD · tiers · backtested</>, cta: "GitHub" },
 ];
 
 function useClock() {
@@ -65,7 +72,6 @@ export default function App() {
   const [step, setStep] = useState(reduce ? 3 : 0);
   const [revealed, setRevealed] = useState(reduce);
   const [wheelReady, setWheelReady] = useState(false);
-  const [swipe, setSwipe] = useState(false);
 
   const nameFrame = useRef<FrameHandle>(null);
   const sideRef = useRef<HTMLDivElement>(null);
@@ -77,7 +83,7 @@ export default function App() {
 
   const runIntro = useCallback(() => {
     if (reduce) return;
-    setStep(0); setSwipe(false); setRevealed(false);
+    setStep(0); setRevealed(false);
     const el = sideRef.current;
     el?.classList.remove("on");
     el?.querySelectorAll<HTMLElement>(".in").forEach(b => { b.classList.remove("on"); b.style.transitionDelay = ""; });
@@ -85,7 +91,7 @@ export default function App() {
     wheel.current?.play();
     const ts = [
       setTimeout(() => { setStep(1); nameFrame.current?.show(); }, 2300),   // the frame draws round the name
-      setTimeout(() => { setStep(2); setSwipe(true); }, 2650),              // the name rises, the rule sweeps
+      setTimeout(() => setStep(2), 2650),                                   // the name rises out of its baseline
       setTimeout(() => {                                                    // the rest of the page follows
         setStep(3);
         const e = sideRef.current;
@@ -100,6 +106,10 @@ export default function App() {
   }, [reduce]);
 
   useEffect(() => { if (wheelReady) return runIntro(); }, [wheelReady, runIntro]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--accent", ACCENTS[cur] ?? SITE_ACCENT);
+  }, [cur]);
 
   return (
     <>
@@ -135,12 +145,12 @@ export default function App() {
               <div className="side" ref={sideRef}>
                 <Frame label={<><b>name</b></>} hold={!reduce} handleRef={nameFrame}>
                   <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
-                  <i className={`swipe${swipe ? " go" : ""}`} />
                 </Frame>
                 <p className="kick in">Statistics and machine learning, Carnegie Mellon</p>
                 <p className="lede in">
-                  I build things that measure the world. A bowling ball tracker that reads a throw from one
-                  phone. Pipelines that separate people from robots in server logs. Tests for matched binary data.
+                  TrueLine, an iPhone app that measures a bowling throw from one camera, is on the App
+                  Store. Before that, usage analytics at NIST and a co-authored paper on matched binary
+                  diagnostic tests.
                 </p>
                 <ul className="in">
                   <li><a href="https://github.com/adam-zhu1">GitHub</a></li>
@@ -153,7 +163,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="sec" id="projects">
+          <section className="sec" id="projects" style={{ "--accent": ACCENTS.projects } as CSSProperties}>
             <div className="sechead in" ref={headProjects}><h2>Projects</h2><span>1 shipped</span></div>
             <TrueLine />
           </section>
@@ -169,11 +179,10 @@ export default function App() {
             <div>
               <h2 className="in">Let&rsquo;s connect.</h2>
               <a className="mailto in" href="mailto:adamzhu@andrew.cmu.edu">adamzhu@andrew.cmu.edu</a>
-              <div className="grid4 in">
+              <div className="cells in">
                 <a className="cell" href="https://github.com/adam-zhu1"><small>Code</small><b>GitHub</b><span>adam-zhu1</span></a>
                 <a className="cell" href="https://www.linkedin.com/in/adam-zhu-cmu/"><small>Track record</small><b>LinkedIn</b><span>adam-zhu-cmu</span></a>
                 <a className="cell" href="/Adam-Zhu-Resume.pdf"><small>One page</small><b>Resume</b><span>PDF</span></a>
-                <a className="cell" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797"><small>Shipped</small><b>App Store</b><span>TrueLine</span></a>
               </div>
             </div>
             <footer className="in"><span>Adam Zhu, Pittsburgh</span><span>{clock}</span></footer>

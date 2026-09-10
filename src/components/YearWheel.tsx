@@ -158,7 +158,7 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
                 onPointerMove={e => setTip(t => t && { ...t, x: Math.min(innerWidth - 360, e.clientX + 14), y: Math.min(innerHeight - 90, e.clientY + 14) })}
                 onPointerLeave={e => { (e.target as SVGLineElement).classList.remove("lit"); setTip(null); }} />
         ))}
-        <circle className="todaydot" cx={C} cy={C - R} r="3.2" fill="#40e69e" />
+        <circle className="todaydot" cx={C} cy={C - R} r="3.2" fill="var(--accent)" />
         <text className="center" x={C} y={C - 6} textAnchor="middle" fontSize="44" letterSpacing="-1.5">{model.total}</text>
         <text className="sub" x={C} y={C + 18} textAnchor="middle">
           commits · {model.days.length} days · {model.repos} repos

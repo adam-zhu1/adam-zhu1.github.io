@@ -64,8 +64,8 @@ function drawMark(svg: SVGSVGElement, kind: Mark) {
   return () => grow.forEach(f => f());
 }
 
-export function WorkCard({ href, mark, title, blurb, stat, cta, label, seed }: {
-  href: string; mark: Mark; title: string; blurb: string; stat: React.ReactNode; cta: string; label: React.ReactNode; seed: number;
+export function WorkCard({ href, mark, title, blurb, stat, cta, seed }: {
+  href: string; mark: Mark; title: string; blurb: string; stat: React.ReactNode; cta: string; seed: number;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   useEffect(() => {
@@ -77,7 +77,7 @@ export function WorkCard({ href, mark, title, blurb, stat, cta, label, seed }: {
   }, [mark]);
 
   return (
-    <Frame seed={seed} label={label} threshold={0.4}>
+    <Frame seed={seed} threshold={0.4}>
       <a className="card" href={href} target="_blank" rel="noreferrer">
           <div className="mark"><svg ref={svgRef} aria-hidden="true" /></div>
           <b>{title}</b>

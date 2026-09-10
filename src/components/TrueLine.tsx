@@ -38,7 +38,7 @@ export function TrueLine() {
   return (
     <div className="proj" id="trueline">
       <div className="in" ref={textRef}>
-        <h3>TrueLine</h3>
+        <h3>TrueLine<i className="swipe" /></h3>
         <p className="desc">
           A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it measures
           the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and
@@ -49,6 +49,9 @@ export function TrueLine() {
           <div><dt>Built with</dt><dd>Swift, Vision, Core ML, a fine-tuned detector</dd></div>
           <div><dt>Since</dt><dd><a href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">App Store</a>, 24 August 2026</dd></div>
         </dl>
+        <a className="store" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
+          Download on the App Store<i aria-hidden="true">&#8599;</i>
+        </a>
         <div className="ctl">
           <button type="button" onClick={play}>Replay</button>
           <button type="button" onClick={() => setPaused(engine.current?.toggle() ?? false)}>{paused ? "Resume" : "Pause"}</button>
