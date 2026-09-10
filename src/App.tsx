@@ -108,13 +108,14 @@ export default function App() {
 
       <nav className="idx" aria-label="Sections">
         {SECTIONS.map(s => (
-          <a key={s.id} href={`#${s.id}`} className={cur === s.id ? "cur" : ""}><i />{s.label}</a>
+          <a key={s.id} href={`#${s.id}`} className={cur === s.id ? "cur" : ""} aria-current={cur === s.id ? "true" : undefined}>
+            <i aria-hidden="true" /><span>{s.label}</span>
+          </a>
         ))}
       </nav>
 
       <div className="bar">
         <span>Adam Zhu</span>
-        <button className="replay" type="button" onClick={runIntro}>Replay intro</button>
         <span className="clock">Pittsburgh {clock}</span>
       </div>
 

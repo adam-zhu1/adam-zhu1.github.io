@@ -31,31 +31,37 @@ a { color: inherit; }
 
 /* ---------- shell ---------- */
 .site { position: relative; z-index: 1; }
-.wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px 0 96px; }
+.wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px 0 var(--rail, 136px); }
 section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-content: safe center; padding: 88px 0 64px; scroll-margin-top: 72px; }
 
-.bar { position: fixed; left: 0; right: 0; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 40px 18px 96px; font-size: 13.5px; color: var(--ink2); pointer-events: none; }
+.bar { position: fixed; left: 0; right: 0; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 40px 18px var(--rail, 136px); font-size: 13.5px; color: var(--ink2); pointer-events: none; }
 .bar > * { pointer-events: auto; }
 .bar .clock { font-family: var(--mono); font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
 .bar .replay { font: inherit; font-size: 12.5px; color: var(--ink2); background: none; border: 1px solid var(--line2); padding: 5px 12px; border-radius: 999px; cursor: pointer; margin-left: auto; margin-right: 16px; }
 .bar .replay:hover { color: var(--ink); border-color: var(--ink2); }
 .bar .replay:focus-visible, .idx a:focus-visible, .ctl button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 
-/* ---------- index pill ---------- */
-.idx { position: fixed; left: 16px; top: 50%; transform: translateY(-50%); z-index: 40;
+/* ---------- the index: a slim pill of dots. The pill never resizes; the label
+   you point at pops out beside it, so only one item ever opens. ---------- */
+.idx { position: fixed; left: 18px; top: 50%; transform: translateY(-50%); z-index: 40;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  width: 30px; padding: 12px 0; border-radius: 999px;
   background: rgba(22,22,26,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 14px 0;
-  display: flex; flex-direction: column; gap: 12px; width: 14px; overflow: hidden;
-  transition: width .26s cubic-bezier(.4,0,.2,1), padding .26s cubic-bezier(.4,0,.2,1); }
-.idx:hover, .idx:focus-within { width: 150px; padding: 14px; }
-.idx a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--mute); font-size: 13.5px; line-height: 16px; height: 16px; white-space: nowrap; padding-left: 4px; transition: padding .26s cubic-bezier(.4,0,.2,1), color .2s; }
-.idx:hover a, .idx:focus-within a { padding-left: 0; }
-.idx i { flex: none; width: 6px; height: 1px; background: var(--mute); transition: background .2s; }
+  border: 1px solid rgba(255,255,255,.08); }
+.idx a { position: relative; display: grid; place-items: center; width: 22px; height: 18px;
+  color: var(--mute); text-decoration: none; transition: color .2s; }
+.idx i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; transition: background .2s, transform .2s; }
+.idx a:hover, .idx a:focus-visible { color: var(--ink); }
+.idx a:hover i { transform: scale(1.25); }
 .idx a.cur { color: var(--ink); }
 .idx a.cur i { background: var(--mint); }
-.idx span { opacity: 0; transition: opacity .2s .06s; }
-.idx:hover span, .idx:focus-within span { opacity: 1; }
-.idx a:hover { color: var(--ink); }
+.idx span { position: absolute; left: calc(100% + 14px); top: 50%; white-space: nowrap;
+  transform: translateY(-50%) translateX(-6px); opacity: 0; pointer-events: none;
+  font-size: 12.5px; line-height: 1; color: var(--ink);
+  background: rgba(22,22,26,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.09); border-radius: 999px; padding: 6px 12px;
+  transition: opacity .18s linear, transform .24s cubic-bezier(.22,1,.36,1); }
+.idx a:hover span, .idx a:focus-visible span { opacity: 1; transform: translateY(-50%) translateX(0); }
 
 /* ---------- the frame ---------- */
 .win { position: relative; }
@@ -217,16 +223,18 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 
 @media (max-width: 1180px) { .proj { grid-template-columns: 1fr } .nums { grid-template-columns: repeat(3,1fr) } }
 @media (max-width: 980px) {
-  .wrap { padding-left: 64px; padding-right: 24px }
-  .bar { padding-left: 64px; padding-right: 24px; font-size: 12.5px; white-space: nowrap }
+  :root { --rail: 62px }
+  .wrap { padding-right: 24px }
+  .bar { padding-right: 24px; font-size: 12.5px; white-space: nowrap }
+  .idx { left: 12px }
   .bar .replay { margin-right: 12px; padding: 4px 10px; font-size: 11.5px }
   .proj.soon, .hero .grid1 { grid-template-columns: 1fr }
   .wheel { max-width: 420px; margin: 24px auto 0 }
 }
 @media (max-width: 560px) {
-  .wrap { padding-left: 52px; padding-right: 18px }
-  .bar { padding-left: 52px; padding-right: 18px }
-  .bar .replay { display: none }
+  :root { --rail: 52px }
+  .wrap { padding-right: 18px }
+  .bar { padding-right: 18px }
   .nums { grid-template-columns: repeat(2, 1fr) }
 }
 @media (prefers-reduced-motion: reduce) {
