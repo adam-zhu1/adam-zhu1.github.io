@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://adam-zhu1.github.io/sitemap.xml
+Sitemap: https://adamzhu.dev/sitemap.xml
