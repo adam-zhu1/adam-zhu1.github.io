@@ -287,9 +287,11 @@ export default function TrueLinePage() {
           {/* ---------- out ---------- */}
           <section className="sec tlend" ref={endRef}>
             <div className="in">
-              <h2>Free to try, ten throws in.</h2>
-              <p>Download it, shoot a throw, see what your ball actually does. A one-time unlock removes
-                the limit.</p>
+              <h2>Ten free throws.</h2>
+              {/* "analyzed", not "successful": every analysis consumes one, including a partial
+                  result, and discarding does not refund it. */}
+              <p>Download it, shoot a throw, see what your ball actually does. Ten analyzed throws are
+                free; a one-time unlock removes the limit.</p>
               <a className="store big" href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
             </div>
             <footer className="in">
