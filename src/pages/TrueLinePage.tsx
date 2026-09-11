@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Bar } from "../components/Bar";
 import { Index, useCurrentSection, type Section } from "../components/Index";
 import { Frame } from "../components/Frame";
 import { Ambience } from "../components/Ambience";
 import { TrueLineStage } from "../components/TrueLineStage";
 import { A } from "../lib/router";
-import { useReveal, prefersReducedMotion } from "../lib/useReveal";
+import { land, LANDED, morphPending } from "../lib/morph";
+import { useEachReveal, useReveal, prefersReducedMotion } from "../lib/useReveal";
 
 const SECTIONS: Section[] = [
   { id: "tl-top", label: "TrueLine" },
+  { id: "tl-seq", label: "One throw" },
   { id: "tl-read", label: "The numbers" },
   { id: "tl-hard", label: "Why it's hard" },
   { id: "tl-calib", label: "Calibration" },
@@ -76,51 +78,117 @@ const COMING = [
 export default function TrueLinePage() {
   const cur = useCurrentSection(SECTIONS, "tl-top");
   const [revealed, setRevealed] = useState(prefersReducedMotion());
+  /* read before the layout effect below consumes it, so the title screen knows whether it
+     is being arrived at by morph or by a cold load of the URL */
+  const [morphing] = useState(morphPending);
+  const [ready, setReady] = useState(prefersReducedMotion());
+  const title = useRef<HTMLHeadingElement>(null);
 
-  const readRef = useReveal<HTMLDivElement>({ threshold: 0.3 });
-  const hardRef = useReveal<HTMLDivElement>({ threshold: 0.3 });
-  const calibRef = useReveal<HTMLDivElement>({ threshold: 0.3 });
-  const pipeRef = useReveal<HTMLDivElement>({ threshold: 0.25 });
-  const appRef = useReveal<HTMLDivElement>({ threshold: 0.2 });
-  const nextRef = useReveal<HTMLDivElement>({ threshold: 0.25 });
-  const endRef = useReveal<HTMLDivElement>({ threshold: 0.3 });
+  const seqRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const readRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const hardRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const calibRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const pipeRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const appRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const nextRef = useReveal<HTMLDivElement>({ threshold: 0.4 });
+  const endRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
+
+  /* every list reveals item by item rather than all at once on the container, so a row
+     three screens down still has its entrance left when you get there */
+  const tilesRef = useEachReveal<HTMLDivElement>({ threshold: 0.3 });
+  const pipeListRef = useEachReveal<HTMLOListElement>({ threshold: 0.3, stagger: 80 });
+  const flowRef = useEachReveal<HTMLDivElement>({ threshold: 0.25 });
+  const comingRef = useEachReveal<HTMLDivElement>({ threshold: 0.3, stagger: 80 });
+  const factsRef = useEachReveal<HTMLDivElement>({ threshold: 0.4, stagger: 90 });
+
+  /* the landing half of the morph: the flying name is handed to the real heading here */
+  useLayoutEffect(() => {
+    scrollTo(0, 0);
+    const flying = title.current ? land(title.current) : false;
+    const t = setTimeout(() => setReady(true), flying ? LANDED : 90);
+    return () => clearTimeout(t);
+  }, []);
 
   /* the page owns mint outright — it is TrueLine's colour, and this is TrueLine's page */
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty("--accent", "#40e69e");
-    scrollTo(0, 0);
     const t = setTimeout(() => setRevealed(true), 600);
     return () => { clearTimeout(t); root.style.setProperty("--accent", "#f4f4f2"); };
   }, []);
 
-  /* the wipe: drag across the frame to sweep the solved lane over the raw footage */
+  /* ---------- the calibration wipe ----------
+     It sweeps on its own so the fit is visible without anyone being told to drag anything,
+     and hands over the moment a pointer arrives. The sweep only runs while the figure is on
+     screen, and picks up from wherever the pointer left the divider rather than jumping. */
   const wipe = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const el = wipe.current;
     if (!el) return;
-    const set = (clientX: number) => {
-      const r = el.getBoundingClientRect();
-      const pct = Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100));
-      el.style.setProperty("--w", pct.toFixed(1) + "%");
+    const SPAN = 36, MID = 50, PERIOD = 9000;
+    const set = (pct: number) => el.style.setProperty("--w", pct.toFixed(1) + "%");
+    const read = () => parseFloat(el.style.getPropertyValue("--w")) || MID;
+    set(MID);
+
+    let raf = 0, last = 0, phase = 0, seen = false, held = false, over = false, down = false, idle = 0;
+    const reduce = prefersReducedMotion();
+
+    const tick = (now: number) => {
+      if (last) phase += ((now - last) / PERIOD) * Math.PI * 2;
+      last = now;
+      set(MID + Math.sin(phase) * SPAN);
+      raf = requestAnimationFrame(tick);
     };
-    let down = false;
-    const start = (e: PointerEvent) => { down = true; set(e.clientX); };
-    const move = (e: PointerEvent) => { if (down || e.pointerType === "mouse") set(e.clientX); };
-    const end = () => { down = false; };
-    el.addEventListener("pointerdown", start);
-    el.addEventListener("pointermove", move);
-    // once a drag starts it follows the pointer off the figure, the way a slider does
-    const drag = (e: PointerEvent) => { if (down) set(e.clientX); };
+    const start = () => {
+      if (raf || held || !seen || reduce) return;
+      phase = Math.asin(Math.max(-1, Math.min(1, (read() - MID) / SPAN)));   // carry on from here
+      last = 0;
+      raf = requestAnimationFrame(tick);
+    };
+    const stop = () => { if (raf) cancelAnimationFrame(raf); raf = 0; };
+    /* a cursor crossing the figure should not freeze it forever, so control lapses back a
+       couple of seconds after the pointer is done with it */
+    const relax = () => {
+      clearTimeout(idle);
+      idle = window.setTimeout(() => { if (!over && !down) { held = false; start(); } }, 2200);
+    };
+    const take = (clientX: number) => {
+      held = true; stop();
+      const r = el.getBoundingClientRect();
+      set(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100)));
+      relax();
+    };
+
+    const enter = () => { over = true; };
+    const leave = () => { over = false; relax(); };
+    const pdown = (e: PointerEvent) => { down = true; take(e.clientX); };
+    const pmove = (e: PointerEvent) => { if (down || e.pointerType === "mouse") take(e.clientX); };
+    const drag = (e: PointerEvent) => { if (down) take(e.clientX); };
+    const up = () => { down = false; relax(); };
+
+    el.addEventListener("pointerenter", enter);
+    el.addEventListener("pointerleave", leave);
+    el.addEventListener("pointerdown", pdown);
+    el.addEventListener("pointermove", pmove);
     addEventListener("pointermove", drag);
-    addEventListener("pointerup", end);
-    addEventListener("pointercancel", end);
+    addEventListener("pointerup", up);
+    addEventListener("pointercancel", up);
+
+    const io = new IntersectionObserver(
+      es => es.forEach(e => { seen = e.isIntersecting; if (seen) start(); else stop(); }),
+      { threshold: 0.25 },
+    );
+    io.observe(el);
+
     return () => {
-      el.removeEventListener("pointerdown", start);
-      el.removeEventListener("pointermove", move);
+      stop(); io.disconnect(); clearTimeout(idle);
+      el.removeEventListener("pointerenter", enter);
+      el.removeEventListener("pointerleave", leave);
+      el.removeEventListener("pointerdown", pdown);
+      el.removeEventListener("pointermove", pmove);
       removeEventListener("pointermove", drag);
-      removeEventListener("pointerup", end);
-      removeEventListener("pointercancel", end);
+      removeEventListener("pointerup", up);
+      removeEventListener("pointercancel", up);
     };
   }, []);
 
@@ -133,22 +201,38 @@ export default function TrueLinePage() {
       <main className="site tlpage">
         <div className="wrap">
 
-          {/* ---------- the sequence ---------- */}
-          <section className="sec tlhero" id="tl-top">
+          {/* ---------- the title screen ----------
+              Short on purpose. The home page already runs the sequence, so opening the page
+              on the same figure made the two overlap and the move between them read as a
+              reprint. This is the name, what it is, and the way down. */}
+          <section className={`sec tlhero${ready ? " on" : ""}`} id="tl-top">
             <div className="tlmast">
-              <A className="up" href="/#projects"><i aria-hidden="true">&#8592;</i> The work</A>
-              <h1>TrueLine</h1>
-              <p className="desc">
-                A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it
-                measures the throw: where the ball crossed the arrows, where it hooked, how fast it
-                left your hand, and the board and angle it entered on. Everything runs on the phone.
-              </p>
-              <div className="tlmeta">
+              <A className="up in" href="/#projects"><i aria-hidden="true">&#8592;</i> The work</A>
+              {/* hidden from the first paint while the name is still flying, so the two
+                  copies never overlap; `pre` is the cold-load entrance instead */}
+              <h1 ref={title} className={ready ? "" : morphing ? "handoff" : "pre"}>TrueLine</h1>
+              <i className="tlrule in" aria-hidden="true" />
+              <p className="desc in">A bowling ball tracker for iPhone.</p>
+              <div className="tlmeta in">
                 <div><dt>Platform</dt><dd>iOS, iPhone, portrait</dd></div>
                 <div><dt>Built with</dt><dd>Swift, Vision, Core ML, a fine-tuned detector</dd></div>
                 <div><dt>Released</dt><dd>App Store, 24 August 2026</dd></div>
               </div>
-              <a className="store" href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
+              <a className="store in" href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
+            </div>
+            <a className="cue in" href="#tl-seq">
+              <span>One throw, end to end</span>
+              <i aria-hidden="true" />
+            </a>
+          </section>
+
+          {/* ---------- the sequence ---------- */}
+          <section className="sec" id="tl-seq">
+            <div className="tlhead in" ref={seqRef}>
+              <h2>One throw, end to end</h2>
+              <p>Prop the phone behind the approach, bowl, and it measures the throw: where the ball
+                crossed the arrows, where it hooked, how fast it left your hand, and the board and
+                angle it entered on. Everything runs on the phone.</p>
             </div>
             <TrueLineStage />
           </section>
@@ -160,7 +244,7 @@ export default function TrueLinePage() {
               <p>Nine measurements from one throw. Every one is a lane measurement — a board and a
                 distance — not a number about pixels.</p>
             </div>
-            <div className="tiles">
+            <div className="tiles" ref={tilesRef}>
               {TILES.map(t => (
                 <div className={`tile${t.mint ? " lit" : ""}${t.v === null ? " off" : ""}`} key={t.n}>
                   <small>{t.n}</small>
@@ -195,7 +279,7 @@ export default function TrueLinePage() {
                 ))}
               </div>
             </Frame>
-            <div className="facts3">
+            <div className="facts3" ref={factsRef}>
               <div><b>~90 px</b><span>the whole pin deck, in 1080p footage at 1x</span></div>
               <div><b>~2.3 px</b><span>one board at the far end. A board is 1.06 inches.</span></div>
               <div><b>20–50 px</b><span>the ball, depending how far down the lane it is</span></div>
@@ -230,7 +314,7 @@ export default function TrueLinePage() {
                        alt="A frame from the throw, before the lane geometry is drawn on it" />
                   <img className="over" src="/media/trueline/lane/calib-overlay.jpg" width={938} height={2050} loading="lazy"
                        alt="The same frame with the solved lane drawn back over it: gutters, board seams, the arrows, and a ring on every pin spot" />
-                  <figcaption>Drag to check the fit</figcaption>
+                  <figcaption>Take the divider</figcaption>
                 </figure>
               </Frame>
             </div>
@@ -242,7 +326,7 @@ export default function TrueLinePage() {
               <h2>What happens to a throw</h2>
               <p>Five stages, all of them on the phone. Nothing is uploaded anywhere.</p>
             </div>
-            <ol className="pipe">
+            <ol className="pipe" ref={pipeListRef}>
               {PIPE.map(([name, note], i) => (
                 <li key={name}><span className="k">{String(i + 1).padStart(2, "0")}</span>
                   <span><b>{name}</b><em>{note}</em></span></li>
@@ -257,7 +341,7 @@ export default function TrueLinePage() {
               <p>Record a throw, place the lane, read the result, keep the session. In that order,
                 every time.</p>
             </div>
-            <div className="flow">
+            <div className="flow" ref={flowRef}>
               {APPFLOW.map(([n, file, title, note]) => (
                 <figure key={n}>
                   <span className="k">{n}</span>
@@ -277,7 +361,7 @@ export default function TrueLinePage() {
               <p>The next version is in progress. No date — it ships when the accuracy work behind it
                 is finished and checked against real throws.</p>
             </div>
-            <div className="coming">
+            <div className="coming" ref={comingRef}>
               {COMING.map(([title, note]) => (
                 <div key={title}><b>{title}</b><p>{note}</p></div>
               ))}

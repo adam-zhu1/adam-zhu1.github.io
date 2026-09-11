@@ -169,26 +169,61 @@ export function createTrueLine(els: Els) {
     vid.style.opacity = String(clamp(1 - fade * .96 + back * .88, 0, 1));
   }
 
-  let t0 = 0, raf = null, paused = false, tNow = 0;
+  /* ---------- the clock ----------
+     Two separate reasons to stop: the Pause button, and the sequence not being on screen.
+     They are tracked apart so that scrolling away from a sequence you had paused by hand
+     does not quietly resume it when you scroll back. The clock only ever advances while
+     you are actually looking at it, which is the whole point: this runs about fifteen
+     seconds, and it used to spend most of them playing to nobody. */
+  let t0 = 0, raf = null, tNow = 0;
+  let byHand = false, offscreen = false, started = false, done = false;
+  const halted = () => byHand || offscreen;
+
   function frame(now) {
-    if (paused) { raf = requestAnimationFrame(frame); return; }
     tNow = (now - t0) / 1000;
     if (tNow < T.play) { try { vid.currentTime = 0; } catch (e) {} }
     else if (tNow < T.hold) { if (vid.paused) vid.play().catch(() => {}); }
     else if (!vid.paused) vid.pause();
     draw(Math.min(tNow, T.end));
-    raf = tNow < T.end ? requestAnimationFrame(frame) : null;
+    if (tNow < T.end) { raf = requestAnimationFrame(frame); return; }
+    raf = null; done = true;
   }
-  function run() {
+  /** Picks the clock back up from wherever it was left. */
+  function resume() {
+    if (raf || done || !started || halted() || reduce) return;
+    t0 = performance.now() - tNow * 1000;
+    raf = requestAnimationFrame(frame);
+  }
+  /** Stops the clock dead, holding the current frame on screen. */
+  function halt() {
     if (raf) cancelAnimationFrame(raf);
-    try { vid.pause(); vid.currentTime = 0; } catch (e) {}
-    numsReset();
-    if (reduce) { draw(T.end); numsShow(1); return; }
-    paused = false;
-    t0 = performance.now(); raf = requestAnimationFrame(frame);
+    raf = null;
+    try { vid.pause(); } catch (e) {}
   }
-  function toggle() { paused = !paused; if (paused) vid.pause(); else { t0 = performance.now() - tNow * 1000; if (tNow >= T.play && tNow < T.hold) vid.play().catch(() => {}); } return paused; }
+  /** Start from the top. The Replay button, and the first time you arrive at it. */
+  function run() {
+    halt();
+    try { vid.currentTime = 0; } catch (e) {}
+    numsReset();
+    started = true; done = false; byHand = false; tNow = 0;
+    if (reduce) { draw(T.end); numsShow(1); done = true; return; }
+    resume();
+  }
+  /** The Pause button. Returns the new paused state so the label can follow it. */
+  function toggle() {
+    byHand = !byHand;
+    if (byHand) halt(); else resume();
+    return byHand;
+  }
+  /* Scrolling away is not the same as pausing: it holds the frame, and coming back
+     carries on. A sequence that already reached its end stays at its end. */
+  function setOffscreen(v) {
+    if (offscreen === v) return;
+    offscreen = v;
+    if (v) halt(); else resume();
+  }
+
   draw(0);
-  return { run, toggle, stop: () => { if (raf) cancelAnimationFrame(raf); try { vid.pause(); } catch (e) {} } };
+  return { run, toggle, setOffscreen, isDone: () => done, stop: halt };
 
 }

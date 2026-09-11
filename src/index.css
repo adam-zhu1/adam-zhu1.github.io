@@ -106,6 +106,14 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .in { opacity: 0; transform: translateY(14px); transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1); }
 .on .in, .in.on { opacity: 1; transform: none; }
 
+/* The same entrance, but applied per item by useEachReveal rather than per block, so the
+   last row of a tall grid still has its entrance left by the time you reach it. */
+.rise { opacity: 0; transform: translateY(12px);
+  transition: opacity .62s cubic-bezier(.22,1,.36,1), transform .62s cubic-bezier(.22,1,.36,1); }
+.rise.on { opacity: 1; transform: none; }
+/* inside a hairline grid the cells must not slide, or the rule behind them shows through */
+.tiles > .rise, .pipe > .rise { transform: none; }
+
 /* ---------- ambience ---------- */
 .glow { position: fixed; left: 0; top: 0; width: 720px; height: 720px; margin: -360px 0 0 -360px; pointer-events: none; z-index: 1;
   background: radial-gradient(closest-side, rgba(255,255,255,.06), rgba(255,255,255,.018) 45%, transparent 70%);
@@ -115,11 +123,42 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 
 .amb.on { opacity: 1; }
 .amb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.amb .ring { fill: none; stroke: #fff; stroke-width: 1; opacity: 0; }
-.amb .dust { fill: #fff; }
-@keyframes ping { 0% { transform: scale(.28); opacity: 0 } 12% { opacity: .05 } 100% { transform: scale(1.5); opacity: 0 } }
-@keyframes float { from { transform: translate3d(0,0,0) } to { transform: translate3d(0,-26px,0) } }
+/* The drift field, on every route. Each circle carries its own heading as --x0/--y0 to
+   --x1/--y1, so one pair of keyframes serves the whole field and no two cross the screen
+   the same way. Opacity runs on the same clock as the travel, so nothing appears or
+   disappears at an edge. Kept faint on purpose: it should register as depth, not as
+   weather. */
+.amb .orb { fill: #fff; opacity: 0; }
+.amb .orb.ring { fill: none; stroke: #fff; stroke-width: 1; }
+@keyframes drift {
+  from { transform: translate3d(var(--x0), var(--y0), 0) }
+  to   { transform: translate3d(var(--x1), var(--y1), 0) }
+}
+@keyframes driftfade { 0%, 100% { opacity: 0 } 16%, 84% { opacity: var(--o) } }
 @media (hover: none) { .glow { display: none } }
+/* ---------- the ring from the cursor ----------
+   A click on the page itself answers, in the same double-ring the index dots use. It takes
+   the live accent, so it comes up mint inside a project and ink everywhere else. */
+.rips { position: fixed; inset: 0; z-index: 25; pointer-events: none; }
+.rip { position: absolute; }
+.rip i { position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px;
+  border: 1px solid var(--accent); border-radius: 50%; opacity: 0;
+  animation: rip 900ms cubic-bezier(.22,1,.36,1) forwards; }
+.rip i:last-child { animation-delay: 120ms; }
+@keyframes rip { from { transform: scale(.28); opacity: .45 } to { transform: scale(7.5); opacity: 0 } }
+
+/* ---------- the morph ----------
+   The overlay the project name flies in. Everything here is torn down the moment it lands. */
+.morph { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
+.morphbox { position: fixed; border: 1px solid var(--frame); opacity: 0; }
+.morphtitle { position: fixed; white-space: nowrap; transform-origin: 0 0; will-change: transform; }
+html.morphing { scroll-behavior: auto; }
+.site.leaving { opacity: 0; transform: scale(.988);
+  transition: opacity .17s linear, transform .34s cubic-bezier(.4,0,.2,1); }
+/* the real heading waits under the flying one, and takes it over in a short crossfade —
+   which is also what hides the weight difference between an h3 and an h1 */
+.handoff { opacity: 0; transition: opacity .16s linear; }
+
 
 /* ---------- boot ---------- */
 .boot { position: fixed; inset: 0; z-index: 50; background: var(--bg); pointer-events: none; transition: opacity .8s; }
@@ -279,15 +318,57 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .tlhead p { margin: 0; color: var(--ink2); font-size: 15.5px; }
 .tlnote { color: var(--mute); font-size: 13px; max-width: 68ch; margin: 18px 0 0; }
 
-/* ---------- masthead ---------- */
-.sec.tlhero { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 44px; align-items: center; }
+/* ---------- the title screen ----------
+   One screen, and deliberately almost empty. The hub already runs the sequence, so opening
+   the page on the same figure made the two overlap and the move between them read as a
+   reprint rather than as going somewhere. The name is the only thing that survives the
+   morph, so the name is what this screen is built around. */
+.sec.tlhero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+  position: relative; padding: 104px 0 96px; }
+.tlmast { max-width: 660px; }
 .tlmast .up { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11.5px;
   color: var(--mute); text-decoration: none; letter-spacing: .05em; transition: color .2s; }
 .tlmast .up:hover { color: var(--mint); }
-.tlmast h1 { font-size: clamp(40px, 6.4vw, 68px); font-weight: 400; letter-spacing: -.04em; line-height: 1; margin: 18px 0 0; }
-.tlmast .desc { color: var(--ink2); font-size: 15.5px; margin: 18px 0 0; max-width: 46ch; }
-.tlmeta { display: flex; flex-direction: column; gap: 9px; margin: 26px 0 24px; }
+.tlmast h1 { font-size: clamp(46px, 8vw, 104px); font-weight: 400; letter-spacing: -.045em;
+  line-height: 1; margin: 20px 0 0;
+  clip-path: inset(0 0 -22% 0); transform: none;
+  transition: clip-path 1s cubic-bezier(.22,1,.36,1), transform 1s cubic-bezier(.22,1,.36,1),
+              opacity .16s linear; }
+/* a cold load rises the name out of its own baseline; a morph lands it there instead */
+.tlmast h1.pre { clip-path: inset(108% 0 -22% 0); transform: translateY(.14em); }
+/* rendered from the first paint, never transitioned into, so the flying name and the real
+   one are never both on screen */
+.tlmast h1.handoff { opacity: 0; }
+.tlrule { display: block; height: 1px; max-width: 470px; margin: 26px 0 0; background: var(--line2);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .9s cubic-bezier(.22,1,.36,1), opacity .5s linear; }
+.tlhero.on .tlrule.in { transform: scaleX(1); }
+.tlmast .desc { color: var(--ink2); font-size: 16.5px; margin: 20px 0 0; max-width: 46ch; }
+.tlmeta { display: flex; flex-direction: column; gap: 9px; margin: 30px 0 26px; max-width: 470px; }
 .tlmeta div { display: flex; gap: 14px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 9px; }
+
+/* the screen's own stagger, so the title screen assembles instead of appearing */
+.tlhero .up { transition-delay: 0ms }
+.tlhero .tlrule { transition-delay: 110ms }
+.tlhero .desc { transition-delay: 190ms }
+.tlhero .tlmeta { transition-delay: 270ms }
+.tlhero .store { transition-delay: 350ms }
+.tlhero .cue { transition-delay: 640ms }
+
+/* the way down, and the only thing on this screen that keeps moving */
+.cue { position: absolute; left: 0; bottom: 38px; display: inline-flex; flex-direction: column; gap: 11px;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--mute); text-decoration: none; transition: color .25s; }
+.cue:hover { color: var(--mint); }
+.cue i { display: block; width: 1px; height: 36px; position: relative; overflow: hidden;
+  background: linear-gradient(var(--line2), transparent); }
+.cue i::after { content: ""; position: absolute; left: 0; top: 0; width: 1px; height: 13px;
+  background: var(--mint); animation: cuedrop 2.6s cubic-bezier(.4,0,.2,1) infinite; }
+@keyframes cuedrop {
+  0% { transform: translateY(-15px); opacity: 0 }
+  22% { opacity: 1 }
+  70%, 100% { transform: translateY(36px); opacity: 0 }
+}
 .tlmeta dt { font-family: var(--mono); font-size: 10.5px; color: var(--mute); letter-spacing: .07em;
   text-transform: uppercase; flex: 0 0 84px; }
 .tlmeta dd { margin: 0; font-size: 13.5px; color: var(--ink2); }
@@ -385,7 +466,6 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .tlend footer a:hover { color: var(--mint); }
 
 @media (max-width: 1080px) {
-  .sec.tlhero { grid-template-columns: 1fr; gap: 34px; }
   .tlstage { grid-template-columns: 1fr; }
   .calib { grid-template-columns: 1fr; gap: 28px; }
   .calib { grid-template-columns: 1fr; }
@@ -399,6 +479,10 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 }
 @media (prefers-reduced-motion: reduce) {
   .stills figure { opacity: 1; transform: none; transition: none; }
+  .rise { opacity: 1; transform: none; transition: none; }
+  .amb, .rips, .morph { display: none; }
+  .cue i::after { animation: none; opacity: .8; }
+  .tlrule, .tlhero.on .tlrule.in { transform: none; transition: none; }
 }
 
 /* the door from home into the TrueLine page. Sits under the App Store link, so the two

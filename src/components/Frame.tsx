@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
-import { prefersReducedMotion } from "../lib/useReveal";
+import { whenSeen } from "../lib/useReveal";
 
 const EASES = [
   "cubic-bezier(.22,1,.36,1)",
@@ -33,13 +33,9 @@ export function Frame({ className = "", tag, label, seed = 0, hold = false, thre
   useEffect(() => {
     const el = ref.current;
     if (!el || hold || on) return;
-    if (prefersReducedMotion()) { setOn(true); return; }
-    const io = new IntersectionObserver(
-      es => es.forEach(e => { if (e.isIntersecting) { setOn(true); io.disconnect(); } }),
-      { threshold },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    /* band-gated like every other reveal, so a frame never draws itself while it is still
+       a sliver at the bottom of the screen */
+    return whenSeen(el, () => setOn(true), threshold);
   }, [hold, on, threshold]);
 
   useImperativeHandle(handleRef, () => ({ show: () => setOn(true) }), []);

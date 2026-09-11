@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Frame } from "./Frame";
-import { useCentered } from "../lib/useReveal";
+import { usePlayInView } from "../lib/useReveal";
 import { createTrueLine } from "../lib/trueline";
 
 const STAGES = [
@@ -35,10 +35,11 @@ export function TrueLineStage() {
   }, []);
 
   const play = useCallback(() => { engine.current?.run(); setPaused(false); }, []);
-  const centreRef = useCentered<HTMLDivElement>(play, 420);
+  /* it runs while you are watching it and holds the moment you are not */
+  const stageRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 420);
 
   return (
-    <div className="tlstage" ref={centreRef}>
+    <div className="tlstage" ref={stageRef}>
       <Frame className="appwin" seed={1} tag="01 TrueLine" label={<><b>70</b> tracked frames · 2.3 to 59.6 ft</>}>
         <div className="app">
           <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.jpg"

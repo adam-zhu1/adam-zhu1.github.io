@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Frame } from "./Frame";
 import { A } from "../lib/router";
-import { useCentered, useReveal } from "../lib/useReveal";
+import { usePlayInView, useReveal } from "../lib/useReveal";
+import { morphInto } from "../lib/morph";
 import { createTrueLine } from "../lib/trueline";
 
 const STAGES = [
@@ -31,15 +32,28 @@ export function TrueLine() {
   }, []);
 
   const play = useCallback(() => { engine.current?.run(); setPaused(false); }, []);
-  /* the sequence starts only once the window is centred, never at the edge of the screen */
-  const centreRef = useCentered<HTMLDivElement>(play, 500);
+  /* the sequence starts once the window has settled in front of you, holds while it is off
+     screen, and carries on from there — it is fifteen seconds long, and it used to spend
+     most of them running to nobody */
+  const centreRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 500);
   const textRef = useReveal<HTMLDivElement>();
   const stagesRef = useReveal<HTMLDivElement>();
 
+  /* the door into the page: the name is lifted off this block and flown to the heading its
+     own page keeps for it, so the two read as one object rather than two screens */
+  const block = useRef<HTMLDivElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
+  const open = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    if (!title.current) return;
+    e.preventDefault();
+    morphInto("/trueline", title.current, block.current);
+  };
+
   return (
-    <div className="proj" id="trueline">
+    <div className="proj" id="trueline" ref={block}>
       <div className="in" ref={textRef}>
-        <h3>TrueLine<i className="swipe" /></h3>
+        <h3 ref={title}>TrueLine<i className="swipe" /></h3>
         <p className="desc">
           A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it measures
           the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and
@@ -53,7 +67,7 @@ export function TrueLine() {
         <a className="store" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
           Download on the App Store<i aria-hidden="true">&#8599;</i>
         </a>
-        <A className="more" href="/trueline">
+        <A className="more" href="/trueline" onClick={open}>
           See how it works<i aria-hidden="true">&#8594;</i>
         </A>
         <div className="ctl">

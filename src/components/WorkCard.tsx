@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Frame } from "./Frame";
+import { whenSeen } from "../lib/useReveal";
 
 const INK2 = "#a2a2a7";
 export type Mark = "hist" | "tail" | "bracket" | "ladder";
@@ -71,9 +72,11 @@ export function WorkCard({ href, mark, title, blurb, stat, cta, seed }: {
   useEffect(() => {
     const svg = svgRef.current; if (!svg) return;
     const start = drawMark(svg, mark);
-    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { start(); io.disconnect(); } }), { threshold: 0.4 });
-    if (svg.parentElement) io.observe(svg.parentElement);
-    return () => io.disconnect();
+    /* watch the whole card, not the mark. The mark is 76 px tall and sits at the top of the
+       card, so watching it started a 1.4 s draw the instant the card's top edge cleared the
+       bottom of the screen — and the draw was over before you ever looked at it. */
+    const card = svg.closest(".win") ?? svg.parentElement;
+    return card ? whenSeen(card, start, 0.5) : undefined;
   }, [mark]);
 
   return (
