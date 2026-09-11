@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build && node scripts/prerender.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mirror:trueline": "node scripts/mirror-trueline-docs.mjs --from https://adamzhu.dev/trueline"
   },
   "dependencies": {
     "gsap": "^3.15.0",

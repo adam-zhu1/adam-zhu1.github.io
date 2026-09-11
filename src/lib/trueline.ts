@@ -163,9 +163,9 @@ export function createTrueLine(els: Els) {
       if (!tracking) { capL.textContent = "Run-up"; capR.innerHTML = `<b>Frame ${fr}</b> of 131`; }
       else { const p = ptAt(clipT); capL.textContent = `Board ${p.b.toFixed(1)} at ${p.f.toFixed(1)} ft`; capR.innerHTML = p.m ? `<b>${(p.c ?? 0).toFixed(2)}</b> confidence \u00b7 frame ${fr}` : `<b>coasted</b> \u00b7 frame ${fr}`; }
     }
-    else if (t < T.mv) { capL.textContent = "Six landmarks, 1.8 px rms fit"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
+    else if (t < T.mv) { capL.textContent = "Reference fit, six landmarks \u00b7 1.8 px rms"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
     else if (t < T.met) { capL.textContent = "Lane and path leaving the footage"; capR.innerHTML = "<b>Lane view</b>, width shown 3.5 times"; }
-    else { capL.textContent = "Six of thirteen metrics"; capR.innerHTML = "<b>16.3</b> entry, right of the pocket"; }
+    else { capL.textContent = "Six of the nine metrics"; capR.innerHTML = "<b>16.3</b> entry, right of the pocket"; }
     vid.style.opacity = String(clamp(1 - fade * .96 + back * .88, 0, 1));
   }
 
