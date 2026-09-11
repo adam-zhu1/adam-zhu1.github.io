@@ -41,9 +41,10 @@ jobs:
       - name: Build
         run: npm run build
 
-      # If you add client-side routes later, this helps refresh/deep links on Pages.
-      - name: SPA fallback (404.html)
-        run: cp dist/index.html dist/404.html
+      # Every real route is pre-rendered by scripts/prerender.mjs as part of `npm run build`,
+      # so 404.html stays the hand-written redirect in public/ and only catches stray paths.
+      - name: Check the pre-rendered routes exist
+        run: test -f dist/trueline/index.html && test -f dist/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

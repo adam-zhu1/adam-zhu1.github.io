@@ -111,7 +111,8 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
   background: radial-gradient(closest-side, rgba(255,255,255,.06), rgba(255,255,255,.018) 45%, transparent 70%);
   transform: translate(var(--x,50vw), var(--y,50vh)); opacity: 0; transition: opacity .4s; }
 .glow.on { opacity: 1; }
-.amb { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 1.4s; }
+.amb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 1.4s; }
+
 .amb.on { opacity: 1; }
 .amb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .amb .ring { fill: none; stroke: #fff; stroke-width: 1; opacity: 0; }
@@ -266,3 +267,147 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .swipe { display: none }
   .amb { display: none }
 }
+
+/* ================= the TrueLine page ================= */
+/* Mint belongs to TrueLine, so on its own page the accent runs through everything rather
+   than being rationed to one section the way it is on home. */
+.tlpage .sec { min-height: auto; padding: 96px 0 40px; }
+.tlpage .sec:first-child { padding-top: 104px; }
+
+.tlhead { max-width: 62ch; margin-bottom: 34px; }
+.tlhead h2 { font-size: clamp(24px, 3.4vw, 34px); font-weight: 400; letter-spacing: -.025em; margin: 0 0 10px; text-wrap: balance; }
+.tlhead p { margin: 0; color: var(--ink2); font-size: 15.5px; }
+.tlnote { color: var(--mute); font-size: 13px; max-width: 68ch; margin: 18px 0 0; }
+
+/* ---------- masthead ---------- */
+.sec.tlhero { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 44px; align-items: center; }
+.tlmast .up { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11.5px;
+  color: var(--mute); text-decoration: none; letter-spacing: .05em; transition: color .2s; }
+.tlmast .up:hover { color: var(--mint); }
+.tlmast h1 { font-size: clamp(40px, 6.4vw, 68px); font-weight: 400; letter-spacing: -.04em; line-height: 1; margin: 18px 0 0; }
+.tlmast .desc { color: var(--ink2); font-size: 15.5px; margin: 18px 0 0; max-width: 46ch; }
+.tlmeta { display: flex; flex-direction: column; gap: 9px; margin: 26px 0 24px; }
+.tlmeta div { display: flex; gap: 14px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 9px; }
+.tlmeta dt { font-family: var(--mono); font-size: 10.5px; color: var(--mute); letter-spacing: .07em;
+  text-transform: uppercase; flex: 0 0 84px; }
+.tlmeta dd { margin: 0; font-size: 13.5px; color: var(--ink2); }
+.store.big { font-size: 14px; padding: 12px 20px; }
+
+/* ---------- the stage ---------- */
+/* home squeezes the window so its whole block fits one screen; the page has room, so the
+   sequence gets to be the size it wants */
+.tlstage .app { max-width: 100%; }
+.tlstage { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 22px 26px; align-items: start; }
+
+.tlside { display: flex; flex-direction: column; gap: 18px; }
+.tlstage .nums { grid-column: 1 / -1; margin-top: 6px; }
+
+/* ---------- the nine tiles ---------- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)); gap: 1px;
+  background: var(--line); border: 1px solid var(--line); }
+.tile { background: var(--bg); padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 4px; }
+.tile small { font-family: var(--mono); font-size: 10.5px; color: var(--mute); letter-spacing: .07em; text-transform: uppercase; }
+.tile b { font-weight: 400; font-size: 34px; line-height: 1.05; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.tile b em { font-style: normal; font-size: 13px; color: var(--mute); margin-left: 5px; letter-spacing: 0; }
+.tile.lit b { color: var(--mint); }
+.tile.off b { color: var(--line2); }
+.tile p { margin: 6px 0 0; font-size: 12.5px; color: var(--mute); line-height: 1.5; }
+
+/* ---------- the eight stills ---------- */
+.strip { padding: 16px; }
+.stills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent; }
+.stills::-webkit-scrollbar { height: 7px }
+.stills::-webkit-scrollbar-thumb { background: var(--line2) }
+.stills figure { flex: 1 1 0; min-width: 96px; margin: 0; display: flex; flex-direction: column; gap: 7px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .6s cubic-bezier(.22,1,.36,1) calc(var(--i) * 70ms), transform .6s cubic-bezier(.22,1,.36,1) calc(var(--i) * 70ms); }
+.win.on .stills figure { opacity: 1; transform: none; }
+.stills img { width: 100%; height: auto; display: block; border: 1px solid var(--line); }
+.stills figcaption { font-family: var(--mono); font-size: 10px; color: var(--mute);
+  display: flex; flex-direction: column; gap: 1px; letter-spacing: .02em; }
+.stills figcaption b { color: var(--ink2); font-weight: 400; font-size: 11.5px; }
+
+.facts3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; margin-top: 30px; }
+.facts3 div { border-top: 1px solid var(--line2); padding-top: 13px; }
+.facts3 b { display: block; font-weight: 400; font-size: 27px; letter-spacing: -.03em; color: var(--mint); }
+.facts3 span { display: block; font-size: 13px; color: var(--mute); margin-top: 5px; max-width: 30ch; }
+
+/* ---------- calibration ---------- */
+.calib { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; align-items: start; }
+.calibtext p { color: var(--ink2); font-size: 15px; margin: 0 0 15px; max-width: 54ch; }
+.calibfig { padding: 12px; }
+.wipe { position: relative; margin: 0; overflow: hidden; cursor: ew-resize; touch-action: none;
+  --w: 50%; max-height: 74vh; }
+/* crop from the top: the pins and the far lane are where the fit is worth checking */
+.wipe img { object-fit: cover; object-position: 50% 0; max-height: 74vh; }
+.wipe img { display: block; width: 100%; height: auto; }
+.wipe .over { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--w)) 0 0); }
+.wipe::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--w); width: 1px;
+  background: var(--mint); box-shadow: 0 0 12px rgba(64,230,158,.5); pointer-events: none; }
+.wipe figcaption { position: absolute; left: 10px; bottom: 8px; font-family: var(--mono); font-size: 10px;
+  color: var(--ink2); background: rgba(7,7,8,.72); border: 1px solid var(--line2); padding: 4px 8px;
+  letter-spacing: .05em; pointer-events: none; }
+
+/* ---------- the pipeline ---------- */
+.pipe { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); counter-reset: none; }
+.pipe li { background: var(--bg); display: grid; grid-template-columns: 44px 1fr; gap: 18px;
+  padding: 20px 20px 22px; align-items: baseline; }
+.pipe .k { font-family: var(--mono); font-size: 11px; color: var(--mint); letter-spacing: .1em; }
+.pipe b { display: block; font-weight: 400; font-size: 17px; letter-spacing: -.015em; margin-bottom: 5px; }
+.pipe em { font-style: normal; display: block; color: var(--mute); font-size: 13.5px; max-width: 74ch; line-height: 1.55; }
+
+/* ---------- the app flow ---------- */
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px 20px; }
+.flow figure { margin: 0; display: flex; flex-direction: column; gap: 9px; position: relative; }
+.flow .k { font-family: var(--mono); font-size: 10px; color: var(--mint); letter-spacing: .1em; }
+.flow .ph { border: 1px solid var(--line2); background: #0d0d10; padding: 4px; transition: border-color .3s; }
+.flow figure:hover .ph { border-color: var(--frame); }
+.flow img { display: block; width: 100%; height: auto; }
+.flow figcaption b { display: block; font-weight: 400; font-size: 13.5px; }
+.flow figcaption span { display: block; font-size: 12px; color: var(--mute); margin-top: 2px; line-height: 1.45; }
+
+/* ---------- what's coming ---------- */
+.coming { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: 26px 32px; }
+.coming div { border-top: 1px solid var(--line2); padding-top: 14px; }
+.coming b { display: block; font-weight: 400; font-size: 16px; letter-spacing: -.015em; margin-bottom: 7px; }
+.coming p { margin: 0; font-size: 13.5px; color: var(--mute); line-height: 1.55; }
+
+/* ---------- out ---------- */
+.sec.tlend { padding-bottom: 0; }
+.tlend h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 400; letter-spacing: -.03em; margin: 0 0 12px; }
+.tlend > div > p { color: var(--ink2); margin: 0 0 24px; max-width: 46ch; }
+.tlend footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 60px 0 40px; margin-top: 60px; border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--mute); }
+.tlend footer a { color: var(--ink2); text-decoration: none; transition: color .2s; }
+.tlend footer a:hover { color: var(--mint); }
+
+@media (max-width: 1080px) {
+  .sec.tlhero { grid-template-columns: 1fr; gap: 34px; }
+  .tlstage { grid-template-columns: 1fr; }
+  .calib { grid-template-columns: 1fr; gap: 28px; }
+  .calib { grid-template-columns: 1fr; }
+  .calibfig { max-width: 360px; }
+}
+@media (max-width: 640px) {
+  .tlpage .sec { padding: 64px 0 28px; }
+  .stills figure { min-width: 84px; }
+  .wipe, .wipe img { max-height: 60vh; }
+  .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stills figure { opacity: 1; transform: none; transition: none; }
+}
+
+/* the door from home into the TrueLine page. Sits under the App Store link, so the two
+   ways out of the block read as a pair rather than as chrome scattered around it. */
+.proj .more { display: inline-flex; align-items: center; gap: 9px; margin-top: 14px;
+  font-size: 14px; color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--line2); padding-bottom: 4px;
+  transition: color .25s, border-color .25s, gap .25s cubic-bezier(.22,1,.36,1); }
+.proj .more i { font-style: normal; color: var(--mint); transition: transform .3s cubic-bezier(.22,1,.36,1); }
+.proj .more:hover { color: var(--mint); border-color: var(--mint); gap: 13px; }
+.proj .more:hover i { transform: translateX(2px); }
+.proj .more:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

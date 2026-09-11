@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Frame } from "./Frame";
+import { A } from "../lib/router";
 import { useCentered, useReveal } from "../lib/useReveal";
 import { createTrueLine } from "../lib/trueline";
 
 const STAGES = [
   ["Track", "A detector finds the ball in every frame; a Kalman filter joins the detections into one path."],
-  ["Calibrate", "Six landmarks fix the lane in the frame. The lane is drawn back onto the footage to prove the fit."],
+  ["Calibrate", "Four corners fix the lane in the frame. The lane is drawn back onto the footage to prove the fit."],
   ["Translate", "Lane and path leave the video and settle into the app's plan view."],
-  ["Read", "Thirteen metrics. This throw entered at board 16.3, just right of the pocket."],
+  ["Read", "Nine measurements. This throw entered at board 16.3, just right of the pocket."],
 ] as const;
 
 export function TrueLine() {
@@ -52,6 +53,9 @@ export function TrueLine() {
         <a className="store" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
           Download on the App Store<i aria-hidden="true">&#8599;</i>
         </a>
+        <A className="more" href="/trueline">
+          See how it works<i aria-hidden="true">&#8594;</i>
+        </A>
         <div className="ctl">
           <button type="button" onClick={play}>Replay</button>
           <button type="button" onClick={() => setPaused(engine.current?.toggle() ?? false)}>{paused ? "Resume" : "Pause"}</button>
