@@ -147,11 +147,6 @@ export default function App() {
                   <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
                 </Frame>
                 <p className="kick in">Statistics and machine learning, Carnegie Mellon</p>
-                <p className="lede in">
-                  TrueLine, an iPhone app that measures a bowling throw from one camera, is on the App
-                  Store. Before that, usage analytics at NIST and a co-authored paper on matched binary
-                  diagnostic tests.
-                </p>
                 <ul className="in">
                   <li><a href="https://github.com/adam-zhu1">GitHub</a></li>
                   <li><a href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
