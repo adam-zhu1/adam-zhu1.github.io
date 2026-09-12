@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { Frame, type FrameHandle } from "../components/Frame";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
 import { TrueLine } from "../components/TrueLine";
+import { Clarity } from "../components/Clarity";
+import { CLARITY_ACCENT } from "../data/clarity";
 import { WorkCard } from "../components/WorkCard";
 import { Ambience } from "../components/Ambience";
 import { Bar, useClock } from "../components/Bar";
@@ -10,7 +12,8 @@ import { useReveal, prefersReducedMotion } from "../lib/useReveal";
 
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
-  { id: "projects", label: "Projects" },
+  { id: "projects", label: "TrueLine" },
+  { id: "clarity", label: "Clarity" },
   { id: "more", label: "More work" },
   { id: "contact", label: "Contact" },
 ];
@@ -18,9 +21,10 @@ const SECTIONS: Section[] = [
 /* The site itself is monochrome. Colour belongs to the projects: each one names its accent
    here, the section paints itself in it, and the chrome that is always on screen (the index
    dot, the mark's today dot, focus rings) takes the accent of the section you are in. Mint is
-   TrueLine's own, the colour its overlay draws the pocket in. */
+   TrueLine's own, the colour its overlay draws the pocket in; lens teal is Clarity's, the
+   secondary from its identity standard, picked over its mint so the two read apart. */
 const SITE_ACCENT = "#f4f4f2";
-const ACCENTS: Record<string, string> = { projects: "#40e69e" };
+const ACCENTS: Record<string, string> = { projects: "#40e69e", clarity: CLARITY_ACCENT };
 
 const WORK = [
   { href: "https://github.com/adam-zhu1", mark: "hist" as const, title: "NIST usage analytics",
@@ -51,6 +55,7 @@ export default function Home() {
   const nameFrame = useRef<FrameHandle>(null);
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
+  const headClarity = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
@@ -114,8 +119,13 @@ export default function Home() {
           </section>
 
           <section className="sec" id="projects" style={{ "--accent": ACCENTS.projects } as CSSProperties}>
-            <div className="sechead in" ref={headProjects}><h2>Projects</h2><span>1 shipped</span></div>
+            <div className="sechead in" ref={headProjects}><h2>Projects</h2><span>2 shipped · 01 TrueLine</span></div>
             <TrueLine />
+          </section>
+
+          <section className="sec" id="clarity" style={{ "--accent": ACCENTS.clarity } as CSSProperties}>
+            <div className="sechead in" ref={headClarity}><h2>Projects</h2><span>2 shipped · 02 Clarity</span></div>
+            <Clarity />
           </section>
 
           <section className="sec" id="more">
