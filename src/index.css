@@ -190,9 +190,17 @@ html.morphing { scroll-behavior: auto; }
 .wheel { position: relative; width: 100%; max-width: 600px; aspect-ratio: 1; margin-left: auto; }
 .wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .wheel .rim { fill: none; stroke: #2e2e36; stroke-width: 1; }
-.wheel .spoke { stroke: #b4b4bc; stroke-width: 1.2; opacity: .55; stroke-linecap: round; transition: opacity .25s, stroke .25s; }
-.wheel .spoke.lit { stroke: #f2f2f4; opacity: 1; }
-.wheel .spoke.today { stroke: var(--accent); opacity: 1; }
+/* A day's spoke is cut into one line per project, each carrying that project's own colour
+   in --c; anything that is not a named project keeps the grey. Butt caps, because round
+   ones are half a pixel long at each end and close the gaps between the segments. */
+.wheel .spoke { stroke: var(--c, #b4b4bc); stroke-width: 1.2; opacity: .55; stroke-linecap: butt;
+  pointer-events: none; transition: opacity .25s, stroke-width .2s cubic-bezier(.22,1,.36,1); }
+/* a fat invisible line per day, so a 1.2 px spoke is still something a pointer can catch */
+.wheel .hit { stroke: transparent; stroke-width: 9; pointer-events: stroke; }
+/* the sweep writes opacity inline every frame, so hover has to answer in width and
+   brightness instead — which also keeps the day's colours rather than washing them out */
+.wheel .day.lit .spoke { stroke-width: 2.8; filter: brightness(1.35); }
+.wheel .key text { fill: #8c8c96; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
 .wheel .mon { fill: #6c6c76; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
 .wheel .mtick { stroke: #3a3a44; stroke-width: 1; }
 .wheel .center { fill: #f2f2f4; font-family: var(--sans); font-weight: 500; }

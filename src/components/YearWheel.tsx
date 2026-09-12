@@ -5,6 +5,21 @@ import { prefersReducedMotion } from "../lib/useReveal";
 type Commit = { r: string; t: string; m: string };
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAY = 86_400_000, R = 250, C = 300;
+
+/**
+ * The wheel is the one place the whole site's colour scheme is visible at once: a day's
+ * spoke is split into the projects that day's commits went to, in this fixed order, and
+ * everything that is not a named project stays grey. The colours are each project's own,
+ * the same ones its section and its page carry.
+ */
+const PROJECTS = [
+  { key: "trueline", label: "TrueLine", color: "#40e69e", repos: ["trueline"] },
+  { key: "clarity", label: "Clarity", color: "#589da1", repos: ["clarity", "clarity-web"] },
+] as const;
+const OTHER = { key: "other", label: "Other", color: "#b4b4bc" } as const;
+const LEGEND = [...PROJECTS, OTHER];
+const projectOf = (repo: string) =>
+  PROJECTS.find(p => (p.repos as readonly string[]).includes(repo.toLowerCase()))?.key ?? OTHER.key;
 const dayKey = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
 export type WheelHandle = { play: () => void; total: number };
@@ -20,11 +35,14 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
 
   const model = useMemo(() => {
     const list = commits as Commit[];
-    const byDay = new Map<string, { n: number; repos: Set<string>; last: string }>();
+    const byDay = new Map<string, { n: number; repos: Map<string, number>; by: Map<string, number>; last: string }>();
     for (const c of list) {
       const k = dayKey(new Date(c.t + ":00Z"));
-      const e = byDay.get(k) ?? { n: 0, repos: new Set<string>(), last: "" };
-      e.n++; e.repos.add(c.r); e.last = c.m;
+      const e = byDay.get(k) ?? { n: 0, repos: new Map<string, number>(), by: new Map<string, number>(), last: "" };
+      e.n++; e.last = c.m;
+      e.repos.set(c.r, (e.repos.get(c.r) ?? 0) + 1);
+      const p = projectOf(c.r);
+      e.by.set(p, (e.by.get(p) ?? 0) + 1);
       byDay.set(k, e);
     }
     const today = new Date();
@@ -36,9 +54,23 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
       .filter(x => x.d >= start)
       .map(x => {
         const a = angOf(x.d), len = 18 + (x.e.n / maxN) * (R * 0.42);
-        return { ...x, a, x1: C + Math.cos(a) * (R - 6), y1: C + Math.sin(a) * (R - 6),
-                 x2: C + Math.cos(a) * (R - 6 - len), y2: C + Math.sin(a) * (R - 6 - len),
-                 today: x.k === dayKey(today) };
+        const at = (r: number) => [C + Math.cos(a) * r, C + Math.sin(a) * r] as const;
+        /* the spoke is cut into one segment per project, longest-lived colour at the rim,
+           each as long as that project's share of the day. A hairline gap keeps two
+           colours from reading as one blended stroke. */
+        const parts = [...PROJECTS, OTHER]
+          .map(p => ({ key: p.key, color: p.color, n: x.e.by.get(p.key) ?? 0 }))
+          .filter(p => p.n > 0);
+        const gap = parts.length > 1 ? 1.2 : 0;
+        let r = R - 6;
+        const segs = parts.map(p => {
+          const l = (p.n / x.e.n) * len - (parts.length > 1 ? gap : 0);
+          const [x1, y1] = at(r), [x2, y2] = at(r - Math.max(l, 1.5));
+          r -= Math.max(l, 1.5) + gap;
+          return { ...p, x1, y1, x2, y2 };
+        });
+        const [ox, oy] = at(R - 6), [ix, iy] = at(R - 6 - len);
+        return { ...x, a, segs, x1: ox, y1: oy, x2: ix, y2: iy, today: x.k === dayKey(today) };
       });
     const months: { a: number; label: string; year?: number }[] = [];
     for (let m = new Date(start.getFullYear(), start.getMonth() + 1, 1); m <= today; m = new Date(m.getFullYear(), m.getMonth() + 1, 1))
@@ -53,7 +85,7 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
     svg.querySelectorAll<SVGElement>(".rim, .spoke").forEach(n => {
       n.style.strokeDasharray = "1"; n.style.strokeDashoffset = "1";
     });
-    svg.querySelectorAll<SVGElement>(".mon, .mtick, .center, .sub, .todaydot").forEach(n => { n.style.opacity = "0"; });
+    svg.querySelectorAll<SVGElement>(".mon, .mtick, .center, .sub, .key, .todaydot").forEach(n => { n.style.opacity = "0"; });
   }, [intro]);
 
   /* the sweep turns once every two minutes and brightens spokes as it passes */
@@ -66,8 +98,8 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
     const turn = (now: number) => {
       a += ((now - last) / 1000) * (Math.PI * 2 / 120); last = now;
       sweep?.setAttribute("transform", `rotate(${(a * 180 / Math.PI).toFixed(2)} ${C} ${C})`);
-      spokes.forEach((sp, i) => {
-        let d = (model.days[i].a - a - 0.3) % (Math.PI * 2); if (d < 0) d += Math.PI * 2;
+      spokes.forEach(sp => {
+        let d = (Number(sp.dataset.a) - a - 0.3) % (Math.PI * 2); if (d < 0) d += Math.PI * 2;
         const k = d > Math.PI * 2 - 0.55 ? (d - (Math.PI * 2 - 0.55)) / 0.55 : 0;
         sp.style.opacity = (0.55 + 0.45 * k).toFixed(3);
       });
@@ -84,7 +116,7 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
     const rims = [...q<SVGCircleElement>(".rim")];
     const spokes = [...q<SVGLineElement>(".spoke")];
     const labels = [...q<SVGElement>(".mon"), ...q<SVGElement>(".mtick")];
-    const centre = [...q<SVGTextElement>(".center"), ...q<SVGTextElement>(".sub")];
+    const centre = [...q<SVGTextElement>(".center"), ...q<SVGTextElement>(".sub"), ...q<SVGGElement>(".key")];
     const dot = svg.querySelector<SVGCircleElement>(".todaydot");
     const count = svg.querySelector<SVGTextElement>(".center");
     let raf = 0;
@@ -151,12 +183,20 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
           );
         })}
         {model.days.map(d => (
-          <line key={d.k} className={`spoke${d.today ? " today" : ""}`} pathLength={1}
-                x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} style={{ pointerEvents: "stroke" }}
-                onPointerEnter={e => { (e.target as SVGLineElement).classList.add("lit");
-                  show(e, `${d.d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })} · ${d.e.n} commit${d.e.n > 1 ? "s" : ""}`, `${[...d.e.repos].join(", ")}`); }}
-                onPointerMove={e => setTip(t => t && { ...t, x: Math.min(innerWidth - 360, e.clientX + 14), y: Math.min(innerHeight - 90, e.clientY + 14) })}
-                onPointerLeave={e => { (e.target as SVGLineElement).classList.remove("lit"); setTip(null); }} />
+          <g key={d.k} className={`day${d.today ? " today" : ""}`}
+             onPointerEnter={e => { e.currentTarget.classList.add("lit");
+               show(e, `${d.d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })} · ${d.e.n} commit${d.e.n > 1 ? "s" : ""}`,
+                    [...d.e.repos].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} ${n}`).join(" · ")); }}
+             onPointerMove={e => setTip(t => t && { ...t, x: Math.min(innerWidth - 360, e.clientX + 14), y: Math.min(innerHeight - 90, e.clientY + 14) })}
+             onPointerLeave={e => { e.currentTarget.classList.remove("lit"); setTip(null); }}>
+            {/* one fat invisible line so a 1.2 px spoke is still catchable by a pointer */}
+            <line className="hit" x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} />
+            {d.segs.map(sg => (
+              <line key={sg.key} className="spoke" pathLength={1} data-a={d.a}
+                    x1={sg.x1} y1={sg.y1} x2={sg.x2} y2={sg.y2}
+                    style={{ "--c": sg.color } as React.CSSProperties} />
+            ))}
+          </g>
         ))}
         <circle className="todaydot" cx={C} cy={C - R} r="3.2" fill="var(--accent)" />
         <text className="center" x={C} y={C - 6} textAnchor="middle" fontSize="44" letterSpacing="-1.5">{model.total}</text>
@@ -166,6 +206,22 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
         <text className="sub" x={C} y={C + 36} textAnchor="middle">
           {MON[model.start.getMonth()]} {model.start.getFullYear()} to today
         </text>
+        {/* the key. Without it the two colours are decoration; with it the wheel says
+            which project each day of work went to. */}
+        {(() => {
+          const W = (l: string) => 13 + l.length * 6.6, GAP = 20;
+          const total = LEGEND.reduce((n, p) => n + W(p.label), 0) + GAP * (LEGEND.length - 1);
+          let x = C - total / 2;
+          return LEGEND.map(p => {
+            const at = x; x += W(p.label) + GAP;
+            return (
+              <g className="key" key={p.key}>
+                <circle cx={at + 3} cy={C + 58} r="3" fill={p.color} />
+                <text x={at + 13} y={C + 61.5} textAnchor="start">{p.label}</text>
+              </g>
+            );
+          });
+        })()}
       </svg>
       {tip && (
         <div className="tip on" style={{ transform: `translate(${tip.x}px,${tip.y}px)` }}>
