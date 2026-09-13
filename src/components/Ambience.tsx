@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "../lib/useReveal";
 
 /**
- * Everything that moves behind the page, on every route. Three quiet things: a soft light
- * that follows the pointer, a slow field of circles drifting across the screen, and a ring
- * that rides out from the cursor when you click somewhere that is not a control.
+ * Everything that moves behind the page, on every route. Two quiet things: a slow field of
+ * circles drifting across the screen, and a ring that rides out from the cursor when you
+ * click somewhere that is not a control.
  */
 
 const N = 26;
@@ -55,27 +55,9 @@ const CONTROL = "a,button,input,select,textarea,summary,label,video,[role=button
 type Rip = { id: number; x: number; y: number };
 
 export function Ambience({ active }: { active: boolean }) {
-  const glow = useRef<HTMLDivElement>(null);
-  const [on, setOn] = useState(false);
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [rips, setRips] = useState<Rip[]>([]);
-
-  /* ---------- the light on the pointer ---------- */
-  useEffect(() => {
-    if (!matchMedia("(hover:hover)").matches) return;
-    let tx = innerWidth / 2, ty = innerHeight / 2, x = tx, y = ty, raf = 0;
-    const tick = () => {
-      x += (tx - x) * 0.16; y += (ty - y) * 0.16;
-      glow.current?.style.setProperty("--x", `${x.toFixed(1)}px`);
-      glow.current?.style.setProperty("--y", `${y.toFixed(1)}px`);
-      raf = Math.abs(tx - x) > 0.4 || Math.abs(ty - y) > 0.4 ? requestAnimationFrame(tick) : 0;
-    };
-    const move = (e: PointerEvent) => { tx = e.clientX; ty = e.clientY; setOn(true); if (!raf) raf = requestAnimationFrame(tick); };
-    const leave = () => setOn(false);
-    addEventListener("pointermove", move); addEventListener("pointerleave", leave);
-    return () => { removeEventListener("pointermove", move); removeEventListener("pointerleave", leave); cancelAnimationFrame(raf); };
-  }, []);
 
   /* ---------- the drift field ---------- */
   useEffect(() => {
@@ -106,7 +88,6 @@ export function Ambience({ active }: { active: boolean }) {
 
   return (
     <>
-      <div className={`glow${on ? " on" : ""}`} ref={glow} aria-hidden="true" />
       <div className={`amb${active ? " on" : ""}`} aria-hidden="true">
         {size.w > 0 && (
           <svg viewBox={`0 0 ${size.w} ${size.h}`} preserveAspectRatio="none">

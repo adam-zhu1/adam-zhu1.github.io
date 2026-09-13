@@ -115,10 +115,6 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .tiles > .rise, .pipe > .rise, .clagents > .rise, .clteam > .rise { transform: none; }
 
 /* ---------- ambience ---------- */
-.glow { position: fixed; left: 0; top: 0; width: 720px; height: 720px; margin: -360px 0 0 -360px; pointer-events: none; z-index: 1;
-  background: radial-gradient(closest-side, rgba(255,255,255,.06), rgba(255,255,255,.018) 45%, transparent 70%);
-  transform: translate(var(--x,50vw), var(--y,50vh)); opacity: 0; transition: opacity .4s; }
-.glow.on { opacity: 1; }
 .amb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 1.4s; }
 
 .amb.on { opacity: 1; }
@@ -135,7 +131,6 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
   to   { transform: translate3d(var(--x1), var(--y1), 0) }
 }
 @keyframes driftfade { 0%, 100% { opacity: 0 } 16%, 84% { opacity: var(--o) } }
-@media (hover: none) { .glow { display: none } }
 /* ---------- the ring from the cursor ----------
    A click on the page itself answers, in the same double-ring the index dots use. It takes
    the live accent, so it comes up mint inside a project and ink everywhere else. */
