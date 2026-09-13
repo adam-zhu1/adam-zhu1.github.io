@@ -495,7 +495,9 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 
 /* the door from home into the TrueLine page. Sits under the App Store link, so the two
    ways out of the block read as a pair rather than as chrome scattered around it. */
-.proj .more { display: inline-flex; align-items: center; gap: 9px; margin-top: 14px;
+/* its own line, always. Inline-flex let it sit beside the pill whenever the pill's label
+   was short enough to leave room, which is why TrueLine's wrapped and Clarity's did not. */
+.proj .more { display: flex; width: fit-content; align-items: center; gap: 9px; margin-top: 14px;
   font-size: 14px; color: var(--ink); text-decoration: none;
   border-bottom: 1px solid var(--line2); padding-bottom: 4px;
   transition: color .25s, border-color .25s, gap .25s cubic-bezier(.22,1,.36,1); }

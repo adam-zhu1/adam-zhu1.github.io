@@ -1,7 +1,10 @@
 /* The facts the Clarity block and page share: links, the accent, and the four steps. */
 export const CLARITY_ACCENT = "#589da1";   // lens teal, the secondary in Clarity's own identity standard
 export const CLARITY_REPO = "https://github.com/s0hamjain/Clarity";
-export const CLARITY_DMG = "https://github.com/s0hamjain/Clarity/releases/download/v1.0.0/Clarity.dmg";
+/* Clarity's own site is where anyone who wants the app goes. This site does not hand out
+   the DMG itself: the published build is ad-hoc signed and needs a coordinator you run
+   yourself, so a download button here would send a reader to something that cannot work
+   for them. The product site owns that job, and its download button stays current. */
 export const CLARITY_SITE = "https://clarity-web-black.vercel.app/";
 
 export const CLARITY_STAGES = [

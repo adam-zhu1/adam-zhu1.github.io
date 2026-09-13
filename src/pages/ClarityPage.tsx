@@ -4,7 +4,7 @@ import { Index, useCurrentSection, type Section } from "../components/Index";
 import { Ambience } from "../components/Ambience";
 import { ClarityStage } from "../components/ClarityStage";
 import { ClarityPipeline } from "../components/ClarityPipeline";
-import { CLARITY_ACCENT, CLARITY_DMG, CLARITY_REPO, CLARITY_SITE } from "../data/clarity";
+import { CLARITY_ACCENT, CLARITY_REPO, CLARITY_SITE } from "../data/clarity";
 import { A } from "../lib/router";
 import { land, LANDED, morphPending } from "../lib/morph";
 import { useEachReveal, useReveal, prefersReducedMotion } from "../lib/useReveal";
@@ -16,7 +16,7 @@ const SECTIONS: Section[] = [
   { id: "cl-agents", label: "Three agents" },
   { id: "cl-desk", label: "The Mac app" },
   { id: "cl-team", label: "The team" },
-  { id: "cl-get", label: "Download" },
+  { id: "cl-get", label: "Get it" },
 ];
 
 const AGENTS = [
@@ -121,7 +121,7 @@ export default function ClarityPage() {
                 <div><dt>My part</dt><dd>The desktop app: menu bar, hotkey, capture, the two windows, recents, the installer</dd></div>
               </div>
               <div className="clhero-links in">
-                <a className="store" href={CLARITY_DMG}>Download for macOS<i aria-hidden="true">&#8599;</i></a>
+                <a className="store" href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
                 <a className="store" href={CLARITY_REPO}>GitHub<i aria-hidden="true">&#8599;</i></a>
               </div>
             </div>
@@ -235,16 +235,15 @@ export default function ClarityPage() {
           {/* ---------- out ---------- */}
           <section className="sec tlend" id="cl-get" ref={endRef}>
             <div className="in">
-              <h2>Try it on your own problem.</h2>
-              <p>Clarity 1.0.0 is a 25 MB DMG. Drag it to Applications, grant Screen Recording and Input
-                Monitoring, and press ⌘⇧E. The build is not notarized yet, so macOS asks once: System
-                Settings, Privacy &amp; Security, Open Anyway.</p>
-              <p className="tlnote">The app talks to a coordinator you run yourself. The server side needs MongoDB
-                Atlas, Docker and API keys; the repo's setup guide covers it.</p>
+              <h2>Go and get it.</h2>
+              <p>Clarity has its own site, with the download and the install steps. The source for
+                all four parts is one repository.</p>
+              <p className="tlnote">The app is the front of a stack you run yourself: a coordinator, an
+                agent service, a render sandbox, MongoDB Atlas and Docker. The repository&rsquo;s setup
+                guide covers all of it.</p>
               <div className="clhero-links">
-                <a className="store big" href={CLARITY_DMG}>Download Clarity.dmg<i aria-hidden="true">&#8599;</i></a>
+                <a className="store big" href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
                 <a className="store big" href={CLARITY_REPO}>Source on GitHub<i aria-hidden="true">&#8599;</i></a>
-                <a className="store big" href={CLARITY_SITE}>Clarity's site<i aria-hidden="true">&#8599;</i></a>
               </div>
             </div>
             <footer className="in">

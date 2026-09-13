@@ -72,7 +72,6 @@ const ROUTES = [
       "@context": "https://schema.org", "@type": "SoftwareApplication",
       name: "Clarity", applicationCategory: "EducationalApplication",
       operatingSystem: "macOS", url: `${ORIGIN}/clarity/`,
-      downloadUrl: "https://github.com/s0hamjain/Clarity/releases/download/v1.0.0/Clarity.dmg",
       codeRepository: "https://github.com/s0hamjain/Clarity",
       author: [
         { "@type": "Person", name: "Adam Zhu", url: `${ORIGIN}/` },
@@ -109,8 +108,7 @@ const ROUTES = [
       <h2>Links</h2>
       <ul>
         <li><a href="https://github.com/s0hamjain/Clarity">Clarity on GitHub</a></li>
-        <li><a href="https://github.com/s0hamjain/Clarity/releases/download/v1.0.0/Clarity.dmg">Download Clarity.dmg</a></li>
-        <li><a href="https://clarity-web-black.vercel.app/">Clarity's own site</a></li>
+        <li><a href="https://clarity-web-black.vercel.app/">Clarity's own site, where the app is downloaded</a></li>
         <li><a href="${ORIGIN}/">Adam Zhu, adamzhu.dev</a></li>
       </ul>`,
   },

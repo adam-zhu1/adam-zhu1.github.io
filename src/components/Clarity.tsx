@@ -4,7 +4,7 @@ import { A } from "../lib/router";
 import { usePlayInView, useReveal } from "../lib/useReveal";
 import { morphInto } from "../lib/morph";
 import { createClarity } from "../lib/clarity";
-import { CLARITY_DMG, CLARITY_STAGES } from "../data/clarity";
+import { CLARITY_SITE, CLARITY_STAGES } from "../data/clarity";
 
 /**
  * Clarity's block on the hub: the same three-column shape as TrueLine's, with the
@@ -52,11 +52,14 @@ export function Clarity() {
           <div><dt>Built with</dt><dd>Python, pywebview, Go, LangGraph, Manim, Docker</dd></div>
           <div><dt>Built</dt><dd>HackCMU, 11 to 12 September 2026, four people. I built the Mac app.</dd></div>
         </dl>
-        <a className="store" href={CLARITY_DMG}>
-          Download for macOS<i aria-hidden="true">&#8599;</i>
+        <a className="store" href={CLARITY_SITE}>
+          Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i>
         </a>
+        {/* not "see how it works": Clarity's own site already explains the product. This
+            page answers the thing a four-person project raises and a product site never
+            does, which is which part was mine. */}
         <A className="more" href="/clarity" onClick={open}>
-          See how it works<i aria-hidden="true">&#8594;</i>
+          What I built<i aria-hidden="true">&#8594;</i>
         </A>
         <div className="ctl">
           <button type="button" onClick={play}>Replay</button>
