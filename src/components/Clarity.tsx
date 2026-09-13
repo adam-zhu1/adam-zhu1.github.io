@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Frame } from "./Frame";
-import { A } from "../lib/router";
+import { A, out } from "../lib/router";
 import { usePlayInView, useReveal } from "../lib/useReveal";
 import { morphInto } from "../lib/morph";
 import { createClarity } from "../lib/clarity";
@@ -52,7 +52,7 @@ export function Clarity() {
           <div><dt>Built with</dt><dd>Python, pywebview, Go, LangGraph, Manim, Docker</dd></div>
           <div><dt>Built</dt><dd>HackCMU, 11 to 12 September 2026, four people. I built the Mac app.</dd></div>
         </dl>
-        <a className="store" href={CLARITY_SITE}>
+        <a className="store" {...out} href={CLARITY_SITE}>
           Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i>
         </a>
         {/* not "see how it works": Clarity's own site already explains the product. This

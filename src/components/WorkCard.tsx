@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Frame } from "./Frame";
 import { whenSeen } from "../lib/useReveal";
+import { out } from "../lib/router";
 
 const INK2 = "#a2a2a7";
 export type Mark = "hist" | "tail" | "bracket" | "ladder";
@@ -81,7 +82,7 @@ export function WorkCard({ href, mark, title, blurb, stat, cta, seed }: {
 
   return (
     <Frame seed={seed} threshold={0.4}>
-      <a className="card" href={href} target="_blank" rel="noreferrer">
+      <a className="card" {...out} href={href}>
           <div className="mark"><svg ref={svgRef} aria-hidden="true" /></div>
           <b>{title}</b>
           <p>{blurb}</p>

@@ -4,7 +4,7 @@ import { Index, useCurrentSection, type Section } from "../components/Index";
 import { Frame } from "../components/Frame";
 import { Ambience } from "../components/Ambience";
 import { TrueLineStage } from "../components/TrueLineStage";
-import { A } from "../lib/router";
+import { A, out } from "../lib/router";
 import { land, LANDED, morphPending } from "../lib/morph";
 import { useEachReveal, useReveal, prefersReducedMotion } from "../lib/useReveal";
 
@@ -218,7 +218,7 @@ export default function TrueLinePage() {
                 <div><dt>Built with</dt><dd>Swift, Vision, Core ML, a fine-tuned detector</dd></div>
                 <div><dt>Released</dt><dd>App Store, 24 August 2026</dd></div>
               </div>
-              <a className="store in" href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
+              <a className="store in" {...out} href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
             </div>
             <a className="cue in" href="#tl-seq">
               <span>One throw, end to end</span>
@@ -376,7 +376,7 @@ export default function TrueLinePage() {
                   result, and discarding does not refund it. */}
               <p>Download it, shoot a throw, see what your ball actually does. Ten analyzed throws are
                 free; a one-time unlock removes the limit.</p>
-              <a className="store big" href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
+              <a className="store big" {...out} href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
             </div>
             <footer className="in">
               <A href="/#projects">&#8592; Back to the work</A>

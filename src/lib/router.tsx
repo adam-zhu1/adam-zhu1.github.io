@@ -34,6 +34,14 @@ export function navigate(to: string, opts: { replace?: boolean } = {}) {
 }
 
 /**
+ * Everything that leaves the site opens in its own tab, so a reader who clicks through to
+ * the App Store or to a project's own site still has the portfolio sitting behind them.
+ * mailto is deliberately not in this set: it hands off to a mail client and would leave an
+ * empty tab behind it.
+ */
+export const out = { target: "_blank", rel: "noreferrer" } as const;
+
+/**
  * An internal link. Falls through to the browser for modified clicks and anything
  * off-site, so cmd-click still opens a new tab on a real URL.
  */

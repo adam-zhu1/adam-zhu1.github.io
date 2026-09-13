@@ -9,6 +9,7 @@ import { Ambience } from "../components/Ambience";
 import { Bar, useClock } from "../components/Bar";
 import { Index, useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
+import { out } from "../lib/router";
 
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
@@ -108,10 +109,10 @@ export default function Home() {
                 </Frame>
                 <p className="kick in">Statistics and machine learning, Carnegie Mellon</p>
                 <ul className="in">
-                  <li><a href="https://github.com/adam-zhu1">GitHub</a></li>
-                  <li><a href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
+                  <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
+                  <li><a {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
                   <li><a href="mailto:adamzhu@andrew.cmu.edu">Email</a></li>
-                  <li><a href="/Adam-Zhu-Resume.pdf">Resume</a></li>
+                  <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
                 </ul>
               </div>
               <div className="wheel"><YearWheel onReady={onWheelReady} intro={!reduce} /></div>
@@ -140,9 +141,9 @@ export default function Home() {
               <h2 className="in">Let&rsquo;s connect.</h2>
               <a className="mailto in" href="mailto:adamzhu@andrew.cmu.edu">adamzhu@andrew.cmu.edu</a>
               <div className="cells in">
-                <a className="cell" href="https://github.com/adam-zhu1"><small>Code</small><b>GitHub</b><span>adam-zhu1</span></a>
-                <a className="cell" href="https://www.linkedin.com/in/adam-zhu-cmu/"><small>Track record</small><b>LinkedIn</b><span>adam-zhu-cmu</span></a>
-                <a className="cell" href="/Adam-Zhu-Resume.pdf"><small>One page</small><b>Resume</b><span>PDF</span></a>
+                <a className="cell" {...out} href="https://github.com/adam-zhu1"><small>Code</small><b>GitHub</b><span>adam-zhu1</span></a>
+                <a className="cell" {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/"><small>Track record</small><b>LinkedIn</b><span>adam-zhu-cmu</span></a>
+                <a className="cell" {...out} href="/Adam-Zhu-Resume.pdf"><small>One page</small><b>Resume</b><span>PDF</span></a>
               </div>
             </div>
             <footer className="in"><span>Adam Zhu, Pittsburgh</span><span>{clock}</span></footer>

@@ -5,7 +5,7 @@ import { Ambience } from "../components/Ambience";
 import { ClarityStage } from "../components/ClarityStage";
 import { ClarityPipeline } from "../components/ClarityPipeline";
 import { CLARITY_ACCENT, CLARITY_REPO, CLARITY_SITE } from "../data/clarity";
-import { A } from "../lib/router";
+import { A, out } from "../lib/router";
 import { land, LANDED, morphPending } from "../lib/morph";
 import { useEachReveal, useReveal, prefersReducedMotion } from "../lib/useReveal";
 
@@ -121,8 +121,8 @@ export default function ClarityPage() {
                 <div><dt>My part</dt><dd>The desktop app: menu bar, hotkey, capture, the two windows, recents, the installer</dd></div>
               </div>
               <div className="clhero-links in">
-                <a className="store" href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
-                <a className="store" href={CLARITY_REPO}>GitHub<i aria-hidden="true">&#8599;</i></a>
+                <a className="store" {...out} href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
+                <a className="store" {...out} href={CLARITY_REPO}>GitHub<i aria-hidden="true">&#8599;</i></a>
               </div>
             </div>
             <a className="cue in" href="#cl-seq">
@@ -218,7 +218,7 @@ export default function ClarityPage() {
             </div>
             <div className="clteam" ref={teamListRef}>
               {TEAM.map(m => (
-                <a key={m.name} className={m.me ? "me" : ""} href={m.href}>
+                <a key={m.name} className={m.me ? "me" : ""} {...out} href={m.href}>
                   <b>{m.name}{m.me && <i>me</i>}</b>
                   <span>{m.role}</span>
                   <small>{m.dir}</small>
@@ -242,8 +242,8 @@ export default function ClarityPage() {
                 agent service, a render sandbox, MongoDB Atlas and Docker. The repository&rsquo;s setup
                 guide covers all of it.</p>
               <div className="clhero-links">
-                <a className="store big" href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
-                <a className="store big" href={CLARITY_REPO}>Source on GitHub<i aria-hidden="true">&#8599;</i></a>
+                <a className="store big" {...out} href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
+                <a className="store big" {...out} href={CLARITY_REPO}>Source on GitHub<i aria-hidden="true">&#8599;</i></a>
               </div>
             </div>
             <footer className="in">

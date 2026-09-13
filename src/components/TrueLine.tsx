@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Frame } from "./Frame";
-import { A } from "../lib/router";
+import { A, out } from "../lib/router";
 import { usePlayInView, useReveal } from "../lib/useReveal";
 import { morphInto } from "../lib/morph";
 import { createTrueLine } from "../lib/trueline";
@@ -62,9 +62,9 @@ export function TrueLine() {
         <dl className="facts">
           <div><dt>For</dt><dd>League bowlers and coaches</dd></div>
           <div><dt>Built with</dt><dd>Swift, Vision, Core ML, a fine-tuned detector</dd></div>
-          <div><dt>Since</dt><dd><a href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">App Store</a>, 24 August 2026</dd></div>
+          <div><dt>Since</dt><dd><a {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">App Store</a>, 24 August 2026</dd></div>
         </dl>
-        <a className="store" href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
+        <a className="store" {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
           Download on the App Store<i aria-hidden="true">&#8599;</i>
         </a>
         <A className="more" href="/trueline" onClick={open}>
