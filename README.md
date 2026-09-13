@@ -7,13 +7,13 @@ Personal site. Vite, React, TypeScript, Tailwind CSS v4, Three.js, GSAP.
 ```
 index.html            entry, plus the SEO head and the crawler fallback
 src/
-  App.tsx             the router: home, /trueline, /clarity
-  pages/              Home, TrueLinePage, ClarityPage
+  App.tsx             the router: home and /trueline
+  pages/              Home, TrueLinePage
   index.css           the whole design system
-  components/         Frame, YearWheel, TrueLine(+Stage), Clarity(+Stage, Pipeline), WorkCard, Ambience
+  components/         Frame, YearWheel, TrueLine(+Stage), Clarity, WorkCard, Ambience
   lib/                reveal hooks, the router, the morph, and the two sequence engines
   data/               commits.json, TrueLine's track and lane geometry, Clarity's links and steps
-public/media/         the TrueLine clip (mp4 + webm) and stills; Clarity's window captures and mark
+public/media/         the TrueLine clip (mp4 + webm) and its stills
 scripts/
   fetch-commits.mjs   rewrites src/data/commits.json from the GitHub API
 prototypes/           throwaway studies, dev-server only, not in the build
@@ -36,7 +36,8 @@ docs/                 planning docs; the brief, research and handoff are untrack
   and timings, and drives them on the same pausable clock as TrueLine's engine. The
   explanation and the array animation are illustrative; the caption says the clock is
   compressed. Lens teal (`#589da1`) is Clarity's accent on this site, chosen over its own
-  mint so the two projects read apart.
+  mint so the two projects read apart. Clarity has no page here: it is a team project with
+  its own site, and the block links out to it and nowhere else.
 - **Frames** draw their own four edges and watch themselves, so `.on` always lands on the
   element the CSS targets. Animations start when a thing is properly on screen, and the
   TrueLine sequence waits until its window is centred.

@@ -44,7 +44,7 @@ jobs:
       # Every real route is pre-rendered by scripts/prerender.mjs as part of `npm run build`,
       # so 404.html stays the hand-written redirect in public/ and only catches stray paths.
       - name: Check the pre-rendered routes exist
-        run: test -f dist/trueline/index.html && test -f dist/clarity/index.html && test -f dist/404.html
+        run: test -f dist/trueline/index.html && test -f dist/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

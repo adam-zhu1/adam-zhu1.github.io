@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Frame } from "./Frame";
-import { A, out } from "../lib/router";
+import { out } from "../lib/router";
 import { usePlayInView, useReveal } from "../lib/useReveal";
-import { morphInto } from "../lib/morph";
 import { createClarity } from "../lib/clarity";
 import { CLARITY_SITE, CLARITY_STAGES } from "../data/clarity";
 
 /**
- * Clarity's block on the hub: the same three-column shape as TrueLine's, with the
- * sequence rebuilt from the app's own windows in the middle. Lens teal is its colour.
+ * Clarity's block on the hub: the same three-column shape as TrueLine's, with the sequence
+ * rebuilt from the app's own windows in the middle. Lens teal is its colour.
+ *
+ * Unlike TrueLine this has no page of its own behind it. Clarity is a team project with its
+ * own site, and that site is the one place it is explained; the only way out of this block
+ * is to it.
  */
 export function Clarity() {
   const stage = useRef<HTMLDivElement>(null);
@@ -29,19 +32,10 @@ export function Clarity() {
   const textRef = useReveal<HTMLDivElement>();
   const stagesRef = useReveal<HTMLDivElement>();
 
-  const block = useRef<HTMLDivElement>(null);
-  const title = useRef<HTMLHeadingElement>(null);
-  const open = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    if (!title.current) return;
-    e.preventDefault();
-    morphInto("/clarity", title.current, block.current);
-  };
-
   return (
-    <div className="proj clproj" ref={block}>
+    <div className="proj clproj">
       <div className="in" ref={textRef}>
-        <h3 ref={title}>Clarity<i className="swipe" /></h3>
+        <h3>Clarity<i className="swipe" /></h3>
         <p className="desc">
           A macOS menu-bar app that explains any problem on your screen. Press one hotkey, drag a box
           around the problem, and a written explanation arrives in seconds, then an animation made for
@@ -55,12 +49,6 @@ export function Clarity() {
         <a className="store" {...out} href={CLARITY_SITE}>
           Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i>
         </a>
-        {/* not "see how it works": Clarity's own site already explains the product. This
-            page answers the thing a four-person project raises and a product site never
-            does, which is which part was mine. */}
-        <A className="more" href="/clarity" onClick={open}>
-          What I built<i aria-hidden="true">&#8594;</i>
-        </A>
         <div className="ctl">
           <button type="button" onClick={play}>Replay</button>
           <button type="button" onClick={() => setPaused(engine.current?.toggle() ?? false)}>{paused ? "Resume" : "Pause"}</button>
