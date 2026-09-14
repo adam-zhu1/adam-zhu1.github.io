@@ -184,7 +184,7 @@ html.morphing { scroll-behavior: auto; }
 /* ---------- the wheel ---------- */
 .wheel { position: relative; width: 100%; max-width: 600px; aspect-ratio: 1; margin-left: auto; }
 .wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.wheel .rim { fill: none; stroke: #2e2e36; stroke-width: 1; }
+.wheel .rim { fill: none; stroke: #4a4a56; stroke-width: 1; }
 /* A day's spoke is cut into one line per project, each carrying that project's own colour
    in --c; anything that is not a named project keeps the grey. Butt caps, because round
    ones are half a pixel long at each end and close the gaps between the segments. */
@@ -198,11 +198,9 @@ html.morphing { scroll-behavior: auto; }
 .wheel .key text { fill: #8c8c96; font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; }
 .wheel .mon { fill: #6c6c76; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
 .wheel .mtick { stroke: #3a3a44; stroke-width: 1; }
-/* the label the number belongs to, and the brightest small type in the wheel */
-.wheel .ctitle { fill: var(--ink2); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; }
 .wheel .center { fill: #f2f2f4; font-family: var(--sans); font-weight: 500; }
-.wheel .hint { fill: #6d6d77; font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em; }
-.wheel .sub { fill: #7c7c85; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; }
+/* the word the number belongs to, at headline size rather than caption size */
+.wheel .unit { fill: var(--ink2); font-family: var(--sans); font-size: 22px; letter-spacing: -.01em; }
 .wheel .sweep { fill: url(#sweepGrad); opacity: .55; }
 
 .tip { position: fixed; z-index: 60; pointer-events: none; background: rgba(22,22,26,.9); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 8px 11px; font-size: 12.5px; color: var(--ink2); opacity: 0; transition: opacity .15s; max-width: 340px; }
