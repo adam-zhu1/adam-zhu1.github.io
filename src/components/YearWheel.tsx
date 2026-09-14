@@ -85,7 +85,7 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
     svg.querySelectorAll<SVGElement>(".rim, .spoke").forEach(n => {
       n.style.strokeDasharray = "1"; n.style.strokeDashoffset = "1";
     });
-    svg.querySelectorAll<SVGElement>(".mon, .mtick, .center, .sub, .key, .todaydot").forEach(n => { n.style.opacity = "0"; });
+    svg.querySelectorAll<SVGElement>(".mon, .mtick, .ctitle, .center, .sub, .key, .hint, .todaydot").forEach(n => { n.style.opacity = "0"; });
   }, [intro]);
 
   /* the sweep turns once every two minutes and brightens spokes as it passes */
@@ -116,7 +116,8 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
     const rims = [...q<SVGCircleElement>(".rim")];
     const spokes = [...q<SVGLineElement>(".spoke")];
     const labels = [...q<SVGElement>(".mon"), ...q<SVGElement>(".mtick")];
-    const centre = [...q<SVGTextElement>(".center"), ...q<SVGTextElement>(".sub"), ...q<SVGGElement>(".key")];
+    const centre = [...q<SVGTextElement>(".ctitle"), ...q<SVGTextElement>(".center"), ...q<SVGTextElement>(".sub"),
+                    ...q<SVGGElement>(".key"), ...q<SVGTextElement>(".hint")];
     const dot = svg.querySelector<SVGCircleElement>(".todaydot");
     const count = svg.querySelector<SVGTextElement>(".center");
     let raf = 0;
@@ -158,7 +159,7 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
   return (
     <>
       <svg ref={svgRef} viewBox="0 0 600 600" role="img"
-           aria-label={`${model.total} commits over the past year across ${model.repos} repositories`}>
+           aria-label={`${model.total} commits over the past 12 months across ${model.repos} repositories, drawn as one line per day around a year`}>
         <defs>
           <radialGradient id="sweepGrad">
             <stop offset="0" stopColor="#fff" stopOpacity="0" />
@@ -199,29 +200,36 @@ export function YearWheel({ onReady, intro = false }: { onReady?: (h: WheelHandl
           </g>
         ))}
         <circle className="todaydot" cx={C} cy={C - R} r="3.2" fill="var(--accent)" />
-        <text className="center" x={C} y={C - 6} textAnchor="middle" fontSize="44" letterSpacing="-1.5">{model.total}</text>
-        <text className="sub" x={C} y={C + 18} textAnchor="middle">
-          commits · {model.days.length} days · {model.repos} repos
-        </text>
-        <text className="sub" x={C} y={C + 36} textAnchor="middle">
-          {MON[model.start.getMonth()]} {model.start.getFullYear()} to today
+        {/* The centre says what the object is before it says how big the number is. The
+            old order was the other way round — a large unlabelled count over three lines of
+            small grey type, with the word "commits" buried in the middle of one of them —
+            and readers told Adam they could not tell what the wheel was counting. */}
+        <text className="ctitle" x={C} y={C - 52} textAnchor="middle">COMMITS, PAST 12 MONTHS</text>
+        <text className="center" x={C} y={C + 4} textAnchor="middle" fontSize="46" letterSpacing="-1.5">{model.total}</text>
+        <text className="sub" x={C} y={C + 28} textAnchor="middle">
+          {model.days.length} active days · {model.repos} repos
         </text>
         {/* the key. Without it the two colours are decoration; with it the wheel says
             which project each day of work went to. */}
         {(() => {
-          const W = (l: string) => 13 + l.length * 6.6, GAP = 20;
+          const W = (l: string) => 12 + l.length * 6.3, GAP = 14;
           const total = LEGEND.reduce((n, p) => n + W(p.label), 0) + GAP * (LEGEND.length - 1);
           let x = C - total / 2;
           return LEGEND.map(p => {
             const at = x; x += W(p.label) + GAP;
             return (
               <g className="key" key={p.key}>
-                <circle cx={at + 3} cy={C + 58} r="3" fill={p.color} />
-                <text x={at + 13} y={C + 61.5} textAnchor="start">{p.label}</text>
+                <circle cx={at + 2.5} cy={C + 46} r="2.8" fill={p.color} />
+                <text x={at + 12} y={C + 49.5} textAnchor="start">{p.label}</text>
               </g>
             );
           });
         })()}
+        {/* the encoding, said plainly: without it a spoke reads as decoration rather than
+            as one day of work. Everything in this centre block has to stay inside the
+            radius the spokes stop at (122 in viewBox units, the shortest a spoke can be),
+            or a busy day will one day be drawn straight through the type. */}
+        <text className="hint" x={C} y={C + 72} textAnchor="middle">each line is one day</text>
       </svg>
       {tip && (
         <div className="tip on" style={{ transform: `translate(${tip.x}px,${tip.y}px)` }}>

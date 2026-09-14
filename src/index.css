@@ -191,14 +191,17 @@ html.morphing { scroll-behavior: auto; }
 .wheel .spoke { stroke: var(--c, #b4b4bc); stroke-width: 1.2; opacity: .55; stroke-linecap: butt;
   pointer-events: none; transition: opacity .25s, stroke-width .2s cubic-bezier(.22,1,.36,1); }
 /* a fat invisible line per day, so a 1.2 px spoke is still something a pointer can catch */
-.wheel .hit { stroke: transparent; stroke-width: 9; pointer-events: stroke; }
+.wheel .hit { stroke: transparent; stroke-width: 9; pointer-events: stroke; cursor: crosshair; }
 /* the sweep writes opacity inline every frame, so hover has to answer in width and
    brightness instead — which also keeps the day's colours rather than washing them out */
 .wheel .day.lit .spoke { stroke-width: 2.8; filter: brightness(1.35); }
-.wheel .key text { fill: #8c8c96; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
+.wheel .key text { fill: #8c8c96; font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; }
 .wheel .mon { fill: #6c6c76; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
 .wheel .mtick { stroke: #3a3a44; stroke-width: 1; }
+/* the label the number belongs to, and the brightest small type in the wheel */
+.wheel .ctitle { fill: var(--ink2); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; }
 .wheel .center { fill: #f2f2f4; font-family: var(--sans); font-weight: 500; }
+.wheel .hint { fill: #6d6d77; font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em; }
 .wheel .sub { fill: #7c7c85; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; }
 .wheel .sweep { fill: url(#sweepGrad); opacity: .55; }
 
