@@ -39,6 +39,8 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 
 .bar { position: fixed; left: 0; right: 0; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 40px 18px var(--rail, 136px); font-size: 13.5px; color: var(--ink2); pointer-events: none; }
 .bar > * { pointer-events: auto; }
+/* content scrolls under the bar, so the bar carries a strip of the ground behind it */
+.bar::before { content: ""; position: absolute; inset: 0 0 -24px; z-index: -1; background: linear-gradient(var(--bg) 55%, transparent); pointer-events: none; }
 .bar .clock { font-family: var(--mono); font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
 .bar .replay { font: inherit; font-size: 12.5px; color: var(--ink2); background: none; border: 1px solid var(--line2); padding: 5px 12px; border-radius: 999px; cursor: pointer; margin-left: auto; margin-right: 16px; }
 .bar .replay:hover { color: var(--ink); border-color: var(--ink2); }
@@ -83,6 +85,8 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .win.on > .edge { transform: none; }
 .win > .corner { position: absolute; width: 9px; height: 9px; pointer-events: none; opacity: 0; transition: opacity .4s ease 1.1s; }
 .win.on > .corner { opacity: 1; }
+/* the brackets read as decoration; the drawn edge is enough */
+.win > .corner { display: none; }
 /* each tick is an L: ::before is the arm along the top or bottom edge, ::after the arm
    down the left or right one. Both arms must sit on the two edges the corner belongs to,
    or the bracket points away from its own corner. */
@@ -163,13 +167,12 @@ html.morphing { scroll-behavior: auto; }
 
 /* ---------- 01 hero ---------- */
 .hero .grid1 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 72px; align-items: center; }
-.hero .win { display: inline-block; padding: 20px 30px 16px 26px; }
 .hero h1 { margin: 0; font-size: clamp(52px, 7.4vw, 112px); font-weight: 500; letter-spacing: -.045em; line-height: .95;
   clip-path: inset(0 0 -20% 0); transform: none;
   transition: clip-path 1.05s cubic-bezier(.22,1,.36,1), transform 1.05s cubic-bezier(.22,1,.36,1); }
 .hero h1.pre { clip-path: inset(108% 0 -20% 0); transform: translateY(.14em); }
-.hero .kick { font-size: 14px; color: var(--mute); margin: 26px 0 0; }
-.hero ul { display: flex; flex-wrap: wrap; gap: 26px; margin: 36px 0 0; padding: 0; list-style: none; }
+.hero .kick { font-size: 18px; color: var(--ink2); margin: 22px 0 0; }
+.hero ul { display: flex; flex-wrap: wrap; gap: 26px; margin: 32px 0 0; padding: 0; list-style: none; }
 .hero a { font-size: 16px; color: var(--ink); text-decoration: none; position: relative; padding-bottom: 3px; }
 .hero a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .18s cubic-bezier(.4,0,.2,1); }
 .hero a:hover::after, .hero a:focus-visible::after { transform: scaleX(1); }
@@ -209,10 +212,10 @@ html.morphing { scroll-behavior: auto; }
 .tip em { font-style: normal; color: var(--mute); }
 
 /* ---------- 02 projects ---------- */
-.sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; }
-.sechead h2 { margin: 0; font-size: 13.5px; font-weight: 500; color: var(--ink2); }
+.sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 40px; }
+.sechead h2 { margin: 0; font-size: 14px; font-weight: 500; color: var(--mute); }
 .sechead span { font-family: var(--mono); font-size: 11px; color: var(--mute); }
-.proj { display: grid; grid-template-columns: minmax(210px,.8fr) minmax(0,1.7fr) minmax(190px,.75fr); gap: 36px; align-items: start; }
+.proj { display: grid; grid-template-columns: minmax(280px,.85fr) minmax(0,1.6fr); gap: 72px; align-items: start; }
 .proj h3 { position: relative; display: inline-block; font-size: clamp(30px,3vw,42px); font-weight: 500; letter-spacing: -.035em; line-height: 1; margin: 0; }
 /* the project's own colour draws itself under its name, then clears out of the way */
 .swipe { position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: var(--accent);
@@ -224,28 +227,35 @@ html.morphing { scroll-behavior: auto; }
   56% { transform-origin: right }
   100% { transform: scaleX(1); opacity: 0 }
 }
-.proj .desc { margin: 16px 0 0; font-size: 16px; color: var(--ink2); }
+.proj .desc { margin: 20px 0 0; font-size: 16.5px; color: var(--ink2); max-width: 46ch; }
+.proj .meta { margin: 14px 0 0; font-size: 14px; color: var(--mute); }
+.ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 26px; }
+.ctas .store { margin-top: 0; }
 .facts { margin: 22px 0 0; font-size: 14.5px; }
 .facts div { display: grid; grid-template-columns: 82px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
 .facts dt { color: var(--mute); margin: 0; }
 .facts dd { margin: 0; color: var(--ink2); }
-.stages { margin: 0; padding-top: 6px; }
-.step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); opacity: .4; transition: opacity .35s linear; }
+.stages { margin: 36px 0 0; }
+.step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); opacity: .45; transition: opacity .35s linear; }
 .step.cur { opacity: 1; }
 .step .n { font-size: 12.5px; color: var(--mute); padding-top: 3px; font-variant-numeric: tabular-nums; }
 .step.cur .n { color: var(--accent); }
 .step b { display: block; font-weight: 500; font-size: 15.5px; }
-.step em { font-style: normal; font-size: 14.5px; color: var(--ink2); }
+/* only the step being played says what it is; the others are just their names */
+.step em { display: grid; grid-template-rows: 0fr; font-style: normal; font-size: 14.5px; color: var(--ink2); transition: grid-template-rows .45s cubic-bezier(.22,1,.36,1); }
+.step em > span { overflow: hidden; }
+.step.cur em { grid-template-rows: 1fr; }
+.step.cur em > span { padding-top: 4px; }
 .store { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; padding: 9px 17px;
   font-size: 14.5px; color: var(--ink); text-decoration: none; border: 1px solid var(--line2);
   border-radius: 999px; transition: border-color .2s, background .2s; }
 .store:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .store i { font-style: normal; font-size: 13px; color: var(--mute); transition: transform .2s cubic-bezier(.22,1,.36,1); }
 .store:hover i { color: var(--ink2); transform: translate(2px,-2px); }
-.ctl { display: flex; gap: 8px; margin-top: 22px; }
+.ctl { display: flex; gap: 18px; margin-top: 18px; }
 .store + .ctl { margin-top: 14px; }
-.ctl button { font: inherit; font-size: 12.5px; color: var(--ink2); background: none; border: 1px solid var(--line2); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
-.ctl button:hover { color: var(--ink); border-color: var(--ink2); }
+.ctl button { font: inherit; font-size: 13px; color: var(--mute); background: none; border: 0; padding: 0; cursor: pointer; }
+.ctl button:hover { color: var(--ink); }
 .appwin { padding: 18px; }
 /* the block must fit one screen: the animation is sized from what is left after the
    section heading, the caption and the metrics row, so the numbers are never cut off */
@@ -263,32 +273,30 @@ html.morphing { scroll-behavior: auto; }
 .num i { font-style: normal; font-size: 11.5px; color: var(--mute); margin-left: 4px; }
 
 /* ---------- 03 more work ---------- */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 44px 26px; }
-.card { text-decoration: none; color: inherit; padding: 22px 22px 20px; min-height: 230px; display: flex; flex-direction: column; }
-.card .mark { height: 76px; margin-bottom: 16px; }
-.card .mark svg { width: 100%; height: 100%; overflow: visible; }
-.card b { font-weight: 500; font-size: 17px; }
-.card p { margin: 6px 0 0; font-size: 15px; color: var(--ink2); }
-.card .stat { font-family: var(--mono); font-size: 11.5px; color: var(--mute); margin: 10px 0 0; line-height: 1.6; }
-.card .stat b { color: var(--ink2); font-weight: 400; font-size: inherit; }
-.card .go { margin-top: auto; padding-top: 14px; font-size: 13px; color: var(--mute); }
-.card:hover .go { color: var(--ink); }
+.worklist { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
+.worklist .row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.6fr) 130px; gap: 40px; align-items: baseline;
+  padding: 26px 0; border-top: 1px solid var(--line); text-decoration: none; color: inherit; }
+.worklist b { font-weight: 500; font-size: 18px; }
+.worklist p { margin: 0; font-size: 15.5px; color: var(--ink2); }
+.worklist .go { font-size: 13.5px; color: var(--mute); white-space: nowrap; text-align: right; transition: color .2s; }
+.worklist .row:hover .go { color: var(--ink); }
+.worklist .row:hover b { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 
 /* ---------- 04 contact ---------- */
-.contact h2 { margin: 0; font-size: clamp(40px,6vw,88px); font-weight: 500; letter-spacing: -.04em; line-height: .98; }
-.contact .mailto { display: inline-block; margin: 24px 0 0; font-size: clamp(20px,2.6vw,34px); font-weight: 500; letter-spacing: -.02em; color: var(--ink); text-decoration: none; position: relative; padding-bottom: 8px; }
+.sec.contact { min-height: 70vh; }
+#more { min-height: auto; padding-top: 140px; }
+.contact h2 { margin: 0; font-size: 14px; font-weight: 500; color: var(--mute); }
+.contact .mailto { display: inline-block; margin: 28px 0 0; font-size: clamp(22px,4.4vw,60px); overflow-wrap: anywhere; font-weight: 500; letter-spacing: -.02em; color: var(--ink); text-decoration: none; position: relative; padding-bottom: 8px; }
 .contact .mailto::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--frame); transform: scaleX(0); transform-origin: left; transition: transform 1s cubic-bezier(.22,1,.36,1) .6s, background .2s; }
 .contact.on .mailto::after { transform: scaleX(1); }
 .contact .mailto:hover::after { background: var(--ink); }
-.cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap: 1px; margin: 56px 0 0; background: var(--line); }
-.cell { background: var(--bg); padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 5px; text-decoration: none; color: inherit; transition: background .2s; }
-.cell:hover { background: #101013; }
-.cell small { font-size: 12px; color: var(--mute); }
-.cell b { font-weight: 500; font-size: 16.5px; }
-.cell span { font-family: var(--mono); font-size: 11.5px; color: var(--mute); }
+.contact .links { display: flex; flex-wrap: wrap; gap: 26px; margin: 40px 0 0; padding: 0; list-style: none; }
+.contact .links a { font-size: 16px; color: var(--ink); text-decoration: none; }
+.contact .links a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 
-@media (max-width: 1180px) { .proj { grid-template-columns: 1fr } .nums { grid-template-columns: repeat(3,1fr) } }
+@media (max-width: 1180px) { .proj { grid-template-columns: 1fr; gap: 40px } .nums { grid-template-columns: repeat(3,1fr) } }
+@media (max-width: 760px) { .worklist .row { grid-template-columns: 1fr; gap: 6px } .worklist .go { text-align: left } }
 @media (max-width: 980px) {
   :root { --rail: 62px }
   .wrap { padding-right: 24px }
@@ -489,11 +497,8 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .tlrule, .tlhero.on .tlrule.in { transform: none; transition: none; }
 }
 
-/* the door from home into the TrueLine page. Sits under the App Store link, so the two
-   ways out of the block read as a pair rather than as chrome scattered around it. */
-/* its own line, always. Inline-flex let it sit beside the pill whenever the pill's label
-   was short enough to leave room, which is why TrueLine's wrapped and Clarity's did not. */
-.proj .more { display: flex; width: fit-content; align-items: center; gap: 9px; margin-top: 14px;
+/* the door from home into the TrueLine page, beside the App Store link in the same row */
+.proj .more { display: inline-flex; align-items: center; gap: 9px;
   font-size: 14px; color: var(--ink); text-decoration: none;
   border-bottom: 1px solid var(--line2); padding-bottom: 4px;
   transition: color .25s, border-color .25s, gap .25s cubic-bezier(.22,1,.36,1); }

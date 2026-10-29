@@ -17,7 +17,6 @@ function useClock() {
  * home and back to the work from a project page, so it is always "up one level".
  */
 export function Bar({ home = true }: { home?: boolean }) {
-  const clock = useClock();
   return (
     <div className="bar">
       <A className="mark" href={home ? "#adam" : "/#projects"}
@@ -32,7 +31,6 @@ export function Bar({ home = true }: { home?: boolean }) {
         </svg>
         <span>Adam Zhu</span>
       </A>
-      <span className="clock">Pittsburgh {clock}</span>
     </div>
   );
 }

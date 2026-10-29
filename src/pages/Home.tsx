@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { Frame, type FrameHandle } from "../components/Frame";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { CLARITY_ACCENT } from "../data/clarity";
 import { WorkCard } from "../components/WorkCard";
-import { Ambience } from "../components/Ambience";
-import { Bar, useClock } from "../components/Bar";
+import { Bar } from "../components/Bar";
 import { Index, useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
 import { out } from "../lib/router";
@@ -28,35 +26,31 @@ const SITE_ACCENT = "#f4f4f2";
 const ACCENTS: Record<string, string> = { projects: "#40e69e", clarity: CLARITY_ACCENT };
 
 const WORK = [
-  { href: "https://github.com/adam-zhu1", mark: "hist" as const, title: "NIST usage analytics",
+  { href: "https://github.com/adam-zhu1", title: "NIST usage analytics",
     blurb: "A five-stage Python pipeline that separated people from robots in a public data portal's logs.",
-    stat: <><b>51%</b> automated · <b>0.95</b> best F1</>, cta: "GitHub" },
-  { href: "https://doi.org/10.3390/math12050741", mark: "tail" as const, title: "Matched binary diagnostic tests",
-    blurb: "Statistical tests for proportion difference in one-to-two matched binary data. Co-author.",
-    stat: <><b>2024</b> · Mathematics 12(5), 741</>, cta: "DOI" },
-  { href: "https://github.com/adam-zhu1/march-madness-2026", mark: "bracket" as const, title: "March Madness predictor",
+    cta: "GitHub" },
+  { href: "https://doi.org/10.3390/math12050741", title: "Matched binary diagnostic tests",
+    blurb: "Statistical tests for proportion difference in one-to-two matched binary data. Co-author, Mathematics.",
+    meta: "2024", cta: "Paper" },
+  { href: "https://github.com/adam-zhu1/march-madness-2026", title: "March Madness predictor",
     blurb: "Year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
-    stat: <><b>63 games</b> · win probability each</>, cta: "GitHub" },
-  { href: "https://github.com/adam-zhu1/fantasy-football-draft", mark: "ladder" as const, title: "Fantasy draft assistant",
+    cta: "GitHub" },
+  { href: "https://github.com/adam-zhu1/fantasy-football-draft", title: "Fantasy draft assistant",
     blurb: "Floor-adjusted value over replacement from three seasons of weekly variance, plus a live draft board.",
-    stat: <><b>Floor-first</b> VBD · tiers · backtested</>, cta: "GitHub" },
+    cta: "GitHub" },
 ];
 
 export default function Home() {
-  const clock = useClock();
   const cur = useCurrentSection(SECTIONS);
   const wheel = useRef<WheelHandle | null>(null);
   /* The intro plays on every load. It is the site's opening, not a one-time gate:
      the wheel assembles, the name rises out of its own baseline, then the page follows. */
   const reduce = prefersReducedMotion();
   const [step, setStep] = useState(reduce ? 3 : 0);
-  const [revealed, setRevealed] = useState(reduce);
   const [wheelReady, setWheelReady] = useState(false);
 
-  const nameFrame = useRef<FrameHandle>(null);
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
-  const headClarity = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
@@ -64,14 +58,14 @@ export default function Home() {
 
   const runIntro = useCallback(() => {
     if (reduce) return;
-    setStep(0); setRevealed(false);
+    setStep(0);
     const el = sideRef.current;
     el?.classList.remove("on");
     el?.querySelectorAll<HTMLElement>(".in").forEach(b => { b.classList.remove("on"); b.style.transitionDelay = ""; });
     scrollTo(0, 0);
     wheel.current?.play();
     const ts = [
-      setTimeout(() => { setStep(1); nameFrame.current?.show(); }, 2300),   // the frame draws round the name
+      setTimeout(() => setStep(1), 2300),
       setTimeout(() => setStep(2), 2650),                                   // the name rises out of its baseline
       setTimeout(() => {                                                    // the rest of the page follows
         setStep(3);
@@ -81,7 +75,6 @@ export default function Home() {
           e.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${i * 110}ms`; b.classList.add("on"); });
         }
       }, 3250),
-      setTimeout(() => setRevealed(true), 3800),
     ];
     return () => ts.forEach(clearTimeout);
   }, [reduce]);
@@ -94,8 +87,6 @@ export default function Home() {
 
   return (
     <>
-      <Ambience active={revealed} />
-
       <Index sections={SECTIONS} cur={cur} />
       <Bar />
 
@@ -103,10 +94,8 @@ export default function Home() {
         <div className="wrap">
           <section className="sec hero" id="adam">
             <div className="grid1">
-              <div className="side" ref={sideRef}>
-                <Frame label={<><b>name</b></>} hold={!reduce} handleRef={nameFrame}>
-                  <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
-                </Frame>
+              <div className={`side${reduce ? " on" : ""}`} ref={sideRef}>
+                <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
                 <p className="kick in">Statistics and machine learning, Carnegie Mellon</p>
                 <ul className="in">
                   <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
@@ -120,33 +109,32 @@ export default function Home() {
           </section>
 
           <section className="sec" id="projects" style={{ "--accent": ACCENTS.projects } as CSSProperties}>
-            <div className="sechead in" ref={headProjects}><h2>Projects</h2><span>2 shipped · 01 TrueLine</span></div>
+            <div className="sechead in" ref={headProjects}><h2>Projects</h2></div>
             <TrueLine />
           </section>
 
           <section className="sec" id="clarity" style={{ "--accent": ACCENTS.clarity } as CSSProperties}>
-            <div className="sechead in" ref={headClarity}><h2>Projects</h2><span>2 shipped · 02 Clarity</span></div>
             <Clarity />
           </section>
 
           <section className="sec" id="more">
-            <div className="sechead in" ref={headMore}><h2>More work</h2><span>{WORK.length} · each links out</span></div>
-            <div className="grid">
-              {WORK.map((w, i) => <WorkCard key={w.title} {...w} seed={i} />)}
-            </div>
+            <div className="sechead in" ref={headMore}><h2>More work</h2></div>
+            <ul className="worklist">
+              {WORK.map(w => <WorkCard key={w.title} {...w} />)}
+            </ul>
           </section>
 
           <section className="sec contact" id="contact" ref={contactRef}>
             <div>
-              <h2 className="in">Let&rsquo;s connect.</h2>
+              <h2 className="in">Contact</h2>
               <a className="mailto in" href="mailto:adamzhu@andrew.cmu.edu">adamzhu@andrew.cmu.edu</a>
-              <div className="cells in">
-                <a className="cell" {...out} href="https://github.com/adam-zhu1"><small>Code</small><b>GitHub</b><span>adam-zhu1</span></a>
-                <a className="cell" {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/"><small>Track record</small><b>LinkedIn</b><span>adam-zhu-cmu</span></a>
-                <a className="cell" {...out} href="/Adam-Zhu-Resume.pdf"><small>One page</small><b>Resume</b><span>PDF</span></a>
-              </div>
+              <ul className="links in">
+                <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
+                <li><a {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
+                <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
+              </ul>
             </div>
-            <footer className="in"><span>Adam Zhu, Pittsburgh</span><span>{clock}</span></footer>
+            <footer className="in"><span>Adam Zhu, Pittsburgh</span></footer>
           </section>
         </div>
       </main>

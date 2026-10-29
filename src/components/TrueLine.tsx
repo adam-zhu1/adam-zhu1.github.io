@@ -37,7 +37,6 @@ export function TrueLine() {
      most of them running to nobody */
   const centreRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 500);
   const textRef = useReveal<HTMLDivElement>();
-  const stagesRef = useReveal<HTMLDivElement>();
 
   /* the door into the page: the name is lifted off this block and flown to the heading its
      own page keeps for it, so the two read as one object rather than two screens */
@@ -59,17 +58,20 @@ export function TrueLine() {
           the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and
           the board and angle it entered on. Everything runs on the phone.
         </p>
-        <dl className="facts">
-          <div><dt>For</dt><dd>League bowlers and coaches</dd></div>
-          <div><dt>Built with</dt><dd>Swift, Vision, Core ML, a fine-tuned detector</dd></div>
-          <div><dt>Since</dt><dd><a {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">App Store</a>, 24 August 2026</dd></div>
-        </dl>
-        <a className="store" {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
-          Download on the App Store<i aria-hidden="true">&#8599;</i>
-        </a>
-        <A className="more" href="/trueline" onClick={open}>
-          See how it works<i aria-hidden="true">&#8594;</i>
-        </A>
+        <p className="meta">Swift, Vision, Core ML · on the App Store since August 2026</p>
+        <div className="ctas">
+          <a className="store" {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
+            App Store<i aria-hidden="true">&#8599;</i>
+          </a>
+          <A className="more" href="/trueline" onClick={open}>
+            How it works<i aria-hidden="true">&#8594;</i>
+          </A>
+        </div>
+        <div className="stages" ref={steps}>
+          {STAGES.map(([name, note], i) => (
+            <div className="step" key={name}><span className="n">{i + 1}</span><span><b>{name}</b><em><span>{note}</span></em></span></div>
+          ))}
+        </div>
         <div className="ctl">
           <button type="button" onClick={play}>Replay</button>
           <button type="button" onClick={() => setPaused(engine.current?.toggle() ?? false)}>{paused ? "Resume" : "Pause"}</button>
@@ -77,7 +79,7 @@ export function TrueLine() {
       </div>
 
       <div ref={centreRef}>
-        <Frame className="appwin" seed={1} tag="01 TrueLine" label={<><b>70</b> tracked frames · 2.3 to 59.6 ft</>}>
+        <Frame className="appwin" seed={1}>
           <div className="app">
             <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.jpg"
                    aria-label="A bowling throw, tracked frame by frame">
@@ -91,13 +93,6 @@ export function TrueLine() {
         <div className="nums" ref={nums} />
       </div>
 
-      <div className="stages in" ref={stagesRef}>
-        <div ref={steps}>
-          {STAGES.map(([name, note], i) => (
-            <div className="step" key={name}><span className="n">{i + 1}</span><span><b>{name}</b><em>{note}</em></span></div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
