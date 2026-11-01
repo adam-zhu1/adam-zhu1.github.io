@@ -1,36 +1,38 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
-import { TrueLine } from "../components/TrueLine";
-import { Clarity } from "../components/Clarity";
-import { CLARITY_ACCENT } from "../data/clarity";
+import { ProjectStage } from "../components/ProjectStage";
+import { PROJECTS } from "../data/projects";
 import { WorkCard } from "../components/WorkCard";
 import { Bar } from "../components/Bar";
 import { useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
 import { out } from "../lib/router";
 
+/* What the page watches to know where you are. The projects are one section; which of them
+   is open is the stage's to say, and the bar's chip reads it from there. */
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
-  { id: "projects", label: "TrueLine", group: "Projects", n: "01" },
-  { id: "clarity", label: "Clarity", group: "Projects", n: "02" },
+  { id: "projects", label: "Projects" },
   { id: "more", label: "More work" },
   { id: "contact", label: "Contact" },
+];
+const CHIPS: Section[] = [
+  SECTIONS[0],
+  ...PROJECTS.map((p, i) => ({ id: p.id, label: p.name, group: "Projects", n: String(i + 1).padStart(2, "0") })),
+  ...SECTIONS.slice(2),
 ];
 
 /* The site itself is monochrome. Colour belongs to the projects: each one names its accent
    here, the section paints itself in it, and the chrome that is always on screen (the index
-   dot, the mark's today dot, focus rings) takes the accent of the section you are in. Mint is
+   chip, the mark's today dot, focus rings) takes the accent of the project you are on. Mint is
    TrueLine's own, the colour its overlay draws the pocket in; lens teal is Clarity's, the
-   secondary from its identity standard, picked over its mint so the two read apart. */
+   secondary from its identity standard, picked over its mint so the two read apart; NIST
+   takes a quiet indigo. The colours themselves live with the projects in ProjectStage. */
 const SITE_ACCENT = "#f4f4f2";
-const ACCENTS: Record<string, string> = { projects: "#40e69e", clarity: CLARITY_ACCENT };
 
 const WORK = [
-  { href: "https://github.com/adam-zhu1", title: "NIST usage analytics",
-    blurb: "A five-stage Python pipeline that separated people from robots in a public data portal's logs.",
-    cta: "GitHub" },
   { href: "https://doi.org/10.3390/math12050741", title: "Matched binary diagnostic tests",
-    blurb: "Statistical tests for proportion difference in one-to-two matched binary data. Co-author, Mathematics.",
+    blurb: "Statistical tests for proportion difference in one-to-two matched binary data. Second author, Mathematics.",
     meta: "2024", cta: "Paper" },
   { href: "https://github.com/adam-zhu1/march-madness-2026", title: "March Madness predictor",
     blurb: "Year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
@@ -51,6 +53,7 @@ export default function Home() {
 
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
+  const [active, setActive] = useState(0);
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
@@ -75,12 +78,12 @@ export default function Home() {
   useEffect(() => { if (wheelReady && !reduce) wheel.current?.play(); }, [wheelReady, reduce]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--accent", ACCENTS[cur] ?? SITE_ACCENT);
-  }, [cur]);
+    document.documentElement.style.setProperty("--accent", cur === "projects" ? PROJECTS[active].accent : SITE_ACCENT);
+  }, [cur, active]);
 
   return (
     <>
-      <Bar sections={SECTIONS} cur={cur} />
+      <Bar sections={CHIPS} cur={cur === "projects" ? PROJECTS[active].id : cur} />
 
       <main className="site">
         <div className="wrap">
@@ -104,13 +107,9 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="sec" id="projects" style={{ "--accent": ACCENTS.projects } as CSSProperties}>
+          <section className="sec projects" id="projects">
             <div className="sechead in" ref={headProjects}><h2>Projects</h2></div>
-            <TrueLine />
-          </section>
-
-          <section className="sec" id="clarity" style={{ "--accent": ACCENTS.clarity } as CSSProperties}>
-            <Clarity />
+            <ProjectStage active={active} onActive={setActive} />
           </section>
 
           <section className="sec" id="more">

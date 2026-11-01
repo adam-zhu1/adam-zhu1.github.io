@@ -101,7 +101,10 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
           {home ? <>
             <a href="#projects">Work</a>
             <a href="#contact">Contact</a>
-          </> : <A href="/#projects">Work</A>}
+          </> : <>
+            <A href="/#projects">Work</A>
+            <A href="/#contact">Contact</A>
+          </>}
           <a className="cv" {...out} href={RESUME}>Resume<i aria-hidden="true">&#8599;</i></a>
         </nav>
       </div>

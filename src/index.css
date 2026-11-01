@@ -180,7 +180,7 @@ html.morphing { scroll-behavior: auto; }
 .hero .grid1 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 72px; align-items: center; }
 .hero h1 { margin: 0; font-size: clamp(52px, 7.4vw, 112px); font-weight: 500; letter-spacing: -.045em; line-height: .95;
   clip-path: inset(0 0 -20% 0); transform: none;
-  transition: clip-path 1.05s cubic-bezier(.22,1,.36,1), transform 1.05s cubic-bezier(.22,1,.36,1); }
+  transition: clip-path .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1); }
 .hero h1.pre { clip-path: inset(108% 0 -20% 0); transform: translateY(.14em); }
 .hero .kick { font-size: 18px; color: var(--ink2); margin: 22px 0 0; }
 .hero ul { display: flex; flex-wrap: wrap; gap: 26px; margin: 32px 0 0; padding: 0; list-style: none; }
@@ -231,8 +231,6 @@ html.morphing { scroll-behavior: auto; }
 .sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 40px; }
 .sechead h2 { margin: 0; font-size: 14px; font-weight: 500; color: var(--mute); }
 .sechead span { font-family: var(--mono); font-size: 11px; color: var(--mute); }
-.proj { display: grid; grid-template-columns: minmax(280px,.85fr) minmax(0,1.6fr); gap: 72px; align-items: start; }
-.proj h3 { position: relative; display: inline-block; font-size: clamp(30px,3vw,42px); font-weight: 500; letter-spacing: -.035em; line-height: 1; margin: 0; }
 /* the project's own colour draws itself under its name, then clears out of the way */
 .swipe { position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: var(--accent);
   transform: scaleX(0); transform-origin: left; opacity: 0; }
@@ -243,8 +241,8 @@ html.morphing { scroll-behavior: auto; }
   56% { transform-origin: right }
   100% { transform: scaleX(1); opacity: 0 }
 }
-.proj .desc { margin: 20px 0 0; font-size: 16.5px; color: var(--ink2); max-width: 46ch; }
-.proj .meta { margin: 14px 0 0; font-size: 14px; color: var(--mute); }
+.plist .desc { margin: 20px 0 0; font-size: 16.5px; color: var(--ink2); max-width: 46ch; }
+.plist .meta { margin: 14px 0 0; font-size: 14px; color: var(--mute); }
 .ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 26px; }
 .ctas .store { margin-top: 0; }
 .facts { margin: 22px 0 0; font-size: 14.5px; }
@@ -315,7 +313,7 @@ html.morphing { scroll-behavior: auto; }
 .contact .links a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 
-@media (max-width: 1180px) { .proj { grid-template-columns: 1fr; gap: 40px } .nums { grid-template-columns: repeat(3,1fr) } }
+@media (max-width: 1180px) { .nums { grid-template-columns: repeat(3,1fr) } }
 @media (max-width: 760px) { .worklist .row { grid-template-columns: 1fr; gap: 6px } .worklist .go { text-align: left } }
 @media (max-width: 980px) {
   :root { --rail: 24px }
@@ -328,7 +326,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .wrap { padding-right: 18px }
   .nums { grid-template-columns: repeat(2, 1fr) }
   /* two long captions side by side wrap into ragged columns; stack them instead */
-  #clarity .cap { flex-direction: column; gap: 2px }
+  .clproj .cap { flex-direction: column; gap: 2px }
 }
 @media (max-width: 640px) {
   .bar { padding: 10px 10px 0 }
@@ -526,14 +524,14 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 }
 
 /* the door from home into the TrueLine page, beside the App Store link in the same row */
-.proj .more { display: inline-flex; align-items: center; gap: 9px;
+.plist .more { display: inline-flex; align-items: center; gap: 9px;
   font-size: 14px; color: var(--ink); text-decoration: none;
   border-bottom: 1px solid var(--line2); padding-bottom: 4px;
   transition: color .25s, border-color .25s, gap .25s cubic-bezier(.22,1,.36,1); }
-.proj .more i { font-style: normal; color: var(--mint); transition: transform .3s cubic-bezier(.22,1,.36,1); }
-.proj .more:hover { color: var(--mint); border-color: var(--mint); gap: 13px; }
-.proj .more:hover i { transform: translateX(2px); }
-.proj .more:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.plist .more i { font-style: normal; color: var(--mint); transition: transform .3s cubic-bezier(.22,1,.36,1); }
+.plist .more:hover { color: var(--mint); border-color: var(--mint); gap: 13px; }
+.plist .more:hover i { transform: translateX(2px); }
+.plist .more:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 /* ================= Clarity ================= */
 /* Lens teal is Clarity's: the secondary in its own identity standard, chosen over its mint
@@ -654,4 +652,95 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 @media (prefers-reduced-motion: reduce) {
   .cl-glow, .cl-dial, .cl-caret { animation: none; }
   .cl-spot, .cl-result, .cl-expl p, .cl-video, .cl-sel, .cl-cross, .cl-keys { transition: none; }
+}
+
+/* ================= the project stage =================
+   One list, one media column. Pinned on a desktop window: the track is a screen per project
+   plus one, the stage sticks for a screen, and the scroll position only picks which project
+   is open. Everywhere else the same markup lies flat: the two columns dissolve with
+   display: contents and each demo slots in under its own project by order. */
+.projects { min-height: 0; padding-bottom: 32px; }
+.plist { list-style: none; margin: 0; padding: 0; }
+.plist li { position: relative; border-top: 1px solid var(--line); padding: 22px 0 26px; }
+.plist h3 { margin: 0; font-weight: 500; letter-spacing: -.035em; line-height: 1; }
+.plist h3 button { all: unset; cursor: pointer; display: inline-flex; align-items: baseline; gap: 16px;
+  font-size: clamp(30px, 3vw, 44px); color: var(--ink); transition: color .45s, font-size .65s cubic-bezier(.16,1,.3,1); }
+.plist h3 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
+.plist .pn { font-family: var(--mono); font-size: 12px; letter-spacing: 0; color: var(--mute); transform: translateY(-.9em); }
+.plist li.on .pn { color: var(--accent); }
+.pbody { display: grid; grid-template-rows: 1fr; }
+.pbody > div { overflow: hidden; min-height: 0; }
+.plist .desc { margin: 18px 0 0; }
+.plist .result { margin: 14px 0 0; font-size: 15px; color: var(--ink); max-width: 46ch; padding-left: 14px; border-left: 2px solid var(--accent); }
+.prog { position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+.pmedia .layer { margin: 28px 0 56px; }
+.pstick { display: flex; flex-direction: column; }
+.plist, .pmedia { display: contents; }
+.plist li { order: var(--o); }
+.pmedia .layer { order: var(--o); }
+.democtl { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 6px 24px; margin-top: 18px; }
+.democtl .stages { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 14px; flex: 1 1 420px; }
+.democtl .step { grid-template-columns: 18px 1fr; gap: 6px; padding: 8px 0 0; }
+.democtl .step b { font-size: 14px; }
+/* in the strip only the name shows; the caption under the frame already says what is happening */
+.democtl .step em { display: none; }
+.democtl .ctl { margin-top: 0; }
+
+/* NIST: a measured result, drawn plainly */
+.nistwin { border: 1px solid var(--line2); border-radius: 4px; padding: 28px 28px 22px; }
+.nist .nk { margin: 0 0 18px; font-size: 13px; color: var(--mute); }
+.nist .bars { display: grid; gap: 12px; }
+.nist .br { display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; gap: 14px; font-size: 14px; color: var(--ink2); }
+.nist .br i { display: block; height: 34px; border-radius: 3px; background: var(--line2); width: 0;
+  transition: width 1.1s cubic-bezier(.16,1,.3,1) .15s; }
+.nist .br.after i { background: var(--accent); transition-delay: .4s; }
+.nist.on .br i { width: calc(var(--w) * 2); }
+.nist .br b { font-weight: 500; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.nist .nnote { margin: 18px 0 0; font-size: 14px; color: var(--ink2); max-width: 60ch; }
+.nstats { margin: 22px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0 16px; }
+.nstats div { border-top: 1px solid var(--line2); padding: 10px 0 12px; }
+.nstats dt { font-size: 11.5px; color: var(--mute); }
+.nstats dd { margin: 4px 0 0; font-size: 22px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+/* ---- pinned ---- */
+.pstage.pinned { height: calc(100svh + var(--n) * 90svh); margin-top: -24px; }
+.pinned .pstick { position: sticky; top: 0; height: 100svh; display: grid; grid-template-columns: minmax(300px, .82fr) minmax(0, 1.5fr);
+  gap: 64px; align-items: center; padding: 84px 0 28px; box-sizing: border-box; }
+.pinned .plist { display: block; align-self: center; }
+.pinned .pmedia { display: block; position: relative; height: 100%; }
+.pinned .plist li { padding: 18px 0 20px; }
+.pinned .plist li:not(.on) h3 button { color: #8a8a93; font-size: clamp(26px, 2.4vw, 34px); }
+.pinned .plist li:not(.on) h3 button:hover { color: var(--ink); }
+.pinned .pbody { grid-template-rows: 0fr; transition: grid-template-rows .65s cubic-bezier(.16,1,.3,1); }
+.pinned .pbody > div { opacity: 0; transition: opacity .3s linear; }
+.pinned li.on .pbody { grid-template-rows: 1fr; }
+.pinned li.on .pbody > div { opacity: 1; transition: opacity .45s linear .15s; }
+.pinned li.on .prog { transform: scaleX(var(--progress, 0)); }
+.pinned .plist .desc { font-size: 15.5px; }
+/* the demos sit in one place; the active one wipes up over the last and settles */
+.pinned .pmedia .layer { position: absolute; inset: 0; margin: 0; display: flex; align-items: center;
+  clip-path: inset(100% 0 0 0); visibility: hidden;
+  transition: clip-path .9s cubic-bezier(.16,1,.3,1), visibility 0s linear .9s; }
+.pinned .pmedia .layer.on { clip-path: inset(0 0 0 0); visibility: visible; z-index: 1;
+  transition: clip-path .9s cubic-bezier(.16,1,.3,1), visibility 0s; }
+.pinned .pmedia .layer > .demo { width: 100%; transform: scale(1.04); transition: transform 1.3s cubic-bezier(.16,1,.3,1); }
+.pinned .pmedia .layer.on > .demo { transform: none; }
+.pinned .demo .app { max-width: min(100%, calc(100svh - 340px)); }
+.pinned .demo.clproj .app, .pinned .demo.clproj .cap { max-width: min(100%, calc(100svh - 250px)); }
+.pinned .demo .nums { margin-top: 12px; }
+
+/* stacked on a wide window, the demo would otherwise run the full width of the page */
+.pstage:not(.pinned) .pmedia .layer { max-width: 1040px; }
+@media (max-width: 640px) {
+  .democtl .stages { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  /* six readouts in two rows rather than three, so the space they hold for the Read step stays small */
+  .demo .nums { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; margin-top: 14px; }
+  .demo .num { padding: 8px 4px 6px; }
+  .demo .num b { font-size: 18px; }
+  .nstats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .nistwin { padding: 20px 18px 16px; }
+  .nist .br { grid-template-columns: 52px 1fr 56px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nist .br i { transition: none; }
 }

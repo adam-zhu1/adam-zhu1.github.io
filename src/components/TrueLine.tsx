@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Frame } from "./Frame";
-import { A, out } from "../lib/router";
-import { usePlayInView, useReveal } from "../lib/useReveal";
-import { morphInto } from "../lib/morph";
+import { usePlayInView } from "../lib/useReveal";
 import { createTrueLine } from "../lib/trueline";
 
 const STAGES = [
@@ -12,7 +10,12 @@ const STAGES = [
   ["Read", "Nine measurements. This throw entered at board 16.3, just right of the pocket."],
 ] as const;
 
-export function TrueLine() {
+/**
+ * TrueLine's demo on the hub: one tracked throw, played as the four stages of the pipeline.
+ * The words about the app live with the project list; this is only the thing it does.
+ * `held` keeps it paused while another project has the stage.
+ */
+export function TrueLine({ held = false }: { held?: boolean }) {
   const vid = useRef<HTMLVideoElement>(null);
   const ov = useRef<SVGSVGElement>(null);
   const steps = useRef<HTMLDivElement>(null);
@@ -35,38 +38,23 @@ export function TrueLine() {
   /* the sequence starts once the window has settled in front of you, holds while it is off
      screen, and carries on from there — it is fifteen seconds long, and it used to spend
      most of them running to nobody */
-  const centreRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 500);
-  const textRef = useReveal<HTMLDivElement>();
-
-  /* the door into the page: the name is lifted off this block and flown to the heading its
-     own page keeps for it, so the two read as one object rather than two screens */
-  const block = useRef<HTMLDivElement>(null);
-  const title = useRef<HTMLHeadingElement>(null);
-  const open = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    if (!title.current) return;
-    e.preventDefault();
-    morphInto("/trueline", title.current, block.current);
-  };
+  const centreRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 500, held);
 
   return (
-    <div className="proj" id="trueline" ref={block}>
-      <div className="in" ref={textRef}>
-        <h3 ref={title}>TrueLine<i className="swipe" /></h3>
-        <p className="desc">
-          A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it measures
-          the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and
-          the board and angle it entered on. Everything runs on the phone.
-        </p>
-        <p className="meta">Swift, Vision, Core ML · on the App Store since August 2026</p>
-        <div className="ctas">
-          <a className="store" {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
-            App Store<i aria-hidden="true">&#8599;</i>
-          </a>
-          <A className="more" href="/trueline" onClick={open}>
-            How it works<i aria-hidden="true">&#8594;</i>
-          </A>
+    <div className="demo" ref={centreRef}>
+      <Frame className="appwin" seed={1}>
+        <div className="app">
+          <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.jpg"
+                 aria-label="A bowling throw, tracked frame by frame">
+            <source src="/media/trueline-throw.webm" type="video/webm" />
+            <source src="/media/trueline-throw.mp4" type="video/mp4" />
+          </video>
+          <svg ref={ov} viewBox="0 0 560 560" preserveAspectRatio="none" aria-hidden="true" />
         </div>
+        <div className="cap"><span ref={capL}>Run-up</span><span ref={capR}><b>Frame 1</b> of 131</span></div>
+      </Frame>
+      <div className="nums" ref={nums} />
+      <div className="democtl">
         <div className="stages" ref={steps}>
           {STAGES.map(([name, note], i) => (
             <div className="step" key={name}><span className="n">{i + 1}</span><span><b>{name}</b><em><span>{note}</span></em></span></div>
@@ -77,22 +65,6 @@ export function TrueLine() {
           <button type="button" onClick={() => setPaused(engine.current?.toggle() ?? false)}>{paused ? "Resume" : "Pause"}</button>
         </div>
       </div>
-
-      <div ref={centreRef}>
-        <Frame className="appwin" seed={1}>
-          <div className="app">
-            <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.jpg"
-                   aria-label="A bowling throw, tracked frame by frame">
-              <source src="/media/trueline-throw.webm" type="video/webm" />
-              <source src="/media/trueline-throw.mp4" type="video/mp4" />
-            </video>
-            <svg ref={ov} viewBox="0 0 560 560" preserveAspectRatio="none" aria-hidden="true" />
-          </div>
-          <div className="cap"><span ref={capL}>Run-up</span><span ref={capR}><b>Frame 1</b> of 131</span></div>
-        </Frame>
-        <div className="nums" ref={nums} />
-      </div>
-
     </div>
   );
 }

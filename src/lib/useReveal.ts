@@ -151,25 +151,34 @@ export function useVisible<T extends HTMLElement>(
 export function usePlayInView<T extends HTMLElement>(
   get: () => { run: () => void; setOffscreen: (v: boolean) => void } | null,
   settle = 420,
+  held = false,
 ) {
+  /* `held` is for a demo that is on screen but not the one being shown, like the layers of
+     the project stage that sit under the active one: it waits, or pauses, until released. */
   const ref = useRef<T>(null);
   const api = useRef(get);
+  const hold = useRef(held);
+  const st = useRef({ started: false, seen: false, timer: 0 });
   useEffect(() => { api.current = get; }, [get]);
+  const arm = useRef(() => {});
+  arm.current = () => {
+    const s = st.current;
+    if (s.started) { api.current()?.setOffscreen(!s.seen || hold.current); return; }
+    clearTimeout(s.timer);
+    if (s.seen && !hold.current) s.timer = window.setTimeout(() => { s.started = true; api.current()?.run(); }, settle);
+  };
+  useEffect(() => { hold.current = held; arm.current(); }, [held]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (prefersReducedMotion()) { api.current()?.run(); return; }
-    let started = false, timer = 0;
+    const s = st.current;
+    if (prefersReducedMotion()) { s.seen = true; if (!hold.current) { s.started = true; api.current()?.run(); } return; }
     const io = new IntersectionObserver(
-      es => es.forEach(e => {
-        if (started) { api.current()?.setOffscreen(!e.isIntersecting); return; }
-        clearTimeout(timer);
-        if (e.isIntersecting) timer = window.setTimeout(() => { started = true; api.current()?.run(); }, settle);
-      }),
+      es => es.forEach(e => { s.seen = e.isIntersecting; arm.current(); }),
       { rootMargin: "-25% 0px -25% 0px", threshold: 0 },
     );
     io.observe(el);
-    return () => { clearTimeout(timer); io.disconnect(); };
+    return () => { clearTimeout(s.timer); io.disconnect(); };
   }, [settle]);
   return ref;
 }
