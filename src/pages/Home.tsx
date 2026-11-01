@@ -5,14 +5,14 @@ import { Clarity } from "../components/Clarity";
 import { CLARITY_ACCENT } from "../data/clarity";
 import { WorkCard } from "../components/WorkCard";
 import { Bar } from "../components/Bar";
-import { Index, useCurrentSection, type Section } from "../components/Index";
+import { useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
 import { out } from "../lib/router";
 
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
-  { id: "projects", label: "TrueLine" },
-  { id: "clarity", label: "Clarity" },
+  { id: "projects", label: "TrueLine", group: "Projects", n: "01" },
+  { id: "clarity", label: "Clarity", group: "Projects", n: "02" },
   { id: "more", label: "More work" },
   { id: "contact", label: "Contact" },
 ];
@@ -43,8 +43,8 @@ const WORK = [
 export default function Home() {
   const cur = useCurrentSection(SECTIONS);
   const wheel = useRef<WheelHandle | null>(null);
-  /* The intro plays on every load. It is the site's opening, not a one-time gate:
-     the wheel assembles, the name rises out of its own baseline, then the page follows. */
+  /* Content first. The name rises and the lines under it follow straight away, while the
+     wheel assembles beside them; nothing on the page waits for the wheel to finish. */
   const reduce = prefersReducedMotion();
   const [step, setStep] = useState(reduce ? 3 : 0);
   const [wheelReady, setWheelReady] = useState(false);
@@ -56,30 +56,23 @@ export default function Home() {
 
   const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
 
-  const runIntro = useCallback(() => {
+  useEffect(() => {
     if (reduce) return;
-    setStep(0);
-    const el = sideRef.current;
-    el?.classList.remove("on");
-    el?.querySelectorAll<HTMLElement>(".in").forEach(b => { b.classList.remove("on"); b.style.transitionDelay = ""; });
-    scrollTo(0, 0);
-    wheel.current?.play();
     const ts = [
-      setTimeout(() => setStep(1), 2300),
-      setTimeout(() => setStep(2), 2650),                                   // the name rises out of its baseline
-      setTimeout(() => {                                                    // the rest of the page follows
+      setTimeout(() => setStep(2), 60),                                     // the name rises out of its baseline
+      setTimeout(() => {                                                    // the lines under it follow
         setStep(3);
         const e = sideRef.current;
         if (e) {
           e.classList.add("on");
-          e.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${i * 110}ms`; b.classList.add("on"); });
+          e.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${i * 70}ms`; b.classList.add("on"); });
         }
-      }, 3250),
+      }, 220),
     ];
     return () => ts.forEach(clearTimeout);
   }, [reduce]);
 
-  useEffect(() => { if (wheelReady) return runIntro(); }, [wheelReady, runIntro]);
+  useEffect(() => { if (wheelReady && !reduce) wheel.current?.play(); }, [wheelReady, reduce]);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", ACCENTS[cur] ?? SITE_ACCENT);
@@ -87,8 +80,7 @@ export default function Home() {
 
   return (
     <>
-      <Index sections={SECTIONS} cur={cur} />
-      <Bar />
+      <Bar sections={SECTIONS} cur={cur} />
 
       <main className="site">
         <div className="wrap">
@@ -96,13 +88,17 @@ export default function Home() {
             <div className="grid1">
               <div className={`side${reduce ? " on" : ""}`} ref={sideRef}>
                 <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
-                <p className="kick in">Statistics and machine learning, Carnegie Mellon</p>
+                <p className="kick in">Statistics and machine learning at Carnegie Mellon. Looking for Summer 2027 internships in software, ML, data science, or quant.</p>
                 <ul className="in">
                   <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
                   <li><a {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
                   <li><a href="mailto:adamzhu@andrew.cmu.edu">Email</a></li>
                   <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
                 </ul>
+                <dl className="now in">
+                  <dt>Now</dt><dd>ScottyLabs AI, on Bark, CMU&rsquo;s campus AI assistant</dd>
+                  <dt>Previously</dt><dd>Research intern at NIST, CSAFE, and VRAC</dd>
+                </dl>
               </div>
               <div className="wheel"><YearWheel onReady={onWheelReady} intro={!reduce} /></div>
             </div>

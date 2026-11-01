@@ -34,46 +34,57 @@ a { color: inherit; }
 
 /* ---------- shell ---------- */
 .site { position: relative; z-index: 1; }
-.wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px 0 var(--rail, 136px); }
+.wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px 0 var(--rail, 40px); }
 section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-content: safe center; padding: 88px 0 64px; scroll-margin-top: 72px; }
 
-.bar { position: fixed; left: 0; right: 0; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 40px 18px var(--rail, 136px); font-size: 13.5px; color: var(--ink2); pointer-events: none; }
-.bar > * { pointer-events: auto; }
-/* content scrolls under the bar, so the bar carries a strip of the ground behind it */
-.bar::before { content: ""; position: absolute; inset: 0 0 -24px; z-index: -1; background: linear-gradient(var(--bg) 55%, transparent); pointer-events: none; }
-.bar .clock { font-family: var(--mono); font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
-.bar .replay { font: inherit; font-size: 12.5px; color: var(--ink2); background: none; border: 1px solid var(--line2); padding: 5px 12px; border-radius: 999px; cursor: pointer; margin-left: auto; margin-right: 16px; }
-.bar .replay:hover { color: var(--ink); border-color: var(--ink2); }
-.bar .replay:focus-visible, .idx a:focus-visible, .ctl button:focus-visible, .store:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* ---------- the bar ----------
+   Flat at the top of a page: the mark and the links, nothing behind them. Once you scroll it
+   gathers into a centred pill of liquid glass, and the chip inside says where you are. */
+.bar { position: fixed; left: 0; right: 0; top: 0; z-index: 40; display: flex; justify-content: center;
+  padding: 12px 16px 0; pointer-events: none; font-size: 13.5px; color: var(--ink2); }
+.bar .pill { pointer-events: auto; position: relative; display: flex; align-items: center; gap: 14px;
+  width: min(1280px, 100% - 48px); height: 46px; padding: 0 8px 0 16px; border-radius: 999px;
+  transition: width .7s cubic-bezier(.16,1,.3,1), background-color .4s, box-shadow .4s, border-color .4s; }
+.bar.lifted .pill { width: min(760px, 100%); }
+.bar .links { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.bar .links a { color: var(--ink); text-decoration: none; padding: 7px 11px; border-radius: 999px; transition: color .2s, background-color .2s; }
+.bar .links a:hover { color: var(--ink); background: rgba(255,255,255,.06); }
+.bar .links .cv { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); margin-left: 4px; padding: 7px 14px;
+  border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+.bar .links .cv:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.26); }
+.bar .links .cv i { font-style: normal; font-size: 12px; color: var(--ink2); transition: transform .2s cubic-bezier(.22,1,.36,1); }
+.bar .links .cv:hover i { transform: translate(2px,-2px); }
+.bar a:focus-visible, .ctl button:focus-visible, .store:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---------- the index: a slim pill of dots. The pill never resizes; the label
-   you point at pops out beside it, so only one item ever opens. ---------- */
-.idx { position: fixed; left: 18px; top: 50%; transform: translateY(-50%); z-index: 40;
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  width: 30px; padding: 12px 0; border-radius: 999px;
-  background: rgba(22,22,26,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,.08); }
-.idx a { position: relative; display: grid; place-items: center; width: 22px; height: 18px;
-  color: var(--mute); text-decoration: none; transition: color .2s; }
-.idx i { width: 6px; height: 6px; border-radius: 50%; background: currentColor;
-  transition: background .2s, transform .3s cubic-bezier(.22,1,.36,1); }
-.idx a:hover, .idx a:focus-visible { color: var(--ink); }
-.idx a:hover i, .idx a:focus-visible i { transform: scale(1.35); }
-/* a ring rides out from the dot, and a second one behind it, the way the wheel pings */
-.idx a::before, .idx a::after { content: ""; position: absolute; width: 6px; height: 6px; border-radius: 50%;
-  border: 1px solid currentColor; opacity: 0; pointer-events: none; }
-.idx a:hover::before, .idx a:focus-visible::before { animation: dotring 1.1s cubic-bezier(.22,1,.36,1); }
-.idx a:hover::after, .idx a:focus-visible::after { animation: dotring 1.1s cubic-bezier(.22,1,.36,1) .22s; }
-@keyframes dotring { 0% { transform: scale(1); opacity: .85 } 100% { transform: scale(4.6); opacity: 0 } }
-.idx a.cur { color: var(--ink); }
-.idx a.cur i { background: var(--accent); }
-.idx span { position: absolute; left: calc(100% + 14px); top: 50%; white-space: nowrap;
-  transform: translateY(-50%) translateX(-6px); opacity: 0; pointer-events: none;
-  font-size: 12.5px; line-height: 1; color: var(--ink);
-  background: rgba(22,22,26,.86); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,.09); border-radius: 999px; padding: 6px 12px;
-  transition: opacity .18s linear, transform .24s cubic-bezier(.22,1,.36,1); }
-.idx a:hover span, .idx a:focus-visible span { opacity: 1; transform: translateY(-50%) translateX(0); }
+/* where you are: a dark well inside the glass, with the section's own colour as a dot */
+.bar .chip { display: inline-flex; align-items: center; gap: 8px; height: 28px; overflow: hidden; white-space: nowrap;
+  padding: 0; border-radius: 999px; box-sizing: border-box; opacity: 0;
+  background: rgba(0,0,0,.42); box-shadow: inset 0 1px 2px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em; color: var(--ink);
+  transition: width .5s cubic-bezier(.16,1,.3,1), opacity .3s, padding .5s cubic-bezier(.16,1,.3,1); }
+.bar .chip.on { opacity: 1; padding: 0 12px 0 10px; }
+.bar .chip i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); transition: background .5s linear; }
+.bar .chip .roll { display: inline-grid; min-width: 0; overflow: hidden; height: 28px; align-items: center; }
+.bar .chip .t { grid-area: 1 / 1; display: inline-block; white-space: nowrap; }
+.bar .chip .t.in { animation: rollin .44s cubic-bezier(.16,1,.3,1) both; }
+.bar .chip .t.out { animation: rollout .44s cubic-bezier(.16,1,.3,1) both; }
+@keyframes rollin { from { opacity: 0; transform: translateY(100%) } to { opacity: 1; transform: none } }
+@keyframes rollout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-100%) } }
+
+/* ---------- glass ----------
+   For the layer that floats over content, never for content itself. Every browser gets the
+   frost; Chromium also bends the backdrop at the rim (lib/glass.ts sets --glass-filter). */
+.bar.lifted .glass {
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 60%), rgba(14,14,18,.68);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.04), 0 12px 32px -14px rgba(0,0,0,.8); }
+.bar .glass { border: 1px solid transparent; }
+.bar.lifted .glass.refract { backdrop-filter: var(--glass-filter) blur(2px); }
+@media (prefers-reduced-transparency: reduce) {
+  .bar.lifted .glass { background: #141418; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
 
 /* ---------- the frame ---------- */
 .win { position: relative; }
@@ -176,12 +187,17 @@ html.morphing { scroll-behavior: auto; }
 .hero a { font-size: 16px; color: var(--ink); text-decoration: none; position: relative; padding-bottom: 3px; }
 .hero a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .18s cubic-bezier(.4,0,.2,1); }
 .hero a:hover::after, .hero a:focus-visible::after { transform: scaleX(1); }
+.hero .kick { max-width: 34em; line-height: 1.5; }
+.hero .now { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; margin: 40px 0 0; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14.5px; max-width: 34em; }
+.hero .now dt { color: var(--mute); }
+.hero .now dd { margin: 0; color: var(--ink2); }
 
-/* the mark in the top bar: the arc sweeps a full turn when you point at it */
-.bar .mark { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
-.bar .mark svg { width: 19px; height: 19px; overflow: visible; }
-.bar .mark .arc, .bar .mark .today { transform-origin: 12px 12px; transition: transform .9s cubic-bezier(.22,1,.36,1); }
-.bar .mark:hover .arc, .bar .mark:hover .today { transform: rotate(360deg); }
+/* the mark in the top bar: a dial of how far down the page you are. It spins a full turn
+   when you point at it. */
+.bar .mark { flex: none; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.bar .mark svg { width: 19px; height: 19px; overflow: visible; transition: transform .9s cubic-bezier(.22,1,.36,1); }
+.bar .mark:hover svg { transform: rotate(360deg); }
+.bar .mark .track { stroke: var(--line2); }
 .bar .mark .today { fill: var(--accent); transition: fill .5s linear; }
 
 /* ---------- the wheel ---------- */
@@ -247,15 +263,19 @@ html.morphing { scroll-behavior: auto; }
 .step.cur em { grid-template-rows: 1fr; }
 .step.cur em > span { padding-top: 4px; }
 .store { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; padding: 9px 17px;
-  font-size: 14.5px; color: var(--ink); text-decoration: none; border: 1px solid var(--line2);
-  border-radius: 999px; transition: border-color .2s, background .2s; }
-.store:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+  font-size: 14.5px; color: var(--ink); text-decoration: none; border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px; transition: border-color .2s, background .2s;
+  /* the same rim as the bar's glass, so the controls read as one family */
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 60%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+.store:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, transparent); }
 .store i { font-style: normal; font-size: 13px; color: var(--mute); transition: transform .2s cubic-bezier(.22,1,.36,1); }
 .store:hover i { color: var(--ink2); transform: translate(2px,-2px); }
-.ctl { display: flex; gap: 18px; margin-top: 18px; }
+.ctl { display: inline-flex; gap: 2px; margin-top: 18px; padding: 3px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
 .store + .ctl { margin-top: 14px; }
-.ctl button { font: inherit; font-size: 13px; color: var(--mute); background: none; border: 0; padding: 0; cursor: pointer; }
-.ctl button:hover { color: var(--ink); }
+.ctl button { font: inherit; font-size: 13px; color: var(--ink2); background: none; border: 0; padding: 5px 12px; border-radius: 999px; cursor: pointer; transition: color .2s, background-color .2s; }
+.ctl button:hover { color: var(--ink); background: rgba(255,255,255,.08); }
 .appwin { padding: 18px; }
 /* the block must fit one screen: the animation is sized from what is left after the
    section heading, the caption and the metrics row, so the numbers are never cut off */
@@ -298,25 +318,33 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 @media (max-width: 1180px) { .proj { grid-template-columns: 1fr; gap: 40px } .nums { grid-template-columns: repeat(3,1fr) } }
 @media (max-width: 760px) { .worklist .row { grid-template-columns: 1fr; gap: 6px } .worklist .go { text-align: left } }
 @media (max-width: 980px) {
-  :root { --rail: 62px }
+  :root { --rail: 24px }
   .wrap { padding-right: 24px }
-  .bar { padding-right: 24px; font-size: 12.5px; white-space: nowrap }
-  .idx { left: 12px }
-  .bar .replay { margin-right: 12px; padding: 4px 10px; font-size: 11.5px }
   .hero .grid1 { grid-template-columns: 1fr }
   .wheel { max-width: 420px; margin: 24px auto 0 }
 }
 @media (max-width: 560px) {
-  :root { --rail: 52px }
+  :root { --rail: 18px }
   .wrap { padding-right: 18px }
-  .bar { padding-right: 18px }
   .nums { grid-template-columns: repeat(2, 1fr) }
+  /* two long captions side by side wrap into ragged columns; stack them instead */
+  #clarity .cap { flex-direction: column; gap: 2px }
+}
+@media (max-width: 640px) {
+  .bar { padding: 10px 10px 0 }
+  .bar .pill, .bar.lifted .pill { width: 100%; gap: 10px; padding: 0 6px 0 14px; height: 44px }
+  .bar .links a:not(.cv) { display: none }
+  .bar .chip { min-width: 0; flex: 0 1 auto }
+  .bar .chip .t { min-width: 0; overflow: hidden; text-overflow: ellipsis }
+  .bar.lifted .mark span, .bar .chip .g { display: none }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto }
   .win > .edge, .win > .corner, .win > .lbl, .win > .tag, .in, .amb { transition: none }
   .swipe { display: none }
   .amb { display: none }
+  .bar .pill, .bar .chip, .bar .chip i, .bar .mark svg { transition-duration: .01ms }
+  .bar .chip .t { animation: none }
 }
 
 /* ================= the TrueLine page ================= */

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Bar } from "../components/Bar";
-import { Index, useCurrentSection, type Section } from "../components/Index";
+import { useCurrentSection, type Section } from "../components/Index";
 import { Frame } from "../components/Frame";
 import { Ambience } from "../components/Ambience";
 import { TrueLineStage } from "../components/TrueLineStage";
@@ -195,8 +195,7 @@ export default function TrueLinePage() {
   return (
     <>
       <Ambience active={revealed} />
-      <Index sections={SECTIONS} cur={cur} />
-      <Bar home={false} />
+      <Bar home={false} sections={SECTIONS} cur={cur} />
 
       <main className="site tlpage">
         <div className="wrap">

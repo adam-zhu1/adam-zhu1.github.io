@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-export type Section = { id: string; label: string };
+/** A section of a page. `group` and `n` let the bar's chip read "Projects / 01 TrueLine". */
+export type Section = { id: string; label: string; group?: string; n?: string };
 
 /** Marks whichever section owns the middle band of the viewport. */
 export function useCurrentSection(sections: Section[], initial = sections[0]?.id ?? "") {
@@ -17,21 +18,4 @@ export function useCurrentSection(sections: Section[], initial = sections[0]?.id
     return () => obs.forEach(o => o?.disconnect());
   }, [sections]);
   return cur;
-}
-
-/**
- * The dot rail. Same object on every route; only the contents change, so a project page
- * reads as the same site one level down rather than as a different website.
- */
-export function Index({ sections, cur }: { sections: Section[]; cur: string }) {
-  return (
-    <nav className="idx" aria-label="Sections">
-      {sections.map(s => (
-        <a key={s.id} href={`#${s.id}`} className={cur === s.id ? "cur" : ""}
-           aria-current={cur === s.id ? "true" : undefined}>
-          <i aria-hidden="true" /><span>{s.label}</span>
-        </a>
-      ))}
-    </nav>
-  );
 }
