@@ -102,21 +102,26 @@
       <h2>Selected work</h2>
       <ul>
         <li>
-          NIST, Research Data and Computing Office (SURF research intern, summer 2026):
-          built a reproducible five-stage Python pipeline (pandas, scikit-learn)
-          recovering reliable usage metrics for NIST's public data portal: per-IP
-          behavioral feature engineering and four classifiers (best F1 = 0.95). Found
-          51% of 190,687 logged requests were automated, exposed a disguised scraper
-          behind 50,000+ spoofed requests via a second-pass behavioral detection rule,
-          and showed 23% of 20,790 human searches returned no results.
+          NIST, Research Data and Computing Office (research intern, May to August 2026):
+          built a five-stage Python pipeline (pandas, scikit-learn) that separates automated
+          from human traffic across 1.04M requests to NIST's public data portal (271 days,
+          117K unique IPs). A random forest using only behavioral signals reached F1 = 0.94.
+          Caught a disguised scraper that hit the portal monthly from fresh IPs and spoofed
+          hundreds of browser user-agents; an isolation forest surfaced it and log
+          investigation confirmed it. Turning that into auditable cleaning rules raised the
+          measured automated share of traffic from 21.7% to 41.9%. Found that 21.5% of 109K
+          human searches returned no results and built a TF-IDF query-failure classifier
+          (accuracy 0.88).
         </li>
         <li>
-          TrueLine (Jan 2026–present): iOS app that turns one iPhone into a bowling ball
-          tracker: per-throw launch speed, board at the arrows, breakpoint, and entry
-          angle. Fine-tuned YOLOv8 exported to Core ML, Kalman-filter tracking with
-          Savitzky–Golay smoothing, four-corner calibration homography; board position
-          verified within ~1 board and speed within 1–2% against the Python/OpenCV
-          prototype. Swift, SwiftUI, Core ML, AVFoundation, PyTorch.
+          TrueLine (Jan 2026–present): iOS app that measures a bowling ball's launch speed,
+          breakpoint, and entry angle with one iPhone instead of a $10k+ in-lane system.
+          Tracked the ball down the full lane on 6 of 6 unseen clips (two alleys, three camera
+          angles) with a YOLOv8n detector fine-tuned on 215 labeled frames, exported to a
+          5.9 MB Core ML model with Kalman-filter tracking, fully on-device. A four-corner
+          homography calibrates any camera angle into lane coordinates; a clip-by-clip harness
+          verifies the Swift port against the Python prototype within 1 board and 1–2% on
+          speed. Swift, SwiftUI, Core ML, AVFoundation, PyTorch, OpenCV.
           <a href="https://github.com/adam-zhu1/trueline">GitHub repo</a>. Released on the
           <a href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">App Store</a> in August 2026.
         </li>
@@ -129,6 +134,11 @@
           windows, local recents, and the signed app bundle and DMG. Python, pywebview, Go,
           LangGraph, Docker. <a href="https://clarity-web-black.vercel.app/">Clarity's site</a>,
           <a href="https://github.com/s0hamjain/Clarity">GitHub repo</a>.
+        </li>
+        <li>
+          ScottyLabs AI, Carnegie Mellon (software engineer, Sep 2026–present): set up the
+          dev stack for Bark, CMU's campus AI assistant (Python LLM backend, MCP tools,
+          Postgres).
         </li>
         <li>
           CSAFE, Iowa State: forensic analysis on 24,000+ camera images for device

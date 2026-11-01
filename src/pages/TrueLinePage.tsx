@@ -240,8 +240,8 @@ export default function TrueLinePage() {
           <section className="sec" id="tl-read">
             <div className="tlhead in" ref={readRef}>
               <h2>What it gives you back</h2>
-              <p>Nine measurements from one throw. Every one is a lane measurement — a board and a
-                distance — not a number about pixels.</p>
+              <p>Nine measurements from one throw. Every one is a lane measurement, a board and a
+                distance, not a number about pixels.</p>
             </div>
             <div className="tiles" ref={tilesRef}>
               {TILES.map(t => (
@@ -298,7 +298,7 @@ export default function TrueLinePage() {
                   four corners: the foul line at each gutter, and the pin deck at each gutter. A loupe
                   magnifies under your finger while you drag, because at the far end you are placing a
                   handle inside a couple of pixels.</p>
-                <p>Those four points are enough to solve the homography — the transform that turns any
+                <p>Those four points are enough to solve the homography: the transform that turns any
                   pixel in the frame into a board number and a distance down the lane. Everything the
                   app reports afterwards is measured in that space, which is why the numbers survive the
                   phone being in a slightly different spot every time.</p>
@@ -357,7 +357,7 @@ export default function TrueLinePage() {
           <section className="sec" id="tl-next">
             <div className="tlhead in" ref={nextRef}>
               <h2>What I'm working on</h2>
-              <p>The next version is in progress. No date — it ships when the accuracy work behind it
+              <p>The next version is in progress. No date; it ships when the accuracy work behind it
                 is finished and checked against real throws.</p>
             </div>
             <div className="coming" ref={comingRef}>

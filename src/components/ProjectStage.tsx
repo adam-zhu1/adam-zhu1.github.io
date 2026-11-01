@@ -10,7 +10,7 @@ import { PROJECTS } from "../data/projects";
 
 /* Where the stage pins: a real desktop window. Below this, or with reduced motion, the same
    markup lies flat as a stacked list, every project open and its demo under it. */
-const PIN = "(min-width: 64rem) and (min-height: 700px)";
+const PIN = "(min-width: 64rem) and (min-height: 780px)";
 
 function usePinned() {
   const [on, set] = useState(false);

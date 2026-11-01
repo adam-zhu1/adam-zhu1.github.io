@@ -250,7 +250,7 @@ html.morphing { scroll-behavior: auto; }
 .facts dt { color: var(--mute); margin: 0; }
 .facts dd { margin: 0; color: var(--ink2); }
 .stages { margin: 36px 0 0; }
-.step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); opacity: .45; transition: opacity .35s linear; }
+.step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); opacity: .5; transition: opacity .35s linear; }
 .step.cur { opacity: 1; }
 .step .n { font-size: 12.5px; color: var(--mute); padding-top: 3px; font-variant-numeric: tabular-nums; }
 .step.cur .n { color: var(--accent); }
@@ -555,7 +555,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .cl-editor { position: absolute; left: 5%; top: 8%; width: 60%; height: 44%; background: #f7f5ef; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.45); overflow: hidden; color: #1e232a; }
 .cl-ed-bar { height: 12%; display: flex; align-items: center; gap: 4px; padding-left: 3%; background: #ebe8e0; border-bottom: 1px solid #ddd8cd; }
 .cl-ed-bar i { width: 2.2%; aspect-ratio: 1; border-radius: 50%; background: #cfcac0; }
-.cl-ed-bar span { margin-left: 3%; font-size: 5.2cqw; color: #6c6a64; font-family: var(--mono); }
+.cl-ed-bar span { margin-left: 3%; font-size: 5.2cqw; color: #5d5b56; font-family: var(--mono); }
 .cl-editor { container-type: inline-size; }
 .cl-code { margin: 0; padding: 4% 4% 0 3%; font-family: "SF Mono", var(--mono); font-size: 4.9cqw; line-height: 1.56; color: #23282f; white-space: pre; }
 .cl-code .ln { display: inline-block; width: 7%; color: #b3aea3; text-align: right; margin-right: 3%; font-size: .9em; }
