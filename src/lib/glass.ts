@@ -20,8 +20,10 @@ let svgRoot: SVGSVGElement | null = null;
 let seq = 0;
 
 /** The map: red and green carry the x and y push, 128 is "stay put". Only a band along the
-    edge moves, and it pushes inward along the normal, harder the nearer the rim. */
-function drawMap(w: number, h: number, r: number, band: number) {
+    edge moves. Each pixel there reads from further inside, along the normal, so the rim
+    magnifies what is under it like the edge of a lens. `curve` shapes the bezel: higher keeps
+    the middle of the band flat and bends hard right at the rim, the way a rounded slab does. */
+function drawMap(w: number, h: number, r: number, band: number, curve: number) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const g = c.getContext("2d")!;
@@ -35,7 +37,7 @@ function drawMap(w: number, h: number, r: number, band: number) {
       const d = r - (Math.hypot(ox, oy) + Math.min(Math.max(qx, qy), 0));
       let nx = 0, ny = 0;
       if (d < band) {
-        const k = (1 - d / band) ** 2;
+        const k = (1 - d / band) ** curve;
         // the outward normal, from whichever part of the shape is nearest
         let gx = 0, gy = 0;
         if (ox > 0 || oy > 0) { const l = Math.hypot(ox, oy) || 1; gx = ox / l; gy = oy / l; }
@@ -50,7 +52,17 @@ function drawMap(w: number, h: number, r: number, band: number) {
   return c.toDataURL();
 }
 
-export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { band = 14, scale = 26, blur = 6 } = {}) {
+export type GlassOptions = {
+  band?: number;    // how far in from the rim the bending reaches, px
+  scale?: number;   // how hard it bends
+  blur?: number;    // softening applied before bending; 0 keeps the backdrop sharp
+  curve?: number;   // bezel profile, see drawMap
+  fringe?: number;  // 0..1, splits red and blue at the rim like thick glass
+  post?: string;    // filters after the lens, e.g. saturate()
+};
+
+export function useLiquidGlass(ref: RefObject<HTMLElement | null>,
+  { band = 14, scale = 26, blur = 6, curve = 2, fringe = 0, post = "saturate(1.6) brightness(1.06)" }: GlassOptions = {}) {
   useEffect(() => {
     const el = ref.current;
     if (!el || !chromium() || reducedTransparency()) return;
@@ -70,12 +82,27 @@ export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { band = 14, 
     filter.setAttribute("filterUnits", "userSpaceOnUse");
     const fe = document.createElementNS(ns, "feImage");
     fe.setAttribute("result", "map"); fe.setAttribute("preserveAspectRatio", "none");
-    const blurFe = document.createElementNS(ns, "feGaussianBlur");
-    blurFe.setAttribute("in", "SourceGraphic"); blurFe.setAttribute("stdDeviation", String(blur)); blurFe.setAttribute("result", "soft");
-    const disp = document.createElementNS(ns, "feDisplacementMap");
-    disp.setAttribute("in", "soft"); disp.setAttribute("in2", "map"); disp.setAttribute("scale", String(scale));
-    disp.setAttribute("xChannelSelector", "R"); disp.setAttribute("yChannelSelector", "G");
-    filter.append(fe, blurFe, disp);
+    const parts: SVGElement[] = [fe];
+    const el2 = (tag: string, attrs: Record<string, string | number>) => {
+      const n = document.createElementNS(ns, tag);
+      for (const k in attrs) n.setAttribute(k, String(attrs[k]));
+      parts.push(n);
+      return n;
+    };
+    const src = blur > 0 ? (el2("feGaussianBlur", { in: "SourceGraphic", stdDeviation: blur, result: "soft" }), "soft") : "SourceGraphic";
+    const bend = (s: number, result: string) =>
+      el2("feDisplacementMap", { in: src, in2: "map", scale: s, xChannelSelector: "R", yChannelSelector: "G", result });
+    if (fringe > 0) {
+      // three passes at slightly different strengths, one kept per channel, added back together
+      const only = (inn: string, m: string, result: string) => el2("feColorMatrix", { in: inn, type: "matrix", values: m, result });
+      bend(scale * (1 + fringe), "dr"); bend(scale, "dg"); bend(scale * (1 - fringe), "db");
+      only("dr", "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0", "r");
+      only("dg", "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0", "g");
+      only("db", "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0", "b");
+      el2("feComposite", { in: "r", in2: "g", operator: "arithmetic", k2: 1, k3: 1, result: "rg" });
+      el2("feComposite", { in: "rg", in2: "b", operator: "arithmetic", k2: 1, k3: 1 });
+    } else bend(scale, "out");
+    filter.append(...parts);
     svgRoot.appendChild(filter);
 
     let last = "";
@@ -86,9 +113,9 @@ export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { band = 14, 
       if (key === last) return;
       last = key;
       const r = Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, h / 2, w / 2);
-      fe.setAttribute("href", drawMap(w, h, r, Math.min(band, h / 2)));
+      fe.setAttribute("href", drawMap(w, h, r, Math.min(band, h / 2), curve));
       for (const n of [filter, fe]) { n.setAttribute("width", String(w)); n.setAttribute("height", String(h)); }
-      el.style.setProperty("--glass-filter", `url(#${id}) saturate(1.6) brightness(1.06)`);
+      el.style.setProperty("--glass-filter", `url(#${id}) ${post}`);
     };
     // the bar's width animates, so wait for it to settle instead of drawing every frame
     let t = 0;
@@ -97,5 +124,5 @@ export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { band = 14, 
     fit();
     el.classList.add("refract");
     return () => { ro.disconnect(); clearTimeout(t); filter.remove(); el.classList.remove("refract"); el.style.removeProperty("--glass-filter"); };
-  }, [ref, band, scale, blur]);
+  }, [ref, band, scale, blur, curve, fringe, post]);
 }

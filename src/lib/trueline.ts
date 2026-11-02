@@ -55,9 +55,9 @@ export function createTrueLine(els: Els) {
   const { vid, ov, steps, capL, capR, nums } = els;
   const NUMS = ["Speed", "Board at Arrows", "Entry Board", "Entry Angle", "Breakpoint", "Hook"];
   const M0 = n => TRACK.metrics.find(m => m.n === n);
-  nums.replaceChildren(...NUMS.map(n => { const d = document.createElement("div"); d.className = "num"; const m = M0(n); d.innerHTML = `<small>${m.n}</small><b class="${n === "Entry Angle" ? "mint" : ""}">0.0</b><i>${m.u}</i>`; return d; }));
+  nums.replaceChildren(...NUMS.map(n => { const d = document.createElement("div"); d.className = "num"; const m = M0(n); d.innerHTML = `<small>${m.n}</small><b class="${n === "Entry Angle" ? "mint" : ""}">–</b><i>${m.u}</i>`; return d; }));
   function numsShow(k) { [...nums.children].forEach((d, i) => { const o = clamp(k * 6 - i * .9, 0, 1); if (o <= 0) return; d.classList.add("on"); d.querySelector("b").textContent = (M0(NUMS[i]).v * eOut(o)).toFixed(1); }); }
-  function numsReset() { [...nums.children].forEach(d => { d.classList.remove("on"); d.querySelector("b").textContent = "0.0"; }); }
+  function numsReset() { [...nums.children].forEach(d => { d.classList.remove("on"); d.querySelector("b").textContent = "–"; }); }
   const T = { play: .6, hold: .6 + CLIP_END, cal: .6 + CLIP_END + 1.9, mv: .6 + CLIP_END + 3.6, plan: .6 + CLIP_END + 5.4, met: .6 + CLIP_END + 6.2, end: .6 + CLIP_END + 10.5 };
   const STAGE_AT = [0, T.hold, T.cal + .1, T.met];
 

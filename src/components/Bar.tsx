@@ -1,10 +1,27 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { A, out } from "../lib/router";
-import { useLiquidGlass } from "../lib/glass";
+import { useLiquidGlass, type GlassOptions } from "../lib/glass";
 import { prefersReducedMotion } from "../lib/useReveal";
 import type { Section } from "./Index";
 
 const RESUME = "/Adam-Zhu-Resume.pdf";
+
+/* Three takes on the glass, picked with ?glass=a|b|c while we decide. The choice sticks for
+   the tab so moving between pages keeps it. A: clear lens. B: thick glass with a colour
+   fringe. C: frosted, the old look done better. */
+const GLASS: Record<string, GlassOptions> = {
+  a: { band: 20, scale: 56, blur: 0, curve: 2.6, post: "saturate(1.5) brightness(1.04)" },
+  b: { band: 26, scale: 84, blur: 0.6, curve: 2.2, fringe: 0.12, post: "saturate(1.7) brightness(1.06)" },
+  c: { band: 14, scale: 26, blur: 4, curve: 2, post: "saturate(1.6) brightness(1.06)" },
+};
+function glassPick() {
+  let g = new URLSearchParams(location.search).get("glass");
+  try {
+    if (g && GLASS[g]) sessionStorage.setItem("glass", g);
+    else g = sessionStorage.getItem("glass");
+  } catch { /* storage blocked: the URL alone decides */ }
+  return g && GLASS[g] ? g : "b";
+}
 
 /** How far down the page you are, 0 to 1, and whether you have left the top. */
 function useScrollProgress() {
@@ -39,7 +56,8 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
   const pill = useRef<HTMLDivElement>(null);
   const chipText = useRef<HTMLSpanElement>(null);
   const [p, lifted] = useScrollProgress();
-  useLiquidGlass(pill);
+  const [glass] = useState(glassPick);
+  useLiquidGlass(pill, GLASS[glass]);
 
   const sec = sections.find(s => s.id === cur);
   const showChip = lifted && !!sec && sec.id !== sections[0]?.id;
@@ -71,7 +89,7 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
 
   return (
     <header className={`bar${lifted ? " lifted" : ""}`}>
-      <div className="pill glass" ref={pill}>
+      <div className="pill glass" data-glass={glass} ref={pill}>
         <A className="mark" href={home ? "#adam" : "/#projects"}
            aria-label={home ? "Adam Zhu, back to the top" : "Adam Zhu, back to the work"}>
           <svg viewBox="0 0 24 24" aria-hidden="true">

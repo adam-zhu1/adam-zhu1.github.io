@@ -24,7 +24,7 @@
   color-scheme: dark;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: var(--bg); color-scheme: dark; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--sans); font-weight: 400; font-size: 17px; line-height: 1.6;
@@ -41,13 +41,13 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
    Flat at the top of a page: the mark and the links, nothing behind them. Once you scroll it
    gathers into a centred pill of liquid glass, and the chip inside says where you are. */
 .bar { position: fixed; left: 0; right: 0; top: 0; z-index: 40; display: flex; justify-content: center;
-  padding: 12px 16px 0; pointer-events: none; font-size: 13.5px; color: var(--ink2); }
+  padding: 14px 16px 0; pointer-events: none; font-size: 14.5px; color: var(--ink2); }
 .bar .pill { pointer-events: auto; position: relative; display: flex; align-items: center; gap: 14px;
-  width: min(1280px, 100% - 48px); height: 46px; padding: 0 8px 0 16px; border-radius: 999px;
+  width: min(1280px, 100% - 48px); height: 54px; padding: 0 9px 0 20px; border-radius: 999px;
   transition: width .7s cubic-bezier(.16,1,.3,1), background-color .4s, box-shadow .4s, border-color .4s; }
-.bar.lifted .pill { width: min(760px, 100%); }
+.bar.lifted .pill { width: min(840px, 100%); }
 .bar .links { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.bar .links a { color: var(--ink); text-decoration: none; padding: 7px 11px; border-radius: 999px; transition: color .2s, background-color .2s; }
+.bar .links a { color: var(--ink); text-decoration: none; padding: 9px 13px; border-radius: 999px; transition: color .2s, background-color .2s; }
 .bar .links a:hover { color: var(--ink); background: rgba(255,255,255,.06); }
 .bar .links .cv { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); margin-left: 4px; padding: 7px 14px;
   border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06);
@@ -58,14 +58,14 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .bar a:focus-visible, .ctl button:focus-visible, .store:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* where you are: a dark well inside the glass, with the section's own colour as a dot */
-.bar .chip { display: inline-flex; align-items: center; gap: 8px; height: 28px; overflow: hidden; white-space: nowrap;
+.bar .chip { display: inline-flex; align-items: center; gap: 8px; height: 32px; overflow: hidden; white-space: nowrap;
   padding: 0; border-radius: 999px; box-sizing: border-box; opacity: 0;
   background: rgba(0,0,0,.42); box-shadow: inset 0 1px 2px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);
-  font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em; color: var(--ink);
+  font-family: var(--mono); font-size: 12.5px; letter-spacing: .02em; color: var(--ink);
   transition: width .5s cubic-bezier(.16,1,.3,1), opacity .3s, padding .5s cubic-bezier(.16,1,.3,1); }
 .bar .chip.on { opacity: 1; padding: 0 12px 0 10px; }
 .bar .chip i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); transition: background .5s linear; }
-.bar .chip .roll { display: inline-grid; min-width: 0; overflow: hidden; height: 28px; align-items: center; }
+.bar .chip .roll { display: inline-grid; min-width: 0; overflow: hidden; height: 32px; align-items: center; }
 .bar .chip .t { grid-area: 1 / 1; display: inline-block; white-space: nowrap; }
 .bar .chip .t.in { animation: rollin .44s cubic-bezier(.16,1,.3,1) both; }
 .bar .chip .t.out { animation: rollout .44s cubic-bezier(.16,1,.3,1) both; }
@@ -76,12 +76,35 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
    For the layer that floats over content, never for content itself. Every browser gets the
    frost; Chromium also bends the backdrop at the rim (lib/glass.ts sets --glass-filter). */
 .bar.lifted .glass {
-  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 60%), rgba(14,14,18,.68);
-  -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+  --tint: .68; --frost: 14px; --rim: .22;
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 60%), rgba(14,14,18,var(--tint));
+  -webkit-backdrop-filter: blur(var(--frost)) saturate(1.6); backdrop-filter: blur(var(--frost)) saturate(1.6);
   border: 1px solid rgba(255,255,255,.12);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.04), 0 12px 32px -14px rgba(0,0,0,.8); }
+  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--rim)), inset 0 -1px 0 rgba(255,255,255,.04), 0 12px 32px -14px rgba(0,0,0,.8); }
 .bar .glass { border: 1px solid transparent; }
-.bar.lifted .glass.refract { backdrop-filter: var(--glass-filter) blur(2px); }
+.bar.lifted .glass.refract { backdrop-filter: var(--glass-filter) blur(var(--sharp, 2px)); }
+/* A, clear lens: barely tinted, sharp, all the work done by the bent rim and a bright edge.
+   The tint is a touch heavier where the browser cannot bend, so plain frost still reads. */
+.bar.lifted .glass[data-glass="a"] { --tint: .38; --frost: 8px; --rim: .5; --sharp: 0px;
+  background: radial-gradient(120% 140% at 50% -30%, rgba(255,255,255,.14), transparent 55%), rgba(14,14,18,var(--tint));
+  border-color: rgba(255,255,255,.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--rim)), inset 1px 0 0 rgba(255,255,255,.1), inset -1px 0 0 rgba(255,255,255,.1),
+    inset 0 -1px 1px rgba(255,255,255,.12), 0 1px 1px rgba(0,0,0,.3), 0 18px 40px -16px rgba(0,0,0,.85); }
+.bar.lifted .glass.refract[data-glass="a"] { --tint: .2; }
+/* B, thick glass: a deeper bend with red and blue split at the edge, a little softening */
+.bar.lifted .glass[data-glass="b"] { --tint: .62; --frost: 10px; --rim: .55; --sharp: 1px;
+  background: radial-gradient(120% 160% at 30% -40%, rgba(255,255,255,.18), transparent 50%),
+    linear-gradient(0deg, rgba(255,255,255,.05), transparent 40%), rgba(14,14,18,var(--tint));
+  border-color: rgba(255,255,255,.2);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,var(--rim)), inset 0 -1.5px 1px rgba(255,255,255,.16),
+    inset 0 0 18px rgba(255,255,255,.06), 0 2px 2px rgba(0,0,0,.35), 0 22px 46px -16px rgba(0,0,0,.9); }
+.bar.lifted .glass.refract[data-glass="b"] { --tint: .52; }
+/* C, frost: the old look, lighter, with a brighter rim and a deeper shadow */
+.bar.lifted .glass[data-glass="c"] { --tint: .5; --frost: 18px; --rim: .32; --sharp: 6px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--rim)), inset 0 -1px 0 rgba(255,255,255,.06), 0 16px 40px -14px rgba(0,0,0,.85); }
+/* text stays readable when something bright slides under the clear versions */
+.bar.lifted .glass[data-glass="a"] .links a, .bar.lifted .glass[data-glass="b"] .links a,
+.bar.lifted .glass[data-glass="a"] .mark, .bar.lifted .glass[data-glass="b"] .mark { text-shadow: 0 1px 8px rgba(0,0,0,.55); }
 @media (prefers-reduced-transparency: reduce) {
   .bar.lifted .glass { background: #141418; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
@@ -195,7 +218,7 @@ html.morphing { scroll-behavior: auto; }
 /* the mark in the top bar: a dial of how far down the page you are. It spins a full turn
    when you point at it. */
 .bar .mark { flex: none; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
-.bar .mark svg { width: 19px; height: 19px; overflow: visible; transition: transform .9s cubic-bezier(.22,1,.36,1); }
+.bar .mark svg { width: 22px; height: 22px; overflow: visible; transition: transform .9s cubic-bezier(.22,1,.36,1); }
 .bar .mark:hover svg { transform: rotate(360deg); }
 .bar .mark .track { stroke: var(--line2); }
 .bar .mark .today { fill: var(--accent); transition: fill .5s linear; }
@@ -283,8 +306,11 @@ html.morphing { scroll-behavior: auto; }
 .cap { margin-top: 10px; font-size: 13px; color: var(--mute); display: flex; justify-content: space-between; gap: 16px; }
 .cap b { color: var(--ink2); font-weight: 400; }
 .nums { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 24px; }
-.num { padding: 10px 10px 8px; border-top: 1px solid var(--line2); opacity: 0; transform: translateY(8px); transition: opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1); }
-.num.on { opacity: 1; transform: none; }
+/* the readout is there from the start, dim and empty, so the space under the frame reads as
+   an instrument waiting for the throw rather than a gap; the Read step fills it in */
+.num { padding: 10px 10px 8px; border-top: 1px solid var(--line2); opacity: .4; transition: opacity .5s cubic-bezier(.22,1,.36,1), border-color .5s; }
+.num.on { opacity: 1; border-top-color: var(--line2); }
+.num:not(.on) b { color: var(--mute); }
 .num small { display: block; font-size: 11px; color: var(--mute); margin-bottom: 4px; }
 .num b { font-size: 23px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .num b.mint { color: var(--accent); }
@@ -330,7 +356,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 }
 @media (max-width: 640px) {
   .bar { padding: 10px 10px 0 }
-  .bar .pill, .bar.lifted .pill { width: 100%; gap: 10px; padding: 0 6px 0 14px; height: 44px }
+  .bar .pill, .bar.lifted .pill { width: 100%; gap: 10px; padding: 0 6px 0 14px; height: 48px }
   .bar .links a:not(.cv) { display: none }
   .bar .chip { min-width: 0; flex: 0 1 auto }
   .bar .chip .t { min-width: 0; overflow: hidden; text-overflow: ellipsis }
@@ -689,13 +715,21 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 /* NIST: a measured result, drawn plainly */
 .nistwin { border: 1px solid var(--line2); border-radius: 4px; padding: 28px 28px 22px; }
 .nist .nk { margin: 0 0 18px; font-size: 13px; color: var(--mute); }
-.nist .bars { display: grid; gap: 12px; }
-.nist .br { display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; gap: 14px; font-size: 14px; color: var(--ink2); }
-.nist .br i { display: block; height: 34px; border-radius: 3px; background: var(--line2); width: 0;
-  transition: width 1.1s cubic-bezier(.16,1,.3,1) .15s; }
-.nist .br.after i { background: var(--accent); transition-delay: .4s; }
-.nist.on .br i { width: calc(var(--w) * 2); }
-.nist .br b { font-weight: 500; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
+/* bars on a 0 to 100 axis: the label sits above each bar so the track keeps the full width */
+.nchart { position: relative; display: grid; gap: 16px; padding-bottom: 26px; }
+.nchart .axis { position: absolute; inset: 0; pointer-events: none; }
+.nchart .axis span { position: absolute; bottom: 0; left: calc(var(--t) * 1%); transform: translateX(-50%);
+  font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.nchart .axis span:first-child { transform: none; }
+.nchart .axis span:last-child { transform: translateX(-100%); }
+.nist .br { position: relative; display: grid; gap: 6px; font-size: 13px; color: var(--ink2); }
+.nist .br .track { position: relative; display: flex; align-items: center; gap: 10px; height: 30px;
+  background: repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 25%); box-shadow: inset -1px 0 var(--line); }
+.nist .br i { display: block; height: 100%; border-radius: 3px; background: var(--line2); width: 0;
+  transition: width 1.1s cubic-bezier(.16,1,.3,1) calc(.15s + var(--d) * .2s); }
+.nist .br.after i { background: var(--accent); }
+.nist.on .br i { width: calc(var(--w) * 1%); }
+.nist .br b { font-weight: 500; font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums; padding: 0 6px; margin-left: -6px; background: var(--bg); }
 .nist .nnote { margin: 18px 0 0; font-size: 14px; color: var(--ink2); max-width: 60ch; }
 .nstats { margin: 22px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0 16px; }
 .nstats div { border-top: 1px solid var(--line2); padding: 10px 0 12px; }
@@ -703,7 +737,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .nstats dd { margin: 4px 0 0; font-size: 22px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 
 /* ---- pinned ---- */
-.pstage.pinned { height: calc(100svh + var(--n) * 90svh); margin-top: -24px; }
+.pstage.pinned { height: calc(100svh + var(--n) * 75svh); margin-top: -24px; }
 .pinned .pstick { position: sticky; top: 0; height: 100svh; display: grid; grid-template-columns: minmax(300px, .82fr) minmax(0, 1.5fr);
   gap: 64px; align-items: center; padding: 84px 0 28px; box-sizing: border-box; }
 .pinned .plist { display: block; align-self: center; }
@@ -729,6 +763,11 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .pinned .demo.clproj .app, .pinned .demo.clproj .cap { max-width: min(100%, calc(100svh - 250px)); }
 .pinned .demo .nums { margin-top: 12px; }
 
+@media (prefers-reduced-motion: reduce) {
+  .pinned .pbody, .pinned .pbody > div, .pinned li.on .pbody > div, .pinned .plist h3 button,
+  .pinned .pmedia .layer, .pinned .pmedia .layer.on, .pinned .pmedia .layer > .demo { transition: none; }
+  .pinned .pmedia .layer > .demo { transform: none; }
+}
 /* stacked on a wide window, the demo would otherwise run the full width of the page */
 .pstage:not(.pinned) .pmedia .layer { max-width: 1040px; }
 @media (max-width: 640px) {
@@ -739,7 +778,6 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .demo .num b { font-size: 18px; }
   .nstats { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .nistwin { padding: 20px 18px 16px; }
-  .nist .br { grid-template-columns: 52px 1fr 56px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nist .br i { transition: none; }

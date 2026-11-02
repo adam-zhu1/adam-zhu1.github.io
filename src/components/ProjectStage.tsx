@@ -8,14 +8,14 @@ import { CLARITY_SITE } from "../data/clarity";
 import { PROJECTS } from "../data/projects";
 
 
-/* Where the stage pins: a real desktop window. Below this, or with reduced motion, the same
-   markup lies flat as a stacked list, every project open and its demo under it. */
+/* Where the stage pins: a real desktop window. Below this the same markup lies flat as a
+   stacked list, every project open and its demo under it. Reduced motion still pins, since
+   holding still is not motion; the projects just swap without the wipe (see index.css). */
 const PIN = "(min-width: 64rem) and (min-height: 780px)";
 
 function usePinned() {
   const [on, set] = useState(false);
   useEffect(() => {
-    if (prefersReducedMotion()) return;
     const mq = matchMedia(PIN);
     const read = () => set(mq.matches);
     read();
@@ -25,25 +25,42 @@ function usePinned() {
   return on;
 }
 
-/** The measured share of NIST portal traffic that was automated, before and after the
-    cleaning rules, plus the run's scale. Every figure is from the resume. */
+/* The automated share of all 1,039,639 portal requests at each stage of the cleaning, checked
+   against the analysis output. Only aggregates: no IPs, schedules or search phrases. The last
+   figure is a floor, since a scraper spread over many IPs cannot be seen one IP at a time. */
+const NIST_STEPS = [
+  { label: "User-agent only", v: 21.7 },
+  { label: "+ behavioral rules", v: 30.6 },
+  { label: "+ rules after the label audit", v: 41.9 },
+];
+
+/** How the measured automated share grew as the cleaning improved, on a full 0 to 100 axis
+    so the human majority stays in view, plus the run's scale. */
 function NistFigure({ on }: { on: boolean }) {
   return (
     <div className={`demo nist${on ? " on" : ""}`}>
       <div className="win appwin nistwin">
-        <p className="nk">Measured automated share of portal traffic</p>
-        <div className="bars">
-          <div className="br"><span>Before</span><i style={{ "--w": "21.7%" } as CSSProperties} /><b>21.7%</b></div>
-          <div className="br after"><span>After</span><i style={{ "--w": "41.9%" } as CSSProperties} /><b>41.9%</b></div>
+        <p className="nk">Share of requests classified as automated</p>
+        <div className="nchart" role="img"
+             aria-label="Share of requests classified as automated: 21.7% from the user-agent alone, 30.6% with behavioral rules, 41.9% with the rules after the label audit, a lower bound.">
+          <div className="axis" aria-hidden="true">
+            {[0, 25, 50, 75, 100].map(t => <span key={t} style={{ "--t": t } as CSSProperties}>{t}%</span>)}
+          </div>
+          {NIST_STEPS.map((s, i) => (
+            <div key={s.label} className={`br${i === NIST_STEPS.length - 1 ? " after" : ""}`} style={{ "--d": i } as CSSProperties}>
+              <span>{s.label}</span>
+              <div className="track"><i style={{ "--w": s.v } as CSSProperties} /><b>{s.v}%</b></div>
+            </div>
+          ))}
         </div>
-        <p className="nnote">The rules came out of one investigation: a scraper that hit the portal monthly from fresh IPs and spoofed hundreds of browser user-agents.</p>
+        <p className="nnote">41.9% is a lower bound. With the same features, the cleaner labels alone lifted a logistic regression from F1 0.49 to 0.79.</p>
         <dl className="nstats">
           <div><dt>Requests</dt><dd>1.04M</dd></div>
           <div><dt>Days</dt><dd>271</dd></div>
           <div><dt>Unique IPs</dt><dd>117K</dd></div>
-          <div><dt>Random forest F1</dt><dd>0.94</dd></div>
+          <div><dt>Random forest F1, no user-agent</dt><dd>0.94</dd></div>
           <div><dt>Searches with no results</dt><dd>21.5%</dd></div>
-          <div><dt>Query-failure classifier</dt><dd>0.88 acc.</dd></div>
+          <div><dt>Query-failure classifier F1</dt><dd>0.80</dd></div>
         </dl>
       </div>
     </div>
@@ -90,7 +107,8 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) onActive(Number((e.target as HTMLElement).dataset.i));
     }), { rootMargin: "-45% 0px -45% 0px" });
-    items.current.forEach(li => li && io.observe(li));
+    // the demo counts as much as the name above it, so the chip stays right while you read it
+    track.current?.querySelectorAll("[data-i]").forEach(el => io.observe(el));
     return () => io.disconnect();
   }, [pinned, onActive]);
 
@@ -98,12 +116,12 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
     const el = track.current;
     if (!el || !pinned) { items.current[i]?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" }); return; }
     const seg = (el.offsetHeight - innerHeight) / n;
-    scrollTo({ top: el.getBoundingClientRect().top + scrollY + i * seg + 2, behavior: "smooth" });
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY + i * seg + 2, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   };
 
   /* the door into TrueLine's page: the name is lifted off the list and flown to the heading
      its own page keeps for it, so the two read as one object rather than two screens */
-  const tlTitle = useRef<HTMLHeadingElement>(null);
+  const tlTitle = useRef<HTMLSpanElement>(null);
   const openTrueLine = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0 || !tlTitle.current) return;
     e.preventDefault();
@@ -144,7 +162,7 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
         five-stage pandas and scikit-learn pipeline that separates automated from human traffic in
         the logs of NIST&rsquo;s public data portal.
       </p>
-      <p className="meta">Python, pandas, scikit-learn · Gaithersburg, MD</p>
+      <p className="meta">Python, pandas, scikit-learn · Gaithersburg, MD · No public code</p>
       <p className="result">A random forest using only behavioral signals reached F1 = 0.94. An isolation forest surfaced a disguised scraper, and the cleaning rules built from it raised the measured automated share from 21.7% to 41.9%.</p>
     </>,
   ];
@@ -157,9 +175,9 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
             <li key={p.id} id={p.id} data-i={i} ref={el => { items.current[i] = el; }}
                 className={active === i ? "on" : ""} style={{ "--accent": p.accent, "--o": i * 2 } as CSSProperties}>
               <span className="prog" aria-hidden="true" />
-              <h3 ref={i === 0 ? tlTitle : undefined}>
+              <h3>
                 <button type="button" onClick={() => go(i)} aria-expanded={!pinned || active === i}>
-                  <span className="pn">{String(i + 1).padStart(2, "0")}</span>{p.name}
+                  <span className="pn">{String(i + 1).padStart(2, "0")}</span><span ref={i === 0 ? tlTitle : undefined}>{p.name}</span>
                 </button>
               </h3>
               <div className="pbody"><div>{body[i]}</div></div>
@@ -168,7 +186,7 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
         </ol>
         <div className="pmedia">
           {PROJECTS.map((p, i) => (
-            <div key={p.id} className={`layer${active === i ? " on" : ""}`}
+            <div key={p.id} data-i={i} className={`layer${active === i ? " on" : ""}`}
                  style={{ "--accent": p.accent, "--o": i * 2 + 1 } as CSSProperties}
                  aria-hidden={pinned && active !== i}>
               {i === 0 && <TrueLine held={pinned && active !== 0} />}
