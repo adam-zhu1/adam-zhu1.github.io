@@ -18,7 +18,7 @@ const SECTIONS: Section[] = [
 ];
 const CHIPS: Section[] = [
   SECTIONS[0],
-  ...PROJECTS.map((p, i) => ({ id: p.id, label: p.name, group: "Projects", n: String(i + 1).padStart(2, "0") })),
+  ...PROJECTS.map((p, i) => ({ id: p.id, label: p.name, group: "Projects", n: String(i + 1).padStart(2, "0"), accent: p.accent })),
   ...SECTIONS.slice(2),
 ];
 

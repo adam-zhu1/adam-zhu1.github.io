@@ -24,8 +24,10 @@
   color-scheme: dark;
 }
 
-html { scroll-behavior: smooth; background: var(--bg); color-scheme: dark; }
+/* no rubber band past the ends: on a Mac the strip it reveals is painted a shade off the page */
+html { scroll-behavior: smooth; background: var(--bg); color-scheme: dark; overscroll-behavior-y: none; }
 body {
+  overscroll-behavior-y: none;
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--sans); font-weight: 400; font-size: 17px; line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -73,38 +75,26 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 @keyframes rollout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(-100%) } }
 
 /* ---------- glass ----------
-   For the layer that floats over content, never for content itself. Every browser gets the
-   frost; Chromium also bends the backdrop at the rim (lib/glass.ts sets --glass-filter). */
+   Frost for the layer that floats over content, never for content itself: the same in every
+   browser, with a soft highlight along the top and no hard border. */
 .bar.lifted .glass {
-  --tint: .68; --frost: 14px; --rim: .22;
-  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 60%), rgba(14,14,18,var(--tint));
-  -webkit-backdrop-filter: blur(var(--frost)) saturate(1.6); backdrop-filter: blur(var(--frost)) saturate(1.6);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--rim)), inset 0 -1px 0 rgba(255,255,255,.04), 0 12px 32px -14px rgba(0,0,0,.8); }
-.bar .glass { border: 1px solid transparent; }
-.bar.lifted .glass.refract { backdrop-filter: var(--glass-filter) blur(var(--sharp, 2px)); }
-/* A, clear lens: barely tinted, sharp, all the work done by the bent rim and a bright edge.
-   The tint is a touch heavier where the browser cannot bend, so plain frost still reads. */
-.bar.lifted .glass[data-glass="a"] { --tint: .38; --frost: 8px; --rim: .5; --sharp: 0px;
-  background: radial-gradient(120% 140% at 50% -30%, rgba(255,255,255,.14), transparent 55%), rgba(14,14,18,var(--tint));
-  border-color: rgba(255,255,255,.16);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--rim)), inset 1px 0 0 rgba(255,255,255,.1), inset -1px 0 0 rgba(255,255,255,.1),
-    inset 0 -1px 1px rgba(255,255,255,.12), 0 1px 1px rgba(0,0,0,.3), 0 18px 40px -16px rgba(0,0,0,.85); }
-.bar.lifted .glass.refract[data-glass="a"] { --tint: .2; }
-/* B, thick glass: a deeper bend with red and blue split at the edge, a little softening */
-.bar.lifted .glass[data-glass="b"] { --tint: .62; --frost: 10px; --rim: .55; --sharp: 1px;
-  background: radial-gradient(120% 160% at 30% -40%, rgba(255,255,255,.18), transparent 50%),
-    linear-gradient(0deg, rgba(255,255,255,.05), transparent 40%), rgba(14,14,18,var(--tint));
-  border-color: rgba(255,255,255,.2);
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,var(--rim)), inset 0 -1.5px 1px rgba(255,255,255,.16),
-    inset 0 0 18px rgba(255,255,255,.06), 0 2px 2px rgba(0,0,0,.35), 0 22px 46px -16px rgba(0,0,0,.9); }
-.bar.lifted .glass.refract[data-glass="b"] { --tint: .52; }
-/* C, frost: the old look, lighter, with a brighter rim and a deeper shadow */
-.bar.lifted .glass[data-glass="c"] { --tint: .5; --frost: 18px; --rim: .32; --sharp: 6px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,var(--rim)), inset 0 -1px 0 rgba(255,255,255,.06), 0 16px 40px -14px rgba(0,0,0,.85); }
-/* text stays readable when something bright slides under the clear versions */
-.bar.lifted .glass[data-glass="a"] .links a, .bar.lifted .glass[data-glass="b"] .links a,
-.bar.lifted .glass[data-glass="a"] .mark, .bar.lifted .glass[data-glass="b"] .mark { text-shadow: 0 1px 8px rgba(0,0,0,.55); }
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 55%), rgba(16,16,20,.62);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 1px 2px rgba(0,0,0,.4), 0 18px 40px -16px rgba(0,0,0,.9); }
+
+/* the track: the page as a strip along the pill's lower edge, a piece per section. Each piece
+   fills in its section's colour as you read through it; the one you are in stands a little
+   taller. The buttons are taller than the line so it is easy to hit. */
+.bar .track { position: absolute; left: 26px; right: 26px; bottom: 0; height: 10px; display: flex; gap: 4px;
+  opacity: 0; pointer-events: none; transition: opacity .4s; }
+.bar.lifted .track { opacity: 1; pointer-events: auto; }
+.bar .track button { all: unset; flex: 1; position: relative; cursor: pointer; }
+.bar .track i { position: absolute; left: 0; right: 0; bottom: 4px; height: 2px; border-radius: 2px; overflow: hidden;
+  background: rgba(255,255,255,.1); transition: height .3s cubic-bezier(.16,1,.3,1), bottom .3s cubic-bezier(.16,1,.3,1); }
+.bar .track i::after { content: ""; position: absolute; inset: 0; background: var(--c, var(--ink2));
+  transform-origin: left; transform: scaleX(var(--f, 0)); }
+.bar .track button.on i, .bar .track button:hover i { height: 3px; bottom: 3.5px; }
+.bar .track button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 3px; }
 @media (prefers-reduced-transparency: reduce) {
   .bar.lifted .glass { background: #141418; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
@@ -356,7 +346,10 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 }
 @media (max-width: 640px) {
   .bar { padding: 10px 10px 0 }
-  .bar .pill, .bar.lifted .pill { width: 100%; gap: 10px; padding: 0 6px 0 14px; height: 48px }
+  .bar .pill, .bar.lifted .pill { width: 100%; gap: 10px; padding: 0 6px 0 14px; height: 48px; box-sizing: border-box }
+  /* the track needs its own row under the controls on a narrow pill */
+  .bar.lifted .pill { height: 56px; padding-bottom: 8px }
+  .bar .track { left: 20px; right: 20px }
   .bar .links a:not(.cv) { display: none }
   .bar .chip { min-width: 0; flex: 0 1 auto }
   .bar .chip .t { min-width: 0; overflow: hidden; text-overflow: ellipsis }

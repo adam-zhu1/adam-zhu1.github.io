@@ -1,26 +1,60 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { A, out } from "../lib/router";
-import { useLiquidGlass, type GlassOptions } from "../lib/glass";
 import { prefersReducedMotion } from "../lib/useReveal";
 import type { Section } from "./Index";
 
 const RESUME = "/Adam-Zhu-Resume.pdf";
 
-/* Three takes on the glass, picked with ?glass=a|b|c while we decide. The choice sticks for
-   the tab so moving between pages keeps it. A: clear lens. B: thick glass with a colour
-   fringe. C: frosted, the old look done better. */
-const GLASS: Record<string, GlassOptions> = {
-  a: { band: 20, scale: 56, blur: 0, curve: 2.6, post: "saturate(1.5) brightness(1.04)" },
-  b: { band: 26, scale: 84, blur: 0.6, curve: 2.2, fringe: 0.12, post: "saturate(1.7) brightness(1.06)" },
-  c: { band: 14, scale: 26, blur: 4, curve: 2, post: "saturate(1.6) brightness(1.06)" },
-};
-function glassPick() {
-  let g = new URLSearchParams(location.search).get("glass");
-  try {
-    if (g && GLASS[g]) sessionStorage.setItem("glass", g);
-    else g = sessionStorage.getItem("glass");
-  } catch { /* storage blocked: the URL alone decides */ }
-  return g && GLASS[g] ? g : "b";
+/** Where each section begins and ends, in scroll positions. A section starts when its top
+    reaches the reading line, a little under the bar. Projects on the pinned stage have no
+    box of their own to measure, so they split the stage's run the way the stage does. */
+function spans(sections: Section[]) {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const line = innerHeight * 0.4;
+  const stage = document.querySelector<HTMLElement>(".pstage.pinned");
+  const starts = sections.map(s => {
+    const el = document.getElementById(s.id);
+    if (!el) return null;
+    if (stage && stage.contains(el)) {
+      const i = Number(el.dataset.i ?? 0), n = Number(getComputedStyle(stage).getPropertyValue("--n")) || 1;
+      return stage.getBoundingClientRect().top + scrollY + i * (stage.offsetHeight - innerHeight) / n;
+    }
+    return el.getBoundingClientRect().top + scrollY - line;
+  });
+  return starts.map((a, i) => {
+    const s0 = Math.max(0, Math.min(max, a ?? 0));
+    const next = starts.slice(i + 1).find(x => x != null);
+    return [s0, Math.max(s0 + 1, Math.min(max, next ?? max))] as const;
+  });
+}
+
+/** The track: one piece per section, each filling as you read through it. */
+function useTrack(sections: Section[]) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !sections.length) return;
+    let raf = 0;
+    const read = () => {
+      raf = 0;
+      const sp = spans(sections);
+      // the last sections can be too short to reach the reading line; the end of the page finishes them
+      const end = scrollY >= document.documentElement.scrollHeight - innerHeight - 2;
+      [...el.children].forEach((c, i) => {
+        const [a, b] = sp[i];
+        const f = end ? 1 : Math.min(1, Math.max(0, (scrollY - a) / (b - a)));
+        (c as HTMLElement).style.setProperty("--f", String(f));
+      });
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(read); };
+    read();
+    addEventListener("scroll", on, { passive: true });
+    addEventListener("resize", on);
+    const ro = new ResizeObserver(on);
+    ro.observe(document.body);
+    return () => { removeEventListener("scroll", on); removeEventListener("resize", on); ro.disconnect(); cancelAnimationFrame(raf); };
+  }, [sections]);
+  return ref;
 }
 
 /** How far down the page you are, 0 to 1, and whether you have left the top. */
@@ -46,8 +80,9 @@ function useScrollProgress() {
 
 /**
  * The top bar, the same object on every route. At the top of a page it lies flat: the mark
- * and the links, nothing behind them. Once you scroll it gathers into a pill of liquid glass
- * over the content, and a chip inside it says where you are, in that section's colour.
+ * and the links, nothing behind them. Once you scroll it gathers into a frosted pill over the
+ * content; a chip inside it says where you are, and a track along its lower edge shows the
+ * whole page as a strip of sections, each in its own colour.
  *
  * The mark is the year wheel in small: its arc fills as you read down the page and the
  * today dot rides the end of it, so the logo doubles as the scroll position.
@@ -56,8 +91,11 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
   const pill = useRef<HTMLDivElement>(null);
   const chipText = useRef<HTMLSpanElement>(null);
   const [p, lifted] = useScrollProgress();
-  const [glass] = useState(glassPick);
-  useLiquidGlass(pill, GLASS[glass]);
+  const track = useTrack(sections);
+  const jump = (i: number) => {
+    const [a] = spans(sections)[i];
+    scrollTo({ top: i === 0 ? 0 : a + 2, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  };
 
   const sec = sections.find(s => s.id === cur);
   const showChip = lifted && !!sec && sec.id !== sections[0]?.id;
@@ -89,7 +127,7 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
 
   return (
     <header className={`bar${lifted ? " lifted" : ""}`}>
-      <div className="pill glass" data-glass={glass} ref={pill}>
+      <div className="pill glass" ref={pill}>
         <A className="mark" href={home ? "#adam" : "/#projects"}
            aria-label={home ? "Adam Zhu, back to the top" : "Adam Zhu, back to the work"}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -125,6 +163,17 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
           </>}
           <a className="cv" {...out} href={RESUME}>Resume<i aria-hidden="true">&#8599;</i></a>
         </nav>
+
+        {/* the page as a strip: a piece per section, filling as you read; any piece jumps there */}
+        {sections.length > 1 && (
+          <div className="track" ref={track}>
+            {sections.map((s, i) => (
+              <button type="button" key={s.id} tabIndex={lifted ? 0 : -1} aria-label={`Go to ${s.label}`} title={s.label}
+                      className={s.id === cur ? "on" : ""} onClick={() => jump(i)}
+                      style={s.accent ? { "--c": s.accent } as CSSProperties : undefined}><i /></button>
+            ))}
+          </div>
+        )}
       </div>
     </header>
   );

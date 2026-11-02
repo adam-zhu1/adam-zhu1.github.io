@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-/** A section of a page. `group` and `n` let the bar's chip read "Projects / 01 TrueLine". */
-export type Section = { id: string; label: string; group?: string; n?: string };
+/** A section of a page. `group` and `n` let the bar's chip read "Projects / 01 TrueLine";
+    `accent` colours its piece of the bar's track. */
+export type Section = { id: string; label: string; group?: string; n?: string; accent?: string };
 
 /** Marks whichever section owns the middle band of the viewport. */
 export function useCurrentSection(sections: Section[], initial = sections[0]?.id ?? "") {
