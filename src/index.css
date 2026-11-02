@@ -64,6 +64,8 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
   border-left: 1px solid rgba(255,255,255,.12); color: var(--accent); font-variant-numeric: tabular-nums;
   opacity: 0; transition: opacity .3s; }
 .bar .chip .live.on { opacity: 1; }
+/* with nothing to say it gives its room back, or the label beside it is squeezed to nothing */
+.bar .chip:not(.talking) .live { display: none; }
 /* with the readout running, "Projects /" gives up its room */
 .bar .chip.talking .g { display: none; }
 /* where you are: a dark well inside the glass, with the section's own colour as a dot */
@@ -92,9 +94,11 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 /* the track: the page as a strip along the pill's lower edge, a piece per section. Each piece
    fills in its section's colour as you read through it; the one you are in stands a little
    taller. The buttons are taller than the line so it is easy to hit. */
+/* No frosting on the labels and nothing kept alive while hidden: six idle blur layers under the
+   bar made Chrome tint a band across the top of the page a shade lighter than the rest. */
 .bar .track { position: absolute; left: 26px; right: 26px; bottom: 0; height: 10px; display: flex; gap: 4px;
-  opacity: 0; pointer-events: none; transition: opacity .4s; }
-.bar.lifted .track { opacity: 1; pointer-events: auto; }
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .4s, visibility 0s .4s; }
+.bar.lifted .track { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .4s; }
 .bar .track button { all: unset; flex: 1; position: relative; cursor: pointer; }
 .bar .track i { position: absolute; left: 0; right: 0; bottom: 4px; height: 2px; border-radius: 2px; overflow: hidden;
   background: rgba(255,255,255,.1); transition: height .3s cubic-bezier(.16,1,.3,1), bottom .3s cubic-bezier(.16,1,.3,1); }
@@ -104,7 +108,7 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 /* hovering a piece names it under the pill before you commit to the jump */
 .bar .track .peek { --x: -50%; position: absolute; left: 50%; top: calc(100% + 10px); transform: translate(var(--x), -4px); white-space: nowrap;
   padding: 5px 10px; border-radius: 999px; font-family: var(--mono); font-size: 11.5px; color: var(--ink);
-  background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  background: #121216;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 8px 20px -8px rgba(0,0,0,.8);
   opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s cubic-bezier(.16,1,.3,1); }
 .bar .track .peek::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
@@ -264,6 +268,10 @@ html.morphing { scroll-behavior: auto; }
 .sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 40px; }
 .sechead h2 { margin: 0; font-size: 14px; font-weight: 500; color: var(--mute); }
 .sechead span { font-family: var(--mono); font-size: 11px; color: var(--mute); }
+/* a section that opens with its name and one line on what is in it */
+.sechead.intro { display: block; max-width: 640px; }
+.sechead.intro h2 { font-size: clamp(30px, 3.2vw, 40px); font-weight: 500; letter-spacing: -.03em; line-height: 1.1; color: var(--ink); }
+.sechead.intro p { margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: var(--ink2); }
 /* the project's own colour draws itself under its name, then clears out of the way */
 .swipe { position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: var(--accent);
   transform: scaleX(0); transform-origin: left; opacity: 0; }
@@ -788,6 +796,55 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .pinned .pmedia .layer, .pinned .pmedia .layer.on, .pinned .pmedia .layer > .demo { transition: none; }
   .pinned .pmedia .layer > .demo { transform: none; }
 }
+/* the opening card: the section's name over the whole stage, and the three projects in a row.
+   Scrolling on drives --intro from 0 to 1 and the card sinks back out of the way, nothing on it
+   travelling. Only once it has gone does the stage come up, TrueLine entering the way every
+   project does: its words unfold, then its demo wipes up beside them. */
+.pintro { position: absolute; inset: 84px 0 28px; z-index: 2; display: flex; flex-direction: column; justify-content: center;
+  visibility: hidden; pointer-events: none; transform-origin: 30% 50%;
+  opacity: calc(1 - var(--intro, 0)); transform: scale(calc(1 - var(--intro, 0) * .05)); filter: blur(calc(var(--intro, 0) * 8px)); }
+.opening .pintro { visibility: visible; pointer-events: auto; }
+.pintro h2 { margin: 0; font-size: clamp(56px, 6.6vw, 100px); font-weight: 500; letter-spacing: -.045em; line-height: .95; color: var(--ink); }
+.pintro p { margin: 24px 0 0; font-size: 18px; line-height: 1.55; color: var(--ink2); max-width: 46ch; }
+.pintro ol { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; max-width: 980px; }
+.pintro li { border-top: 1px solid var(--line2); }
+.pintro button { all: unset; cursor: pointer; display: grid; justify-items: start; gap: 6px; padding: 18px 0 4px; width: 100%; }
+.pintro .pn { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.pintro b { font-size: clamp(26px, 2.4vw, 34px); font-weight: 500; letter-spacing: -.035em; line-height: 1; color: var(--ink2); transition: color .25s; }
+.pintro .k { font-size: 14px; color: var(--mute); }
+.pintro button:hover b { color: var(--ink); }
+.pintro button:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
+/* the list waits under the card and comes up as the card goes */
+.pinned .plist { transition: opacity .45s linear; }
+.pinned.opening .plist { opacity: 0; }
+/* TrueLine's demo, like every project's, follows its words in rather than arriving first */
+.pinned .pmedia .layer.on { transition: clip-path .9s cubic-bezier(.16,1,.3,1) .18s, visibility 0s; }
+/* pinned, the card is the heading; the plain one above the stage would only repeat it */
+.projects:has(> .pstage.pinned) > .sechead { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pintro { transform: none; filter: none; }
+  .pinned .pmedia .layer.on { transition: none; }
+}
+
+/* a laptop window is often shorter than the stage was drawn for: it still pins, just tighter */
+@media (max-height: 800px) {
+  .pinned .pstick { padding: 76px 0 20px; gap: 48px; }
+  .pinned .plist li { padding: 14px 0 16px; }
+  .pinned .plist .desc { font-size: 14.5px; margin-top: 14px; }
+  .pinned .plist .meta { font-size: 13px; margin-top: 10px; }
+  .pinned .plist .result { font-size: 14px; margin-top: 10px; }
+  .pinned .nistwin { padding: 20px 22px 16px; }
+  .pinned .nist .nk { margin-bottom: 12px; }
+  .pinned .nchart { gap: 10px; padding-bottom: 22px; }
+  .pinned .nist .br .track { height: 24px; }
+  .pinned .nist .nnote { margin-top: 12px; font-size: 13px; }
+  .pinned .nstats { margin-top: 14px; }
+  .pinned .nstats div { padding: 8px 0 8px; }
+  .pinned .nstats dd { font-size: 19px; }
+  .pintro { inset: 76px 0 20px; }
+  .pintro ol { margin-top: 40px; }
+}
+
 /* stacked on a wide window, the demo would otherwise run the full width of the page */
 .pstage:not(.pinned) .pmedia .layer { max-width: 1040px; }
 @media (max-width: 640px) {

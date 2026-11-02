@@ -11,7 +11,7 @@ import { PROJECTS } from "../data/projects";
 /* Where the stage pins: a real desktop window. Below this the same markup lies flat as a
    stacked list, every project open and its demo under it. Reduced motion still pins, since
    holding still is not motion; the projects just swap without the wipe (see index.css). */
-const PIN = "(min-width: 64rem) and (min-height: 780px)";
+const PIN = "(min-width: 64rem) and (min-height: 600px)";
 
 function usePinned() {
   const [on, set] = useState(false);
@@ -24,6 +24,9 @@ function usePinned() {
   }, []);
   return on;
 }
+
+export const PROJECTS_INTRO = "An iPhone app on the App Store, a Mac app built at a hackathon, and a summer of research at NIST.";
+const KINDS = ["iPhone app, on the App Store", "Mac app, HackCMU 2026", "Research internship, summer 2026"];
 
 /* The automated share of all 1,039,639 portal requests at each stage of the cleaning, checked
    against the analysis output. Only aggregates: no IPs, schedules or search phrases. The last
@@ -68,16 +71,18 @@ function NistFigure({ on }: { on: boolean }) {
 }
 
 /**
- * The projects as one pinned stage. Scrolling through it hands the stage from one project
- * to the next: the active one opens on the left, the others fold to their names, and its
- * demo takes the right. The page scrolls normally the whole way; the scroll only decides
- * which project is open.
+ * The projects as one pinned stage. It opens on a card of its own, the section's name and
+ * the three projects in a row; scrolling on hands the stage to each project in turn: the
+ * active one opens on the left, the others fold to their names, and its demo takes the
+ * right. The page scrolls normally the whole way; the scroll only decides what is up.
+ * `active` is -1 while the opening card is.
  */
 export function ProjectStage({ active, onActive }: { active: number; onActive: (i: number) => void }) {
   const pinned = usePinned();
   const track = useRef<HTMLDivElement>(null);
   const items = useRef<(HTMLLIElement | null)[]>([]);
   const n = PROJECTS.length;
+  const steps = pinned ? n + 1 : n;                                  // the opening card is a step of its own
 
   // pinned: the position inside the track picks the project and fills its progress line
   useEffect(() => {
@@ -88,10 +93,15 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
       raf = 0;
       const r = el.getBoundingClientRect();
       const run = el.offsetHeight - innerHeight;
-      const seg = run / n;
+      const seg = run / (n + 1);
       const s = Math.min(Math.max(-r.top, 0), run - 1);
-      const i = Math.min(n - 1, Math.floor(s / seg));
-      el.style.setProperty("--progress", String(Math.min(1, (s - i * seg) / seg)));
+      const k = Math.min(n, Math.floor(s / seg));
+      el.style.setProperty("--progress", String(Math.min(1, (s - k * seg) / seg)));
+      const i = k - 1;
+      /* the card sinks away over the back half of its step */
+      const q = k > 0 ? 1 : Math.min(1, Math.max(0, (s / seg - .5) / .5));
+      const e = prefersReducedMotion() ? (q < 1 ? 0 : 1) : q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2;
+      el.style.setProperty("--intro", e.toFixed(4));
       if (i !== last) { last = i; onActive(i); }
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(read); };
@@ -115,8 +125,8 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
   const go = (i: number) => {
     const el = track.current;
     if (!el || !pinned) { items.current[i]?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" }); return; }
-    const seg = (el.offsetHeight - innerHeight) / n;
-    scrollTo({ top: el.getBoundingClientRect().top + scrollY + i * seg + 2, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    const seg = (el.offsetHeight - innerHeight) / (n + 1);
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY + (i + 1) * seg + 2, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   };
 
   /* the door into TrueLine's page: the name is lifted off the list and flown to the heading
@@ -168,8 +178,26 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
   ];
 
   return (
-    <div className={`pstage${pinned ? " pinned" : ""}`} ref={track} style={{ "--n": n } as CSSProperties}>
+    <div className={`pstage${pinned ? " pinned" : ""}${pinned && active < 0 ? " opening" : ""}`} ref={track}
+         data-lead={pinned ? 1 : 0} style={{ "--n": steps } as CSSProperties}>
       <div className="pstick">
+        {pinned && (
+          <div className="pintro" inert={active >= 0}>
+            <h2>Projects</h2>
+            <p>{PROJECTS_INTRO}</p>
+            <ol>
+              {PROJECTS.map((p, i) => (
+                <li key={p.id} style={{ "--accent": p.accent, "--d": i } as CSSProperties}>
+                  <button type="button" onClick={() => go(i)}>
+                    <span className="pn">{String(i + 1).padStart(2, "0")}</span>
+                    <b>{p.name}</b>
+                    <span className="k">{KINDS[i]}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
         <ol className="plist">
           {PROJECTS.map((p, i) => (
             <li key={p.id} id={p.id} data-i={i} ref={el => { items.current[i] = el; }}

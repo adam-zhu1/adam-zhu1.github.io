@@ -18,7 +18,8 @@ function spans(sections: Section[]) {
     if (!el) return null;
     if (stage && stage.contains(el)) {
       const i = Number(el.dataset.i ?? 0), n = Number(getComputedStyle(stage).getPropertyValue("--n")) || 1;
-      return stage.getBoundingClientRect().top + scrollY + i * (stage.offsetHeight - innerHeight) / n;
+      const lead = Number(stage.dataset.lead ?? 0);                     // steps before the first project, its opening card
+      return stage.getBoundingClientRect().top + scrollY + (i + lead) * (stage.offsetHeight - innerHeight) / n;
     }
     return el.getBoundingClientRect().top + scrollY - line;
   });
@@ -116,7 +117,7 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
     read();
     addEventListener("resize", read);
     return () => removeEventListener("resize", read);
-  }, []);
+  }, [showLive]);
 
   // the chip's width is measured from its text, so it can glide between labels
   const [chipW, setChipW] = useState(0);

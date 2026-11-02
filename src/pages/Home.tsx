@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
-import { ProjectStage } from "../components/ProjectStage";
+import { ProjectStage, PROJECTS_INTRO } from "../components/ProjectStage";
 import { PROJECTS } from "../data/projects";
 import { WorkCard } from "../components/WorkCard";
 import { Bar } from "../components/Bar";
@@ -18,6 +18,7 @@ const SECTIONS: Section[] = [
 ];
 const CHIPS: Section[] = [
   SECTIONS[0],
+  SECTIONS[1],
   ...PROJECTS.map((p, i) => ({ id: p.id, label: p.name, group: "Projects", n: String(i + 1).padStart(2, "0"), accent: p.accent })),
   ...SECTIONS.slice(2),
 ];
@@ -53,7 +54,9 @@ export default function Home() {
 
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
-  const [active, setActive] = useState(0);
+  /* -1 while the stage's opening card is up, before any one project has it */
+  const [active, setActive] = useState(-1);
+  const project = PROJECTS[active];
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
@@ -78,12 +81,12 @@ export default function Home() {
   useEffect(() => { if (wheelReady && !reduce) wheel.current?.play(); }, [wheelReady, reduce]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--accent", cur === "projects" ? PROJECTS[active].accent : SITE_ACCENT);
-  }, [cur, active]);
+    document.documentElement.style.setProperty("--accent", cur === "projects" && project ? project.accent : SITE_ACCENT);
+  }, [cur, project]);
 
   return (
     <>
-      <Bar sections={CHIPS} cur={cur === "projects" ? PROJECTS[active].id : cur} />
+      <Bar sections={CHIPS} cur={cur === "projects" && project ? project.id : cur} />
 
       <main className="site">
         <div className="wrap">
@@ -108,12 +111,18 @@ export default function Home() {
           </section>
 
           <section className="sec projects" id="projects">
-            <div className="sechead in" ref={headProjects}><h2>Projects</h2></div>
+            <div className="sechead intro in" ref={headProjects}>
+              <h2>Projects</h2>
+              <p>{PROJECTS_INTRO}</p>
+            </div>
             <ProjectStage active={active} onActive={setActive} />
           </section>
 
           <section className="sec" id="more">
-            <div className="sechead in" ref={headMore}><h2>More work</h2></div>
+            <div className="sechead intro in" ref={headMore}>
+              <h2>More work</h2>
+              <p>A co-authored paper and two side projects.</p>
+            </div>
             <ul className="worklist">
               {WORK.map(w => <WorkCard key={w.title} {...w} />)}
             </ul>
