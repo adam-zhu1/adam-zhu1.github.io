@@ -212,11 +212,11 @@ export default function TrueLinePage() {
               <h1 ref={title} className={ready ? "" : morphing ? "handoff" : "pre"}>TrueLine</h1>
               <i className="tlrule in" aria-hidden="true" />
               <p className="desc in">A bowling ball tracker for iPhone.</p>
-              <div className="tlmeta in">
+              <dl className="tlmeta in">
                 <div><dt>Platform</dt><dd>iOS, iPhone, portrait</dd></div>
                 <div><dt>Built with</dt><dd>Swift, Vision, Core ML, a fine-tuned detector</dd></div>
                 <div><dt>Released</dt><dd>App Store, 24 August 2026</dd></div>
-              </div>
+              </dl>
               <a className="store in" {...out} href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
             </div>
             <a className="cue in" href="#tl-seq">
@@ -247,7 +247,7 @@ export default function TrueLinePage() {
               {TILES.map(t => (
                 <div className={`tile${t.mint ? " lit" : ""}${t.v === null ? " off" : ""}`} key={t.n}>
                   <small>{t.n}</small>
-                  <b>{t.v === null ? "—" : t.v.toFixed(1)}<em>{t.u}</em></b>
+                  <b>{t.v === null ? "–" : t.v.toFixed(1)}<em>{t.u}</em></b>
                   <p>{t.d}</p>
                 </div>
               ))}
@@ -268,7 +268,7 @@ export default function TrueLinePage() {
             </div>
             <Frame className="strip" seed={2} tag="one throw · eight frames"
                    label={<><b>2.3</b> to <b>59.6</b> ft · release to pins</>}>
-              <div className="stills">
+              <div className="stills" role="region" aria-label="Eight frames of one throw, release to pins" tabIndex={0}>
                 {STILLS.map((s, i) => (
                   <figure key={s.f} style={{ "--i": i } as CSSProperties}>
                     <img src={`/media/trueline/throw/${s.f}.jpg`} width={420} height={780} loading="lazy"

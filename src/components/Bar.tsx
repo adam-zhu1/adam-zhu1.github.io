@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { A, out } from "../lib/router";
 import { prefersReducedMotion } from "../lib/useReveal";
+import { listen } from "../lib/live";
 import type { Section } from "./Index";
 
 const RESUME = "/Adam-Zhu-Resume.pdf";
@@ -57,25 +58,16 @@ function useTrack(sections: Section[]) {
   return ref;
 }
 
-/** How far down the page you are, 0 to 1, and whether you have left the top. */
-function useScrollProgress() {
-  const [p, setP] = useState(0);
+/** Whether you have left the top of the page. */
+function useLifted() {
   const [lifted, setLifted] = useState(false);
   useEffect(() => {
-    let raf = 0;
-    const read = () => {
-      raf = 0;
-      const max = document.documentElement.scrollHeight - innerHeight;
-      setP(max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0);
-      setLifted(scrollY > 0);
-    };
-    const on = () => { if (!raf) raf = requestAnimationFrame(read); };
+    const read = () => setLifted(scrollY > 0);
     read();
-    addEventListener("scroll", on, { passive: true });
-    addEventListener("resize", on);
-    return () => { removeEventListener("scroll", on); removeEventListener("resize", on); cancelAnimationFrame(raf); };
+    addEventListener("scroll", read, { passive: true });
+    return () => removeEventListener("scroll", read);
   }, []);
-  return [p, lifted] as const;
+  return lifted;
 }
 
 /**
@@ -84,13 +76,13 @@ function useScrollProgress() {
  * content; a chip inside it says where you are, and a track along its lower edge shows the
  * whole page as a strip of sections, each in its own colour.
  *
- * The mark is the year wheel in small: its arc fills as you read down the page and the
- * today dot rides the end of it, so the logo doubles as the scroll position.
+ * The mark is the year wheel in small, a ring with the today dot at the top in the colour of
+ * whatever you are looking at. How far along you are is the track's job, not the mark's.
  */
 export function Bar({ home = true, sections = [], cur }: { home?: boolean; sections?: Section[]; cur?: string }) {
   const pill = useRef<HTMLDivElement>(null);
   const chipText = useRef<HTMLSpanElement>(null);
-  const [p, lifted] = useScrollProgress();
+  const lifted = useLifted();
   const track = useTrack(sections);
   const jump = (i: number) => {
     const [a] = spans(sections)[i];
@@ -106,9 +98,29 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
     return <>{g && <span className="g">{g} / </span>}{n && `${n} `}{l}</>;
   };
 
+
+  /* TrueLine's demo narrates itself into the chip while it plays: "Board 18.1 · 4.3 ft" as the
+     ball rolls. The words arrive every frame, so they go straight into the span; React only
+     hears when the readout starts or stops. The readout keeps a fixed width so the chip
+     holds still while the numbers change. */
+  const liveEl = useRef<HTMLSpanElement>(null);
+  const [liveOn, setLiveOn] = useState(false);
+  useEffect(() => listen(t => {
+    if (t && liveEl.current) liveEl.current.textContent = t;
+    setLiveOn(!!t);
+  }), []);
+  const showLive = showChip && liveOn && sec?.id === "p-trueline";
+  const [liveW, setLiveW] = useState(0);
+  useLayoutEffect(() => {
+    const read = () => setLiveW(liveEl.current?.offsetWidth ?? 0);
+    read();
+    addEventListener("resize", read);
+    return () => removeEventListener("resize", read);
+  }, []);
+
   // the chip's width is measured from its text, so it can glide between labels
   const [chipW, setChipW] = useState(0);
-  useLayoutEffect(() => { setChipW(chipText.current?.scrollWidth ?? 0); }, [chip]);
+  useLayoutEffect(() => { setChipW(chipText.current?.scrollWidth ?? 0); }, [chip, showLive]);
 
   // a label change rolls: the old one goes up and out while the new one comes up from below
   const [prev, setPrev] = useState<string | null>(null);
@@ -123,34 +135,30 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
     return () => clearTimeout(t);
   }, [chip]);
 
-  const angle = p * 360;
-
   return (
     <header className={`bar${lifted ? " lifted" : ""}`}>
       <div className="pill glass" ref={pill}>
         <A className="mark" href={home ? "#adam" : "/#projects"}
            aria-label={home ? "Adam Zhu, back to the top" : "Adam Zhu, back to the work"}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle className="track" cx="12" cy="12" r="8.6" fill="none" strokeWidth="1.7" />
-            <circle className="arc" cx="12" cy="12" r="8.6" fill="none" stroke="var(--frame)" strokeWidth="1.7"
-                    strokeLinecap="round" pathLength={100} strokeDasharray="100 100"
-                    strokeDashoffset={100 - Math.max(p * 100, 0.01)} transform="rotate(-90 12 12)" />
+            <circle className="ring" cx="12" cy="12" r="8.6" fill="none" strokeWidth="1.7" />
             <g className="az" fill="currentColor" transform="translate(12 12.6) scale(.236) translate(-33 -31)">
               <path d="M12 44 L20.5 18 L27.5 18 L36 44 L29.4 44 L27.7 38.2 L20.3 38.2 L18.6 44 Z M21.9 32.6 L26.1 32.6 L24 25.4 Z" />
               <path d="M36.5 18 L54 18 L54 23.6 L44.2 38.4 L54 38.4 L54 44 L36 44 L36 38.4 L45.8 23.6 L36.5 23.6 Z" />
             </g>
-            <g transform={`rotate(${angle} 12 12)`}><circle className="today" cx="12" cy="3.4" r="1.8" /></g>
+            <circle className="today" cx="12" cy="3.4" r="1.8" />
           </svg>
           <span>Adam Zhu</span>
         </A>
 
-        <span className={`chip${showChip ? " on" : ""}`} aria-hidden={!showChip}
-              style={{ width: showChip ? chipW + 38 : 0 }}>
+        <span className={`chip${showChip ? " on" : ""}${showLive ? " talking" : ""}`} aria-hidden={!showChip}
+              style={{ width: showChip ? chipW + 38 + (showLive && liveW ? liveW + 10 : 0) : 0 }}>
           <i aria-hidden="true" />
           <span className="roll">
             {prev && <span key={`was-${prev}`} className="t out">{label(prev)}</span>}
             <span ref={chipText} key={chip} className={`t${prev ? " in" : ""}`}>{chip && label(chip)}</span>
           </span>
+          <span className={`live${showLive ? " on" : ""}`} ref={liveEl} />
         </span>
 
         <nav className="links" aria-label="Site">
@@ -164,13 +172,17 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
           <a className="cv" {...out} href={RESUME}>Resume<i aria-hidden="true">&#8599;</i></a>
         </nav>
 
-        {/* the page as a strip: a piece per section, filling as you read; any piece jumps there */}
+        {/* the page as a strip: a piece per section, filling as you read; any piece jumps there.
+            A pointer convenience only: the links and headings already carry the page for a
+            keyboard or a screen reader, and six more tab stops on every page would be in the way. */}
         {sections.length > 1 && (
-          <div className="track" ref={track}>
+          <div className="track" ref={track} aria-hidden="true">
             {sections.map((s, i) => (
-              <button type="button" key={s.id} tabIndex={lifted ? 0 : -1} aria-label={`Go to ${s.label}`} title={s.label}
+              <button type="button" key={s.id} tabIndex={-1}
                       className={s.id === cur ? "on" : ""} onClick={() => jump(i)}
-                      style={s.accent ? { "--c": s.accent } as CSSProperties : undefined}><i /></button>
+                      style={s.accent ? { "--c": s.accent } as CSSProperties : undefined}>
+                <i /><span className="peek" aria-hidden="true">{s.label}</span>
+              </button>
             ))}
           </div>
         )}

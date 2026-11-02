@@ -180,7 +180,8 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
                   <span className="pn">{String(i + 1).padStart(2, "0")}</span><span ref={i === 0 ? tlTitle : undefined}>{p.name}</span>
                 </button>
               </h3>
-              <div className="pbody"><div>{body[i]}</div></div>
+              {/* a folded project is out of reach until it opens, so focus never lands on something you cannot see */}
+              <div className="pbody" inert={pinned && active !== i}><div>{body[i]}</div></div>
             </li>
           ))}
         </ol>

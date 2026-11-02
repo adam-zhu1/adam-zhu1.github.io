@@ -8,7 +8,7 @@
 import TRACK from "../data/trueline-track.json";
 import GEO from "../data/trueline-lane.json";
 
-type Els = { vid: HTMLVideoElement; ov: SVGSVGElement; steps: HTMLElement; capL: HTMLElement; capR: HTMLElement; nums: HTMLElement };
+type Els = { vid: HTMLVideoElement; ov: SVGSVGElement; steps: HTMLElement; capL: HTMLElement; capR: HTMLElement; nums: HTMLElement; onLive?: (t: string) => void };
 
 export function createTrueLine(els: Els) {
   const NS = "http://www.w3.org/2000/svg";
@@ -53,6 +53,7 @@ export function createTrueLine(els: Els) {
 
   const P = TRACK.pts, T_START = TRACK.t_start, CLIP_END = 3.75, M = Object.fromEntries(TRACK.metrics.map(m => [m.n, m]));
   const { vid, ov, steps, capL, capR, nums } = els;
+  let lastSaid = "";
   const NUMS = ["Speed", "Board at Arrows", "Entry Board", "Entry Angle", "Breakpoint", "Hook"];
   const M0 = n => TRACK.metrics.find(m => m.n === n);
   nums.replaceChildren(...NUMS.map(n => { const d = document.createElement("div"); d.className = "num"; const m = M0(n); d.innerHTML = `<small>${m.n}</small><b class="${n === "Entry Angle" ? "mint" : ""}">–</b><i>${m.u}</i>`; return d; }));
@@ -166,6 +167,13 @@ export function createTrueLine(els: Els) {
     else if (t < T.mv) { capL.textContent = "Reference fit, six landmarks \u00b7 1.8 px rms"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
     else if (t < T.met) { capL.textContent = "Lane and path leaving the footage"; capR.innerHTML = "<b>Lane view</b>, width shown 3.5 times"; }
     else { capL.textContent = "Six of the nine metrics"; capR.innerHTML = "<b>16.3</b> entry, right of the pocket"; }
+    /* the same moment in a few words, for whoever is listening (the bar's chip) */
+    if (els.onLive) {
+      const p = tracking && t < T.hold ? ptAt(clipT) : null;
+      const said = t < T.hold ? (p ? `Board ${p.b.toFixed(1)} \u00b7 ${p.f.toFixed(1)} ft` : "Run-up")
+        : t < T.mv ? "Calibrating" : t < T.met ? "Lane view" : "Entry board 16.3";
+      if (said !== lastSaid) { lastSaid = said; els.onLive(said); }
+    }
     vid.style.opacity = String(clamp(1 - fade * .96 + back * .88, 0, 1));
   }
 

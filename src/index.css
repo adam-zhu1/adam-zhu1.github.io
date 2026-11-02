@@ -59,6 +59,13 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .bar .links .cv:hover i { transform: translate(2px,-2px); }
 .bar a:focus-visible, .ctl button:focus-visible, .store:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* TrueLine's live readout, after its name: a fixed width so the chip holds still while the numbers run */
+.bar .chip .live { flex: none; width: 20ch; margin-left: 2px; padding-left: 10px; box-sizing: content-box;
+  border-left: 1px solid rgba(255,255,255,.12); color: var(--accent); font-variant-numeric: tabular-nums;
+  opacity: 0; transition: opacity .3s; }
+.bar .chip .live.on { opacity: 1; }
+/* with the readout running, "Projects /" gives up its room */
+.bar .chip.talking .g { display: none; }
 /* where you are: a dark well inside the glass, with the section's own colour as a dot */
 .bar .chip { display: inline-flex; align-items: center; gap: 8px; height: 32px; overflow: hidden; white-space: nowrap;
   padding: 0; border-radius: 999px; box-sizing: border-box; opacity: 0;
@@ -94,7 +101,20 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .bar .track i::after { content: ""; position: absolute; inset: 0; background: var(--c, var(--ink2));
   transform-origin: left; transform: scaleX(var(--f, 0)); }
 .bar .track button.on i, .bar .track button:hover i { height: 3px; bottom: 3.5px; }
-.bar .track button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 3px; }
+/* hovering a piece names it under the pill before you commit to the jump */
+.bar .track .peek { --x: -50%; position: absolute; left: 50%; top: calc(100% + 10px); transform: translate(var(--x), -4px); white-space: nowrap;
+  padding: 5px 10px; border-radius: 999px; font-family: var(--mono); font-size: 11.5px; color: var(--ink);
+  background: rgba(16,16,20,.82); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 8px 20px -8px rgba(0,0,0,.8);
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s cubic-bezier(.16,1,.3,1); }
+.bar .track .peek::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--c, var(--ink2)); margin-right: 7px; vertical-align: 1px; }
+/* the end pieces hang their label inward so it never runs off the pill */
+.bar .track button:first-child .peek { --x: 0%; left: 0; }
+.bar .track button:last-child .peek { --x: -100%; left: 100%; }
+@media (hover: hover) {
+  .bar .track button:hover .peek { opacity: 1; transform: translate(var(--x), 0); }
+}
 @media (prefers-reduced-transparency: reduce) {
   .bar.lifted .glass { background: #141418; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
@@ -210,7 +230,7 @@ html.morphing { scroll-behavior: auto; }
 .bar .mark { flex: none; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
 .bar .mark svg { width: 22px; height: 22px; overflow: visible; transition: transform .9s cubic-bezier(.22,1,.36,1); }
 .bar .mark:hover svg { transform: rotate(360deg); }
-.bar .mark .track { stroke: var(--line2); }
+.bar .mark .ring { stroke: var(--frame); }
 .bar .mark .today { fill: var(--accent); transition: fill .5s linear; }
 
 /* ---------- the wheel ---------- */
@@ -263,7 +283,7 @@ html.morphing { scroll-behavior: auto; }
 .facts dt { color: var(--mute); margin: 0; }
 .facts dd { margin: 0; color: var(--ink2); }
 .stages { margin: 36px 0 0; }
-.step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); opacity: .5; transition: opacity .35s linear; }
+.step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); opacity: .62; transition: opacity .35s linear; }
 .step.cur { opacity: 1; }
 .step .n { font-size: 12.5px; color: var(--mute); padding-top: 3px; font-variant-numeric: tabular-nums; }
 .step.cur .n { color: var(--accent); }
@@ -298,8 +318,9 @@ html.morphing { scroll-behavior: auto; }
 .nums { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 24px; }
 /* the readout is there from the start, dim and empty, so the space under the frame reads as
    an instrument waiting for the throw rather than a gap; the Read step fills it in */
-.num { padding: 10px 10px 8px; border-top: 1px solid var(--line2); opacity: .4; transition: opacity .5s cubic-bezier(.22,1,.36,1), border-color .5s; }
-.num.on { opacity: 1; border-top-color: var(--line2); }
+.num { padding: 10px 10px 8px; border-top: 1px solid var(--line); transition: border-color .5s; }
+.num.on { border-top-color: var(--line2); }
+.num b { transition: color .5s; }
 .num:not(.on) b { color: var(--mute); }
 .num small { display: block; font-size: 11px; color: var(--mute); margin-bottom: 4px; }
 .num b { font-size: 23px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -345,6 +366,12 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .clproj .cap { flex-direction: column; gap: 2px }
 }
 @media (max-width: 640px) {
+  /* a phone scrolls anyway; sections hug their content instead of each claiming a screen */
+  .site:not(.tlpage) section.sec:not(.hero) { min-height: 0; padding: 72px 0 32px; }
+  section.sec.hero { padding-bottom: 16px; }
+  #more { padding-top: 56px; }
+  .sec.contact { min-height: 0; padding-bottom: 72px; }
+  .sechead { margin-bottom: 24px; }
   .bar { padding: 10px 10px 0 }
   .bar .pill, .bar.lifted .pill { width: 100%; gap: 10px; padding: 0 6px 0 14px; height: 48px; box-sizing: border-box }
   /* the track needs its own row under the controls on a narrow pill */
@@ -353,7 +380,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   .bar .links a:not(.cv) { display: none }
   .bar .chip { min-width: 0; flex: 0 1 auto }
   .bar .chip .t { min-width: 0; overflow: hidden; text-overflow: ellipsis }
-  .bar.lifted .mark span, .bar .chip .g { display: none }
+  .bar.lifted .mark span, .bar .chip .g, .bar .chip .live, .bar .track .peek { display: none }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto }

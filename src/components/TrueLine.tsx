@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Frame } from "./Frame";
 import { usePlayInView } from "../lib/useReveal";
 import { createTrueLine } from "../lib/trueline";
+import { say } from "../lib/live";
 
 const STAGES = [
   ["Track", "A detector finds the ball in every frame; a Kalman filter joins the detections into one path."],
@@ -25,13 +26,19 @@ export function TrueLine({ held = false }: { held?: boolean }) {
   const engine = useRef<ReturnType<typeof createTrueLine> | null>(null);
   const [paused, setPaused] = useState(false);
 
+  // while another project has the stage, this demo has nothing to say
+  const heldRef = useRef(held);
+  const saying = useRef<string | null>(null);
+  useEffect(() => { heldRef.current = held; say(held ? null : saying.current); }, [held]);
+
   useEffect(() => {
     if (!vid.current || !ov.current || !steps.current || !capL.current || !capR.current || !nums.current) return;
     engine.current = createTrueLine({
       vid: vid.current, ov: ov.current, steps: steps.current,
       capL: capL.current, capR: capR.current, nums: nums.current,
+      onLive: t => { saying.current = t; if (!heldRef.current) say(t); },
     });
-    return () => engine.current?.stop();
+    return () => { engine.current?.stop(); say(null); };
   }, []);
 
   const play = useCallback(() => { engine.current?.run(); setPaused(false); }, []);
