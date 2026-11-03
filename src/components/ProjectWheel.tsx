@@ -8,13 +8,13 @@ import { Clarity } from "./Clarity";
 import { NistFigure } from "./ProjectStage";
 import { WORK, type Entry } from "../data/work";
 
-/* Where the wheel pins: a real desktop window. Below this every entry lies flat, one after
-   another, each with its demo or its figure under it. */
+/* Where the wheel pins: a real desktop window. Below this every project lies flat, one after
+   another, each with its demo under it. */
 const PIN = "(min-width: 64rem) and (min-height: 600px)";
-/* how much scroll each entry holds the wheel for, in screen heights: a demo needs time to
-   play; a figure is read at a glance */
-const HOLD = (e: Entry) => (e.demo ? 1.15 : 0.6);
-const SP = 19;            // degrees between neighbours on the rim
+/* how much scroll each project holds the wheel for, in screen heights: long enough for its
+   demo to play while you read */
+const HOLD = 1.15;
+const SP = 30;            // degrees between neighbours on the rim
 const C = 500, R = 468;   // the wheel, in its own 1000 unit square
 
 function usePinned() {
@@ -46,19 +46,6 @@ function scramble(el: HTMLElement, text: string) {
   return () => { cancelAnimationFrame(raf); el.textContent = text; };
 }
 
-/** A figure for the entries with no demo: their own number, set as large as the page allows. */
-function BigFigure({ e, on }: { e: Entry; on: boolean }) {
-  return (
-    <div className={`wbig${on ? " on" : ""}`}>
-      {e.big?.map(([v, l], i) => (
-        <div key={l} className={i ? "two" : "one"} style={{ "--d": i, "--len": Math.max(v.length, 2) } as CSSProperties}>
-          <b>{v}</b><span>{l}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function Links({ e, onTrueLine }: { e: Entry; onTrueLine?: (ev: MouseEvent<HTMLAnchorElement>) => void }) {
   if (!e.links?.length) return null;
   return (
@@ -71,9 +58,9 @@ function Links({ e, onTrueLine }: { e: Entry; onTrueLine?: (ev: MouseEvent<HTMLA
 }
 
 /**
- * The work as a wheel. Everything sits on one rim in the order it happened, newest first,
- * and scrolling turns the rim so each entry in turn comes round to the lens at its edge;
- * the one in the lens opens beside it, its words and then its demo or figure. A pill at the
+ * The projects as a wheel. They sit on one rim, best first, and scrolling turns the rim so
+ * each in turn comes round to the lens at its edge; the one in the lens opens beside it, its
+ * words and then its demo. A pill at the
  * foot of the screen trades the wheel for a plain list and back, for when you would rather
  * read the whole thing at once. `onActive` hands the current entry to the page for its colour.
  */
@@ -92,22 +79,16 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
   useLiquidGlass(lens, { kind: "lens", scale: 46, base: "saturate(1.4) brightness(1.06)", on: wheel });
   useLiquidGlass(foot, { scale: 26, bezel: 16, on: near });
 
-  /* where each entry's hold begins, in screen heights from the top of the stage */
-  const cum = useMemo(() => WORK.reduce<number[]>((a, e, i) => (a.push(i ? a[i - 1] + HOLD(WORK[i - 1]) : 0), a), []), []);
-  const total = cum[cum.length - 1] + HOLD(WORK[WORK.length - 1]);
-
-  /* the rim's ticks, one every 2.5 degrees with the long ones on the entries, and a mark
-     where the year turns over */
-  const years = useMemo(() => WORK.flatMap((e, i) => i && WORK[i - 1].year !== e.year ? [{ at: i - 0.5, y: WORK[i - 1].year }] : []), []);
+  /* where each project's hold begins, in screen heights from the top of the stage */
+  const cum = useMemo(() => WORK.map((_, i) => i * HOLD), []);
+  const total = WORK.length * HOLD;
 
   // the turn: scroll position to the rim's angle, every frame, written straight to the SVG
   useEffect(() => {
     const el = stage.current, svg = ringRef.current;
     if (!el || !svg || !wheel) return;
     const nodes = [...svg.querySelectorAll<SVGGElement>(".node")];
-    const marks = [...svg.querySelectorAll<SVGGElement>(".yr")];
     const ticks = svg.querySelector<SVGGElement>(".ticks");
-    const now = svg.querySelector<SVGGElement>(".now");
     let raf = 0, last = -1;
     const place = (g: SVGGElement, at: number, r: number) => {
       const a = (at * SP) * Math.PI / 180;
@@ -119,7 +100,7 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
       const s = Math.min(Math.max(-el.getBoundingClientRect().top, 0), total * 100 * vh - 1);
       const u = s / (100 * vh);
       let i = 0; while (i < WORK.length - 1 && u >= cum[i + 1]) i++;
-      const f = (u - cum[i]) / HOLD(WORK[i]);
+      const f = (u - cum[i]) / HOLD;
       /* the rim rests while an entry is read, then turns to the next over the last third */
       const q = Math.min(1, Math.max(0, (f - 0.66) / 0.34));
       const ease = prefersReducedMotion() ? (q < 1 ? 0 : 1) : q < .5 ? 4 * q * q * q : 1 - Math.pow(-2 * q + 2, 3) / 2;
@@ -130,8 +111,6 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
         g.style.opacity = String(Math.max(0, 1 - Math.max(0, d - 1.2) * 0.26));
         g.classList.toggle("cur", d < 0.5);
       });
-      marks.forEach(g => place(g, Number(g.dataset.at) - r, R));
-      if (now) place(now, -1.1 - r, R);
       ticks?.setAttribute("transform", `rotate(${(-r * SP).toFixed(2)} ${C} ${C})`);
       el.style.setProperty("--hold", f.toFixed(3));
       const k = Math.round(r);
@@ -177,7 +156,7 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
     const smooth: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
     if (!el) return;
     if (!wheel) { blocks.current[i]?.scrollIntoView({ behavior: smooth }); return; }
-    scrollTo({ top: el.getBoundingClientRect().top + scrollY + (cum[i] + HOLD(WORK[i]) * 0.1) * innerHeight, behavior: smooth });
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY + (cum[i] + HOLD * 0.1) * innerHeight, behavior: smooth });
   }, [wheel, cum]);
 
   /* a row in the list opens that entry on the wheel */
@@ -205,8 +184,7 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
     const held = wheel && active !== i;
     if (e.demo === "trueline") return <TrueLine held={held} />;
     if (e.demo === "clarity") return <Clarity held={held} />;
-    if (e.demo === "nist") return <NistFigure on={!wheel || active === i} />;
-    return <BigFigure e={e} on={!wheel || active === i} />;
+    return <NistFigure on={!wheel || active === i} />;
   };
 
   const cur = WORK[active];
@@ -218,7 +196,6 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
           {WORK.map((e, i) => (
             <li key={e.id} style={{ "--c": e.accent, "--i": i } as CSSProperties}>
               <button type="button" onClick={() => openFromList(i)}>
-                <span className="y">{WORK[i - 1]?.year === e.year ? "" : e.year}</span>
                 <span className="n"><i />{e.name}</span>
                 <span className="k">{e.kind}</span>
                 <span className="w">{e.when}</span>
@@ -244,19 +221,12 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
                                    className={long ? "long" : undefined} />;
                     })}
                   </g>
-                  <g className="now"><circle r="7" /><text x="-22" y="5">Now</text></g>
-                  {years.map(y => (
-                    <g className="yr" key={y.y} data-at={y.at}>
-                      <circle r="4" />
-                      <text x="-26" y="6">{y.y}</text>
-                    </g>
-                  ))}
                   {WORK.map((e, i) => (
-                    <g className={`node${e.demo ? " big" : ""}`} key={e.id} style={{ "--c": e.accent } as CSSProperties}
+                    <g className="node big" key={e.id} style={{ "--c": e.accent } as CSSProperties}
                        onClick={() => go(i)}>
                       <circle className="hit" r="26" />
                       <circle className="dot" r={e.demo ? 9 : 6} />
-                      <text x="-52" y="7">{e.short ?? e.name}</text>
+                      <text x="-52" y="7">{e.name}</text>
                     </g>
                   ))}
                 </svg>
@@ -266,7 +236,7 @@ export function ProjectWheel({ onActive }: { onActive: (e: Entry | null) => void
             <ol className="wtext">
               {WORK.map((e, i) => (
                 <li key={e.id} id={e.id} data-i={i} ref={el => { blocks.current[i] = el; }}
-                    className={`${active === i ? "on" : ""}${e.demo ? " feat" : ""}`}
+                    className={active === i ? "on" : ""}
                     style={{ "--accent": e.accent } as CSSProperties} inert={wheel && active !== i}>
                   <p className="wk">{e.kind} <span>· {e.when}</span></p>
                   <h3><span ref={el => { names.current[i] = el; }}>{e.name}</span></h3>

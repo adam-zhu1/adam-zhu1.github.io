@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
 import { ProjectWheel } from "../components/ProjectWheel";
+import { PROJECTS_INTRO } from "../components/ProjectStage";
+import { MoreWork } from "../components/MoreWork";
 import type { Entry } from "../data/work";
 import { Bar } from "../components/Bar";
 import { useCurrentSection, type Section } from "../components/Index";
@@ -12,6 +14,7 @@ import { out } from "../lib/router";
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
   { id: "projects", label: "Projects" },
+  { id: "more", label: "More work" },
   { id: "contact", label: "Contact" },
 ];
 
@@ -36,6 +39,7 @@ export default function Home() {
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const [entry, setEntry] = useState<Entry | null>(null);
+  const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
   const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
@@ -91,9 +95,17 @@ export default function Home() {
           <section className="sec projects" id="projects">
             <div className="sechead intro in" ref={headProjects}>
               <h2>Projects</h2>
-              <p>Everything in the order it happened, newest first: an iPhone app, a Mac app, research at NIST and Iowa State, a paper, and a few side projects. Scroll to turn the wheel.</p>
+              <p>{PROJECTS_INTRO}</p>
             </div>
             <ProjectWheel onActive={setEntry} />
+          </section>
+
+          <section className="sec" id="more">
+            <div className="sechead intro in" ref={headMore}>
+              <h2>More work</h2>
+              <p>Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
+            </div>
+            <MoreWork />
           </section>
 
           <section className="sec contact" id="contact" ref={contactRef}>

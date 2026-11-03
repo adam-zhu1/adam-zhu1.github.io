@@ -33,10 +33,13 @@
 /* Light: paper rather than white, ink rather than black. The switch in the bar sets
    data-theme; with nothing chosen yet, the system's preference decides (see index.html). */
 :root[data-theme="light"] {
-  --bg: #f1f1ee; --ink: #131316; --ink2: #3e3e46; --mute: #6c6c75;
-  --line: #dcdcd6; --line2: #c4c4bd; --frame: #9a9aa1;
-  --hi: 19 19 22;
-  --acc-mix: 58%;
+  --bg: #f1f1ee; --ink: #0f0f12; --ink2: #2e2e35; --mute: #585861;
+  --line: #d2d2cb; --line2: #b2b2aa; --frame: #7c7c84;
+  --hi: 15 15 18;
+  /* the same colours, deepened until they read on paper: TrueLine's mint, and through
+     --acc-mix every project's own */
+  --mint: #12895a;
+  --acc-mix: 60%;
   color-scheme: light;
 }
 /* The demos are screens, and a screen stays dark whatever the room is: inside one the
@@ -44,7 +47,7 @@
 :root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills, .strip .win-body) {
   --bg: #070708; --ink: #f4f4f2; --ink2: #c2c2c8; --mute: #7c7c85;
   --line: #2a2a30; --line2: #3d3d47; --frame: #8d8d96; --hi: 255 255 255;
-  --acc-mix: 100%;
+  --mint: #40e69e; --acc-mix: 100%;
   color: var(--ink);
 }
 :root[data-theme="light"] .appwin { background: #0a0a0c; border-radius: 10px;
@@ -86,7 +89,7 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .bar .links .cv:hover { background: rgb(var(--hi) / .12); border-color: rgb(var(--hi) / .26); }
 .bar .links .cv i { font-style: normal; font-size: 12px; color: var(--ink2); transition: transform .2s cubic-bezier(.22,1,.36,1); }
 .bar .links .cv:hover i { transform: translate(2px,-2px); }
-.bar a:focus-visible, .ctl button:focus-visible, .store:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bar a:focus-visible, .ctl button:focus-visible, .store:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
 /* TrueLine's live readout, after its name: a fixed width so the chip holds still while the numbers run */
 .bar .chip .live { flex: none; width: 20ch; margin-left: 2px; padding-left: 10px; box-sizing: content-box;
@@ -222,7 +225,7 @@ section.sec { min-height: 100vh; display: flex; flex-direction: column; justify-
 .rips { position: fixed; inset: 0; z-index: 25; pointer-events: none; }
 .rip { position: absolute; }
 .rip i { position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px;
-  border: 1px solid var(--accent); border-radius: 50%; opacity: 0;
+  border: 1px solid var(--acc); border-radius: 50%; opacity: 0;
   animation: rip 900ms cubic-bezier(.22,1,.36,1) forwards; }
 .rip i:last-child { animation-delay: 120ms; }
 @keyframes rip { from { transform: scale(.28); opacity: .45 } to { transform: scale(7.5); opacity: 0 } }
@@ -255,7 +258,7 @@ html.morphing { scroll-behavior: auto; }
 .hero .kick { font-size: 18px; color: var(--ink2); margin: 22px 0 0; }
 .hero ul { display: flex; flex-wrap: wrap; gap: 26px; margin: 32px 0 0; padding: 0; list-style: none; }
 .hero a { font-size: 16px; color: var(--ink); text-decoration: none; position: relative; display: inline-block; padding: 6px 0 3px; }
-.hero a:focus-visible, .contact a:focus-visible, .tlpage a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 3px; }
+.hero a:focus-visible, .contact a:focus-visible, .tlpage a:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 3px; }
 .hero a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .18s cubic-bezier(.4,0,.2,1); }
 .hero a:hover::after, .hero a:focus-visible::after { transform: scaleX(1); }
 .hero .kick { max-width: 34em; line-height: 1.5; }
@@ -269,7 +272,7 @@ html.morphing { scroll-behavior: auto; }
 .bar .mark svg { width: 22px; height: 22px; overflow: visible; transition: transform .9s cubic-bezier(.22,1,.36,1); }
 .bar .mark:hover svg { transform: rotate(360deg); }
 .bar .mark .ring { stroke: var(--frame); }
-.bar .mark .today { fill: var(--accent); transition: fill .5s linear; }
+.bar .mark .today { fill: var(--acc); transition: fill .5s linear; }
 
 /* ---------- the wheel ---------- */
 .wheel { position: relative; width: 100%; max-width: 600px; aspect-ratio: 1; margin-left: auto; }
@@ -307,7 +310,7 @@ html.morphing { scroll-behavior: auto; }
 .sechead.intro h2 { font-size: clamp(30px, 3.2vw, 40px); font-weight: 500; letter-spacing: -.03em; line-height: 1.1; color: var(--ink); }
 .sechead.intro p { margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: var(--ink2); }
 /* the project's own colour draws itself under its name, then clears out of the way */
-.swipe { position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: var(--accent);
+.swipe { position: absolute; left: 0; right: 0; bottom: -6px; height: 1px; background: var(--acc);
   transform: scaleX(0); transform-origin: left; opacity: 0; }
 .in.on h3 > .swipe { animation: swipe 1.5s cubic-bezier(.22,1,.36,1) .35s forwards; }
 @keyframes swipe {
@@ -328,7 +331,7 @@ html.morphing { scroll-behavior: auto; }
 .step { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); opacity: .62; transition: opacity .35s linear; }
 .step.cur { opacity: 1; }
 .step .n { font-size: 12.5px; color: var(--mute); padding-top: 3px; font-variant-numeric: tabular-nums; }
-.step.cur .n { color: var(--accent); }
+.step.cur .n { color: var(--acc); }
 .step b { display: block; font-weight: 500; font-size: 15.5px; }
 /* only the step being played says what it is; the others are just their names */
 .step em { display: grid; grid-template-rows: 0fr; font-style: normal; font-size: 14.5px; color: var(--ink2); transition: grid-template-rows .45s cubic-bezier(.22,1,.36,1); }
@@ -341,7 +344,7 @@ html.morphing { scroll-behavior: auto; }
   /* the same rim as the bar's glass, so the controls read as one family */
   background: linear-gradient(180deg, rgb(var(--hi) / .07), rgb(var(--hi) / .015) 60%);
   box-shadow: inset 0 1px 0 rgb(var(--sheen) / .16); }
-.store:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, transparent); }
+.store:hover { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 11%, transparent); }
 .store i { font-style: normal; font-size: 13px; color: var(--mute); transition: transform .2s cubic-bezier(.22,1,.36,1); }
 .store:hover i { color: var(--ink2); transform: translate(2px,-2px); }
 .ctl { display: inline-flex; gap: 2px; margin-top: 18px; padding: 3px; border-radius: 999px;
@@ -403,7 +406,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .mwr .n { font-size: 19px; font-weight: 500; letter-spacing: -.01em; color: var(--ink2); transition: color .25s, transform .4s cubic-bezier(.16,1,.3,1); }
 .mwr .r { font-size: 13.5px; color: var(--mute); white-space: nowrap; }
 .mwl > li[data-cur] .n { color: var(--ink); transform: translateX(6px); }
-.mwr:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+.mwr:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 4px; }
 .mwp { position: sticky; top: 112px; }
 .mwwin { border: 1px solid var(--line2); border-radius: 4px; padding: 26px 28px 26px; animation: mwin .45s cubic-bezier(.16,1,.3,1) both; }
 @keyframes mwin { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
@@ -694,7 +697,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .plist .more i { font-style: normal; color: var(--mint); transition: transform .3s cubic-bezier(.22,1,.36,1); }
 .plist .more:hover { color: var(--mint); border-color: var(--mint); gap: 13px; }
 .plist .more:hover i { transform: translateX(2px); }
-.plist .more:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.plist .more:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; }
 
 /* ================= Clarity ================= */
 /* Lens teal is Clarity's: the secondary in its own identity standard, chosen over its mint
@@ -829,14 +832,14 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .plist h3 { margin: 0; font-weight: 500; letter-spacing: -.035em; line-height: 1; }
 .plist h3 button { all: unset; cursor: pointer; display: inline-flex; align-items: baseline; gap: 16px;
   font-size: clamp(30px, 3vw, 44px); color: var(--ink); transition: color .45s, font-size .65s cubic-bezier(.16,1,.3,1); }
-.plist h3 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
+.plist h3 button:focus-visible { outline: 2px solid var(--acc); outline-offset: 6px; border-radius: 4px; }
 .plist .pn { font-family: var(--mono); font-size: 12px; letter-spacing: 0; color: var(--mute); transform: translateY(-.9em); }
-.plist li.on .pn { color: var(--accent); }
+.plist li.on .pn { color: var(--acc); }
 .pbody { display: grid; grid-template-rows: 1fr; }
 .pbody > div { overflow: hidden; min-height: 0; }
 .plist .desc { margin: 18px 0 0; }
-.plist .result { margin: 14px 0 0; font-size: 15px; color: var(--ink); max-width: 46ch; padding-left: 14px; border-left: 2px solid var(--accent); }
-.prog { position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+.plist .result { margin: 14px 0 0; font-size: 15px; color: var(--ink); max-width: 46ch; padding-left: 14px; border-left: 2px solid var(--acc); }
+.prog { position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--acc); transform-origin: left; transform: scaleX(0); }
 .pmedia .layer { margin: 28px 0 56px; }
 .pstick { display: flex; flex-direction: column; }
 .plist, .pmedia { display: contents; }
@@ -926,11 +929,11 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .pintro ol { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; max-width: 980px; }
 .pintro li { border-top: 1px solid var(--line2); }
 .pintro button { all: unset; cursor: pointer; display: grid; justify-items: start; gap: 6px; padding: 18px 0 4px; width: 100%; }
-.pintro .pn { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.pintro .pn { font-family: var(--mono); font-size: 12px; color: var(--acc); }
 .pintro b { font-size: clamp(26px, 2.4vw, 34px); font-weight: 500; letter-spacing: -.035em; line-height: 1; color: var(--ink2); transition: color .25s; }
 .pintro .k { font-size: 14px; color: var(--mute); }
 .pintro button:hover b { color: var(--ink); }
-.pintro button:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 4px; }
+.pintro button:focus-visible { outline: 2px solid var(--acc); outline-offset: 6px; border-radius: 4px; }
 /* the list waits under the card and comes up as the card goes */
 .pinned .plist { transition: opacity .45s linear; }
 .pinned.opening .plist { opacity: 0; }
@@ -985,8 +988,9 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 /* ======================================================================
    The wheel draft (branch: wheel)
    ====================================================================== */
-:root { --acc: color-mix(in oklab, var(--accent) var(--acc-mix), #000); }
-.wtext li, .wlist li, .foot .where { --acc: color-mix(in oklab, var(--accent, var(--c)) var(--acc-mix), #000); }
+:root, [style*="--accent"] { --acc: color-mix(in oklab, var(--accent) var(--acc-mix), #000); }
+/* the same for the things coloured by --c, the wheel's dots */
+[style*="--c"] { --cc: color-mix(in oklab, var(--c) var(--acc-mix), #000); }
 
 /* ---- the bar: glass, the links, the switch ---- */
 .bar .theme { all: unset; box-sizing: border-box; position: relative; flex: none; width: 50px; height: 28px; margin-left: 8px;
@@ -1000,7 +1004,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .bar .theme .sun { left: 7px; } .bar .theme .moon { right: 7px; }
 .bar .theme .moon path { fill: currentColor; stroke: none; }
 .bar .theme:not(.light) .sun, .bar .theme.light .moon { opacity: .5; }
-.bar .theme:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bar .theme:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .bar .theme:hover { color: var(--ink); }
 
 :root[data-theme="light"] .bar.lifted .glass, :root[data-theme="light"] .foot.glass {
@@ -1026,16 +1030,12 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .wring .node { cursor: pointer; transition: opacity .2s linear; }
 .wring .node .hit { fill: transparent; }
 .wring .node .dot { fill: var(--bg); stroke: var(--frame); stroke-width: 2; transition: fill .3s, stroke .3s, r .4s cubic-bezier(.16,1,.3,1); }
-.wring .node.big .dot { stroke: var(--c); }
-.wring .node.cur .dot { fill: var(--c); stroke: var(--c); }
+.wring .node.big .dot { stroke: var(--cc, var(--c)); }
+.wring .node.cur .dot { fill: var(--cc, var(--c)); stroke: var(--cc, var(--c)); }
 .wring .node text { fill: var(--mute); font: 400 21px var(--sans); text-anchor: end; letter-spacing: -.01em; transition: fill .3s; }
 .wring .node.big text { fill: var(--ink2); }
 .wring .node.cur text { fill: var(--ink); font-weight: 500; }
 .wring .node:hover text { fill: var(--ink); }
-.wring .yr circle { fill: none; stroke: var(--mute); stroke-width: 1.5; }
-.wring .yr text { fill: var(--mute); font: 400 17px var(--mono); text-anchor: end; letter-spacing: .04em; }
-.wring .now circle { fill: var(--ink); }
-.wring .now text { fill: var(--ink2); font: 400 17px var(--mono); text-anchor: end; letter-spacing: .04em; }
 /* the lens: a bead of glass fixed at the rim's edge that every entry turns through */
 .wring .lens { position: absolute; top: 50%; right: calc(var(--sz) * .032 - 38px); width: 76px; height: 76px; border-radius: 50%;
   transform: translateY(-50%); pointer-events: none;
@@ -1058,13 +1058,13 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .wtext h3 { margin: 14px 0 0; font-size: clamp(34px, 3.3vw, 52px); font-weight: 500; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
 .wtext .desc { margin: 20px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--ink2); }
 .wtext .meta { margin: 14px 0 0; font-size: 13.5px; color: var(--mute); }
-.wtext .result { margin: 16px 0 0; font-size: 14.5px; color: var(--ink); padding-left: 14px; border-left: 2px solid var(--accent); }
+.wtext .result { margin: 16px 0 0; font-size: 14.5px; color: var(--ink); padding-left: 14px; border-left: 2px solid var(--acc); }
 .wtext .ctas { margin-top: 24px; }
 .wtext .more { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; color: var(--ink); text-decoration: none; }
 .wtext .more i { font-style: normal; transition: transform .2s cubic-bezier(.22,1,.36,1); }
 .wtext .more:hover i { transform: translateX(3px); }
 /* a hairline under the words fills as you read the entry, then hands over */
-.pinned .wtext > li::after { content: ""; display: block; height: 1px; margin-top: 30px; background: linear-gradient(90deg, var(--accent) calc(var(--hold, 0) * 100%), var(--line) 0); }
+.pinned .wtext > li::after { content: ""; display: block; height: 1px; margin-top: 30px; background: linear-gradient(90deg, var(--acc) calc(var(--hold, 0) * 100%), var(--line) 0); }
 
 /* the demos sit in one place; the open one wipes up over the last */
 .wmedia { position: relative; height: 100%; container-type: inline-size; }
@@ -1076,38 +1076,21 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .wmedia .layer > .demo { width: 100%; transform: scale(1.04); transition: transform 1.3s cubic-bezier(.16,1,.3,1); }
 .wmedia .layer.on > .demo { transform: none; }
 
-/* a figure for the entries with no demo: the number, as large as the column allows */
-.wbig { width: 100%; display: grid; gap: 34px; align-content: center; }
-.wbig > div { display: grid; gap: 10px; }
-.wbig b { display: block; font-weight: 500; letter-spacing: -.065em; line-height: .82; padding-bottom: .06em;
-  font-size: min(280px, 150cqw / var(--len)); font-variant-numeric: tabular-nums;
-  background: linear-gradient(180deg, var(--ink) 30%, color-mix(in srgb, var(--ink) 22%, transparent));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  clip-path: inset(0 0 100% 0); transform: translateY(.18em);
-  transition: clip-path 1s cubic-bezier(.16,1,.3,1) calc(.25s + var(--d) * .12s), transform 1s cubic-bezier(.16,1,.3,1) calc(.25s + var(--d) * .12s); }
-.wbig .two b { font-size: min(120px, 70cqw / var(--len)); }
-.wbig span { font-size: 16px; color: var(--ink2); opacity: 0; transition: opacity .6s linear calc(.6s + var(--d) * .12s); }
-.wbig.on b { clip-path: inset(-10% 0 -10% 0); transform: none; }
-.wbig.on span { opacity: 1; }
-.wflat .wbig b { font-size: min(150px, 150vw / var(--len) * .55); }
-.wflat .wbig .two b { font-size: min(80px, 70vw / var(--len) * .55); }
 
 /* ---- flat: a phone, or the list's rows opened ---- */
 .wstage:not(.pinned) .wtext > li { border-top: 1px solid var(--line); padding: 28px 0 56px; }
 .wstage:not(.pinned) .wflat { margin-top: 30px; }
-.wstage:not(.pinned) .wtext > li:not(.feat) .wflat { margin-top: 24px; }
 
 /* ---- the list ---- */
 .wlist { list-style: none; margin: 8px 0 0; padding: 0; border-bottom: 1px solid var(--line); }
 .wlist li { border-top: 1px solid var(--line); animation: wrow .6s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i) * 40ms); }
 @keyframes wrow { from { opacity: 0; transform: translateY(10px) } }
 .wlist button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; align-items: baseline;
-  grid-template-columns: 72px minmax(0, 1.25fr) minmax(0, 1fr) 170px 24px; gap: 20px; padding: 22px 8px; border-radius: 4px; transition: background .2s; }
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 170px 24px; gap: 20px; padding: 22px 8px; border-radius: 4px; transition: background .2s; }
 .wlist button:hover, .wlist button:focus-visible { background: rgb(var(--hi) / .04); }
 .wlist button:focus-visible { outline: 2px solid var(--c); outline-offset: -2px; }
-.wlist .y { font-family: var(--mono); font-size: 12px; color: var(--mute); }
 .wlist .n { font-size: clamp(22px, 2vw, 30px); font-weight: 500; letter-spacing: -.03em; color: var(--ink); display: inline-flex; align-items: center; gap: 14px; }
-.wlist .n i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.wlist .n i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cc, var(--c)); }
 .wlist .k { font-size: 14.5px; color: var(--ink2); }
 .wlist .w { font-size: 13.5px; color: var(--mute); font-variant-numeric: tabular-nums; }
 .wlist .go { color: var(--mute); transition: transform .2s cubic-bezier(.22,1,.36,1), color .2s; }
@@ -1123,9 +1106,9 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .foot .seg { display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgb(var(--hi) / .06); }
 .foot .seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 999px; color: var(--ink2); transition: background .25s, color .25s; }
 .foot .seg button.on { background: rgb(var(--hi) / .14); color: var(--ink); box-shadow: inset 0 1px 0 rgb(var(--sheen) / .18); }
-.foot .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.foot .seg button:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
 .foot .where { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; color: var(--ink); }
-.foot .where i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); transition: background .4s; }
+.foot .where i { width: 7px; height: 7px; border-radius: 50%; background: var(--cc, var(--c)); transition: background .4s; }
 .foot .where b { font-weight: 500; animation: rollin .44s cubic-bezier(.16,1,.3,1) both; }
 .foot .where em { font-style: normal; font-family: var(--mono); font-size: 12px; color: var(--mute); }
 
@@ -1134,11 +1117,23 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 :root[data-theme="light"] .wheel .mtick { stroke: var(--line2); }
 :root[data-theme="light"] .wheel .mon, :root[data-theme="light"] .wheel .key text { fill: var(--mute); }
 :root[data-theme="light"] .wheel .center { fill: var(--ink); }
-:root[data-theme="light"] .wheel .spoke { opacity: .8; }
+:root[data-theme="light"] .wheel .spoke { stroke: color-mix(in oklab, var(--c, #8a8a93) 66%, #000); opacity: .85; }
+:root[data-theme="light"] .wheel .sweep { display: none; }
+:root[data-theme="light"] .wheel .key circle { filter: brightness(.62) saturate(1.2); }
+:root[data-theme="light"] .wring .node text { fill: var(--ink2); }
+:root[data-theme="light"] .wring .node.cur text { fill: var(--ink); }
+:root[data-theme="light"] .nist .br .track { background: repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 25%); }
 :root[data-theme="light"] .amb .orb { fill: var(--ink); }
 :root[data-theme="light"] .amb .orb.ring { stroke: var(--ink); fill: none; }
 :root[data-theme="light"] .wring .lens { box-shadow: inset 0 1px 1px rgba(255,255,255,.9), inset 0 -2px 6px rgba(0,0,0,.08), inset 0 0 0 1px rgba(0,0,0,.08), 0 10px 24px -10px rgba(0,0,0,.3); }
 
 @media (prefers-reduced-motion: reduce) {
-  .pinned .wtext > li, .wmedia .layer, .wmedia .layer > .demo, .wbig b, .wbig span, .wlist li, .foot { transition: none; animation: none; }
+  .pinned .wtext > li, .wmedia .layer, .wmedia .layer > .demo, .wlist li, .foot { transition: none; animation: none; }
+}
+/* On paper every project colour is held to the same lightness rather than darkened by one
+   fixed amount, so mint, teal and indigo all land at a readable depth and keep their hue. */
+@supports (color: oklch(from red l c h)) {
+  :root[data-theme="light"], :root[data-theme="light"] [style*="--accent"] { --acc: oklch(from var(--accent) min(l, .56) c h); }
+  :root[data-theme="light"] [style*="--c"] { --cc: oklch(from var(--c) min(l, .58) c h); }
+  :root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills) { --acc: var(--accent); --cc: var(--c); }
 }
