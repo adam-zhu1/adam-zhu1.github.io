@@ -39,7 +39,7 @@ const NIST_STEPS = [
 
 /** How the measured automated share grew as the cleaning improved, on a full 0 to 100 axis
     so the human majority stays in view, plus the run's scale. */
-function NistFigure({ on }: { on: boolean }) {
+export function NistFigure({ on }: { on: boolean }) {
   return (
     <div className={`demo nist${on ? " on" : ""}`}>
       <div className="win appwin nistwin">

@@ -1,26 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
-import { ProjectStage, PROJECTS_INTRO } from "../components/ProjectStage";
-import { PROJECTS } from "../data/projects";
-import { MoreWork } from "../components/MoreWork";
+import { ProjectWheel } from "../components/ProjectWheel";
+import type { Entry } from "../data/work";
 import { Bar } from "../components/Bar";
 import { useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
 import { out } from "../lib/router";
 
-/* What the page watches to know where you are. The projects are one section; which of them
-   is open is the stage's to say, and the bar's chip reads it from there. */
+/* What the page watches to know where you are. Which entry of the work is open is the
+   wheel's to say. */
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
   { id: "projects", label: "Projects" },
-  { id: "more", label: "More work" },
   { id: "contact", label: "Contact" },
-];
-const CHIPS: Section[] = [
-  SECTIONS[0],
-  SECTIONS[1],
-  ...PROJECTS.map((p, i) => ({ id: p.id, label: p.name, group: "Projects", n: String(i + 1).padStart(2, "0"), accent: p.accent })),
-  ...SECTIONS.slice(2),
 ];
 
 /* The site itself is monochrome. Colour belongs to the projects: each one names its accent
@@ -43,10 +35,7 @@ export default function Home() {
 
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
-  /* -1 while the stage's opening card is up, before any one project has it */
-  const [active, setActive] = useState(-1);
-  const project = PROJECTS[active];
-  const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
+  const [entry, setEntry] = useState<Entry | null>(null);
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
   const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
@@ -70,12 +59,12 @@ export default function Home() {
   useEffect(() => { if (wheelReady && !reduce) wheel.current?.play(); }, [wheelReady, reduce]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--accent", cur === "projects" && project ? project.accent : SITE_ACCENT);
-  }, [cur, project]);
+    document.documentElement.style.setProperty("--accent", entry ? entry.accent : SITE_ACCENT);
+  }, [entry]);
 
   return (
     <>
-      <Bar sections={CHIPS} cur={cur === "projects" && project ? project.id : cur} />
+      <Bar sections={SECTIONS} cur={cur} />
 
       <main className="site">
         <div className="wrap">
@@ -102,17 +91,9 @@ export default function Home() {
           <section className="sec projects" id="projects">
             <div className="sechead intro in" ref={headProjects}>
               <h2>Projects</h2>
-              <p>{PROJECTS_INTRO}</p>
+              <p>Everything in the order it happened, newest first: an iPhone app, a Mac app, research at NIST and Iowa State, a paper, and a few side projects. Scroll to turn the wheel.</p>
             </div>
-            <ProjectStage active={active} onActive={setActive} />
-          </section>
-
-          <section className="sec" id="more">
-            <div className="sechead intro in" ref={headMore}>
-              <h2>More work</h2>
-              <p>Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
-            </div>
-            <MoreWork />
+            <ProjectWheel onActive={setEntry} />
           </section>
 
           <section className="sec contact" id="contact" ref={contactRef}>

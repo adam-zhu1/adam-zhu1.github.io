@@ -1,63 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { A, out } from "../lib/router";
-import { prefersReducedMotion } from "../lib/useReveal";
-import { listen } from "../lib/live";
+import { useLiquidGlass } from "../lib/glass";
+import { setTheme, useTheme } from "../lib/theme";
 import type { Section } from "./Index";
 
 const RESUME = "/Adam-Zhu-Resume.pdf";
-
-/** Where each section begins and ends, in scroll positions. A section starts when its top
-    reaches the reading line, a little under the bar. Projects on the pinned stage have no
-    box of their own to measure, so they split the stage's run the way the stage does. */
-function spans(sections: Section[]) {
-  const max = document.documentElement.scrollHeight - innerHeight;
-  const line = innerHeight * 0.4;
-  const stage = document.querySelector<HTMLElement>(".pstage.pinned");
-  const starts = sections.map(s => {
-    const el = document.getElementById(s.id);
-    if (!el) return null;
-    if (stage && stage.contains(el)) {
-      const i = Number(el.dataset.i ?? 0), n = Number(getComputedStyle(stage).getPropertyValue("--n")) || 1;
-      const lead = Number(stage.dataset.lead ?? 0);                     // steps before the first project, its opening card
-      return stage.getBoundingClientRect().top + scrollY + (i + lead) * (stage.offsetHeight - innerHeight) / n;
-    }
-    return el.getBoundingClientRect().top + scrollY - line;
-  });
-  return starts.map((a, i) => {
-    const s0 = Math.max(0, Math.min(max, a ?? 0));
-    const next = starts.slice(i + 1).find(x => x != null);
-    return [s0, Math.max(s0 + 1, Math.min(max, next ?? max))] as const;
-  });
-}
-
-/** The track: one piece per section, each filling as you read through it. */
-function useTrack(sections: Section[]) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !sections.length) return;
-    let raf = 0;
-    const read = () => {
-      raf = 0;
-      const sp = spans(sections);
-      // the last sections can be too short to reach the reading line; the end of the page finishes them
-      const end = scrollY >= document.documentElement.scrollHeight - innerHeight - 2;
-      [...el.children].forEach((c, i) => {
-        const [a, b] = sp[i];
-        const f = end ? 1 : Math.min(1, Math.max(0, (scrollY - a) / (b - a)));
-        (c as HTMLElement).style.setProperty("--f", String(f));
-      });
-    };
-    const on = () => { if (!raf) raf = requestAnimationFrame(read); };
-    read();
-    addEventListener("scroll", on, { passive: true });
-    addEventListener("resize", on);
-    const ro = new ResizeObserver(on);
-    ro.observe(document.body);
-    return () => { removeEventListener("scroll", on); removeEventListener("resize", on); ro.disconnect(); cancelAnimationFrame(raf); };
-  }, [sections]);
-  return ref;
-}
 
 /** Whether you have left the top of the page. */
 function useLifted() {
@@ -71,83 +18,37 @@ function useLifted() {
   return lifted;
 }
 
+/** Day and night, as one switch: the sun and the moon share a track and the knob slides. */
+function ThemeSwitch() {
+  const t = useTheme();
+  const light = t === "light";
+  return (
+    <button type="button" className={`theme${light ? " light" : ""}`} role="switch" aria-checked={!light}
+            aria-label="Dark mode" onClick={() => setTheme(light ? "dark" : "light")}>
+      <i aria-hidden="true" />
+      <svg viewBox="0 0 16 16" aria-hidden="true" className="sun">
+        <circle cx="8" cy="8" r="3" />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map(a => (
+          <line key={a} x1="8" y1="1.6" x2="8" y2="3.1" transform={`rotate(${a} 8 8)`} />
+        ))}
+      </svg>
+      <svg viewBox="0 0 16 16" aria-hidden="true" className="moon">
+        <path d="M12.6 10.2A5.2 5.2 0 0 1 5.8 3.4a5.2 5.2 0 1 0 6.8 6.8Z" />
+      </svg>
+    </button>
+  );
+}
+
 /**
  * The top bar, the same object on every route. At the top of a page it lies flat: the mark
- * and the links, nothing behind them. Once you scroll it gathers into a frosted pill over the
- * content; a chip inside it says where you are, and a track along its lower edge shows the
- * whole page as a strip of sections, each in its own colour.
- *
- * The mark is the year wheel in small, a ring with the today dot at the top in the colour of
- * whatever you are looking at. How far along you are is the track's job, not the mark's.
+ * and the links. Once you scroll it gathers into a pill of glass that bends the page passing
+ * under it. It only carries the way out (the links, the resume) and the light switch; where
+ * you are inside the projects is the wheel's to show, not the bar's.
  */
-export function Bar({ home = true, sections = [], cur }: { home?: boolean; sections?: Section[]; cur?: string }) {
+export function Bar({ home = true }: { home?: boolean; sections?: Section[]; cur?: string }) {
   const pill = useRef<HTMLDivElement>(null);
-  const chipText = useRef<HTMLSpanElement>(null);
   const lifted = useLifted();
-  const track = useTrack(sections);
-  const jump = (i: number) => {
-    const [a] = spans(sections)[i];
-    scrollTo({ top: i === 0 ? 0 : a + 2, behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  };
-
-  const sec = sections.find(s => s.id === cur);
-  const showChip = lifted && !!sec && sec.id !== sections[0]?.id;
-  const chip = sec ? `${sec.group ?? ""}|${sec.n ?? ""}|${sec.label}` : "";
-  /* a project reads as its name after a row of pips, one per project with its own lit in its
-     colour, so where you are among them is shown rather than spelled out; anything else is its
-     name after the dot */
-  const label = (c: string) => {
-    const [g, n, l] = c.split("|");
-    if (!g) return <>{l}</>;
-    const members = sections.filter(s => s.group === g);
-    return <><span className="pips" aria-hidden="true">{members.map(m => (
-      <b key={m.id} className={m.n === n ? "on" : ""} style={{ "--c": m.accent } as CSSProperties} />
-    ))}</span>{l}</>;
-  };
-  const grouped = !!sec?.group;
-
-
-  /* TrueLine's demo narrates itself into the chip while it plays: "Board 18.1 · 4.3 ft" as the
-     ball rolls. The words arrive every frame, so they go straight into the span; React only
-     hears when the readout starts or stops. The readout keeps a fixed width so the chip
-     holds still while the numbers change. */
-  const liveEl = useRef<HTMLSpanElement>(null);
-  const [liveOn, setLiveOn] = useState(false);
-  useEffect(() => listen(t => {
-    if (t && liveEl.current) liveEl.current.textContent = t;
-    setLiveOn(!!t);
-  }), []);
-  const showLive = showChip && liveOn && sec?.id === "p-trueline";
-  const [liveW, setLiveW] = useState(0);
-  useLayoutEffect(() => {
-    const read = () => setLiveW(liveEl.current?.offsetWidth ?? 0);
-    read();
-    addEventListener("resize", read);
-    return () => removeEventListener("resize", read);
-  }, [showLive]);
-
-  /* the chip's width is measured from its text, so it can glide between labels. Measured after
-     every render, not on a list of causes: a label and the readout can change in the same
-     moment, and a width read in between used to stick (a short label in a long pill) */
-  const [chipW, setChipW] = useState(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- every render on purpose; the equality check ends it
-  useLayoutEffect(() => {
-    const w = chipText.current?.scrollWidth ?? 0;
-    if (w !== chipW) setChipW(w);
-  });
-
-  // a label change rolls: the old one goes up and out while the new one comes up from below
-  const [prev, setPrev] = useState<string | null>(null);
-  const last = useRef(chip);
-  useEffect(() => {
-    if (last.current === chip) return;
-    const was = last.current;
-    last.current = chip;
-    if (!was || prefersReducedMotion()) return;
-    setPrev(was);
-    const t = setTimeout(() => setPrev(null), 460);
-    return () => clearTimeout(t);
-  }, [chip]);
+  useLiquidGlass(pill, { scale: 30, bezel: 18, on: lifted });
 
   return (
     <header className={`bar${lifted ? " lifted" : ""}`}>
@@ -165,16 +66,6 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
           <span>Adam Zhu</span>
         </A>
 
-        <span className={`chip${showChip ? " on" : ""}${showLive ? " talking" : ""}${grouped ? " grouped" : ""}`} aria-hidden={!showChip}
-              style={{ width: showChip ? chipW + (grouped ? 24 : 38) + (showLive && liveW ? liveW + 10 : 0) : 0 }}>
-          <i aria-hidden="true" />
-          <span className="roll">
-            {prev && <span key={`was-${prev}`} className="t out">{label(prev)}</span>}
-            <span ref={chipText} key={chip} className={`t${prev ? " in" : ""}`}>{chip && label(chip)}</span>
-          </span>
-          <span className={`live${showLive ? " on" : ""}`} ref={liveEl} />
-        </span>
-
         <nav className="links" aria-label="Site">
           {home ? <>
             <a href="#projects">Projects</a>
@@ -184,22 +75,8 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
             <A href="/#contact">Contact</A>
           </>}
           <a className="cv" {...out} href={RESUME}>Resume<i aria-hidden="true">&#8599;</i></a>
+          <ThemeSwitch />
         </nav>
-
-        {/* the page as a strip: a piece per section, filling as you read; any piece jumps there.
-            A pointer convenience only: the links and headings already carry the page for a
-            keyboard or a screen reader, and six more tab stops on every page would be in the way. */}
-        {sections.length > 1 && (
-          <div className="track" ref={track} aria-hidden="true">
-            {sections.map((s, i) => (
-              <button type="button" key={s.id} tabIndex={-1}
-                      className={s.id === cur ? "on" : ""} onClick={() => jump(i)}
-                      style={s.accent ? { "--c": s.accent } as CSSProperties : undefined}>
-                <i /><span className="peek" aria-hidden="true">{s.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </header>
   );
