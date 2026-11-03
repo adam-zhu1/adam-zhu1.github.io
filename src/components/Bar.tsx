@@ -93,11 +93,18 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
   const sec = sections.find(s => s.id === cur);
   const showChip = lifted && !!sec && sec.id !== sections[0]?.id;
   const chip = sec ? `${sec.group ?? ""}|${sec.n ?? ""}|${sec.label}` : "";
-  /* "Projects / 01 TrueLine". The group drops out on a phone, where the pill is narrow. */
+  /* a project reads as its name after a row of pips, one per project with its own lit in its
+     colour, so where you are among them is shown rather than spelled out; anything else is its
+     name after the dot */
   const label = (c: string) => {
     const [g, n, l] = c.split("|");
-    return <>{g && <span className="g">{g} / </span>}{n && `${n} `}{l}</>;
+    if (!g) return <>{l}</>;
+    const members = sections.filter(s => s.group === g);
+    return <><span className="pips" aria-hidden="true">{members.map(m => (
+      <b key={m.id} className={m.n === n ? "on" : ""} style={{ "--c": m.accent } as CSSProperties} />
+    ))}</span>{l}</>;
   };
+  const grouped = !!sec?.group;
 
 
   /* TrueLine's demo narrates itself into the chip while it plays: "Board 18.1 · 4.3 ft" as the
@@ -119,9 +126,15 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
     return () => removeEventListener("resize", read);
   }, [showLive]);
 
-  // the chip's width is measured from its text, so it can glide between labels
+  /* the chip's width is measured from its text, so it can glide between labels. Measured after
+     every render, not on a list of causes: a label and the readout can change in the same
+     moment, and a width read in between used to stick (a short label in a long pill) */
   const [chipW, setChipW] = useState(0);
-  useLayoutEffect(() => { setChipW(chipText.current?.scrollWidth ?? 0); }, [chip, showLive]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- every render on purpose; the equality check ends it
+  useLayoutEffect(() => {
+    const w = chipText.current?.scrollWidth ?? 0;
+    if (w !== chipW) setChipW(w);
+  });
 
   // a label change rolls: the old one goes up and out while the new one comes up from below
   const [prev, setPrev] = useState<string | null>(null);
@@ -140,7 +153,7 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
     <header className={`bar${lifted ? " lifted" : ""}`}>
       <div className="pill glass" ref={pill}>
         <A className="mark" href={home ? "#adam" : "/#projects"}
-           aria-label={home ? "Adam Zhu, back to the top" : "Adam Zhu, back to the work"}>
+           aria-label={home ? "Adam Zhu, back to the top" : "Adam Zhu, back to the projects"}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle className="ring" cx="12" cy="12" r="8.6" fill="none" strokeWidth="1.7" />
             <g className="az" fill="currentColor" transform="translate(12 12.6) scale(.236) translate(-33 -31)">
@@ -152,8 +165,8 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
           <span>Adam Zhu</span>
         </A>
 
-        <span className={`chip${showChip ? " on" : ""}${showLive ? " talking" : ""}`} aria-hidden={!showChip}
-              style={{ width: showChip ? chipW + 38 + (showLive && liveW ? liveW + 10 : 0) : 0 }}>
+        <span className={`chip${showChip ? " on" : ""}${showLive ? " talking" : ""}${grouped ? " grouped" : ""}`} aria-hidden={!showChip}
+              style={{ width: showChip ? chipW + (grouped ? 24 : 38) + (showLive && liveW ? liveW + 10 : 0) : 0 }}>
           <i aria-hidden="true" />
           <span className="roll">
             {prev && <span key={`was-${prev}`} className="t out">{label(prev)}</span>}
@@ -164,10 +177,10 @@ export function Bar({ home = true, sections = [], cur }: { home?: boolean; secti
 
         <nav className="links" aria-label="Site">
           {home ? <>
-            <a href="#projects">Work</a>
+            <a href="#projects">Projects</a>
             <a href="#contact">Contact</a>
           </> : <>
-            <A href="/#projects">Work</A>
+            <A href="/#projects">Projects</A>
             <A href="/#contact">Contact</A>
           </>}
           <a className="cv" {...out} href={RESUME}>Resume<i aria-hidden="true">&#8599;</i></a>

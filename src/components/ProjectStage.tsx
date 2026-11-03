@@ -32,7 +32,7 @@ const KINDS = ["iPhone app, on the App Store", "Mac app, HackCMU 2026", "Researc
    against the analysis output. Only aggregates: no IPs, schedules or search phrases. The last
    figure is a floor, since a scraper spread over many IPs cannot be seen one IP at a time. */
 const NIST_STEPS = [
-  { label: "User-agent only", v: 21.7 },
+  { label: "User\u2011agent only", v: 21.7 },
   { label: "+ behavioral rules", v: 30.6 },
   { label: "+ rules after the label audit", v: 41.9 },
 ];
@@ -135,7 +135,7 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
   const openTrueLine = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0 || !tlTitle.current) return;
     e.preventDefault();
-    morphInto("/trueline", tlTitle.current, items.current[0]);
+    morphInto("/trueline/", tlTitle.current, items.current[0]);
   };
 
   const body: ReactNode[] = [
@@ -145,13 +145,13 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
         the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and
         the board and angle it entered on. Everything runs on the phone.
       </p>
-      <p className="meta">Swift, Vision, Core ML · on the App Store since August 2026</p>
+      <p className="meta">Swift, Vision, Core ML · on the App Store since August&nbsp;2026</p>
       <p className="result">Tracked the ball down the full lane on 6 of 6 unseen clips; within 1 board and 1–2% on speed against the Python prototype.</p>
       <div className="ctas">
         <a className="store" {...out} href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">
           App Store<i aria-hidden="true">&#8599;</i>
         </a>
-        <A className="more" href="/trueline" onClick={openTrueLine}>How it works<i aria-hidden="true">&#8594;</i></A>
+        <A className="more" href="/trueline/" onClick={openTrueLine}>How it works<i aria-hidden="true">&#8594;</i></A>
       </div>
     </>,
     <>
@@ -173,7 +173,7 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
         the logs of NIST&rsquo;s public data portal.
       </p>
       <p className="meta">Python, pandas, scikit-learn · Gaithersburg, MD · No public code</p>
-      <p className="result">A random forest using only behavioral signals reached F1 = 0.94. An isolation forest surfaced a disguised scraper, and the cleaning rules built from it raised the measured automated share from 21.7% to 41.9%.</p>
+      <p className="result">A random forest using only behavioral signals reached F1&nbsp;=&nbsp;0.94. An isolation forest surfaced a disguised scraper, and the cleaning rules built from it raised the measured automated share from 21.7% to 41.9%.</p>
     </>,
   ];
 

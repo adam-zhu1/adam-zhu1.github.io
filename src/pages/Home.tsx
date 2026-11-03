@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
 import { ProjectStage, PROJECTS_INTRO } from "../components/ProjectStage";
 import { PROJECTS } from "../data/projects";
-import { WorkCard } from "../components/WorkCard";
+import { MoreWork } from "../components/MoreWork";
 import { Bar } from "../components/Bar";
 import { useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
@@ -31,17 +31,6 @@ const CHIPS: Section[] = [
    takes a quiet indigo. The colours themselves live with the projects in ProjectStage. */
 const SITE_ACCENT = "#f4f4f2";
 
-const WORK = [
-  { href: "https://doi.org/10.3390/math12050741", title: "Matched binary diagnostic tests",
-    blurb: "Statistical tests for proportion difference in one-to-two matched binary data. Second author, Mathematics.",
-    meta: "2024", cta: "Paper" },
-  { href: "https://github.com/adam-zhu1/march-madness-2026", title: "March Madness predictor",
-    blurb: "Year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
-    cta: "GitHub" },
-  { href: "https://github.com/adam-zhu1/fantasy-football-draft", title: "Fantasy draft assistant",
-    blurb: "Floor-adjusted value over replacement from three seasons of weekly variance, plus a live draft board.",
-    cta: "GitHub" },
-];
 
 export default function Home() {
   const cur = useCurrentSection(SECTIONS);
@@ -121,11 +110,9 @@ export default function Home() {
           <section className="sec" id="more">
             <div className="sechead intro in" ref={headMore}>
               <h2>More work</h2>
-              <p>A co-authored paper and two side projects.</p>
+              <p>Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
             </div>
-            <ul className="worklist">
-              {WORK.map(w => <WorkCard key={w.title} {...w} />)}
-            </ul>
+            <MoreWork />
           </section>
 
           <section className="sec contact" id="contact" ref={contactRef}>

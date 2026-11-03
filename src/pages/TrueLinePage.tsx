@@ -7,6 +7,15 @@ import { TrueLineStage } from "../components/TrueLineStage";
 import { A, out } from "../lib/router";
 import { land, LANDED, morphPending } from "../lib/morph";
 import { useEachReveal, useReveal, prefersReducedMotion } from "../lib/useReveal";
+import GEO from "../data/trueline-lane.json";
+
+/* the six landmarks of guided calibration, where they sit in this frame (from the app's lane
+   geometry, the same points the home demo finds) and what each one is on the lane */
+const LANDMARKS = GEO.video.marks.map((m, i) => ({
+  v: m.v, l: m.l,
+  name: ["Foul line, right edge", "Foul line, left edge", "Arrow, board 35", "Center arrow", "Arrow, board 5", "Head pin"][i],
+}));
+const TAP_MS = 750;
 
 const SECTIONS: Section[] = [
   { id: "tl-top", label: "TrueLine" },
@@ -122,6 +131,11 @@ export default function TrueLinePage() {
      and hands over the moment a pointer arrives. The sweep only runs while the figure is on
      screen, and picks up from wherever the pointer left the divider rather than jumping. */
   const wipe = useRef<HTMLElement | null>(null);
+  /* before the sweep, the calibration itself: the six landmarks are tapped in one at a time,
+     then the solved lane is laid over the frame left to right. Only then does the divider
+     start its sweep and take a pointer. */
+  const [calN, setCalN] = useState(0);
+  const [calPhase, setCalPhase] = useState<"wait" | "tap" | "fit" | "done">("wait");
   useEffect(() => {
     const el = wipe.current;
     if (!el) return;
@@ -131,7 +145,28 @@ export default function TrueLinePage() {
     set(MID);
 
     let raf = 0, last = 0, phase = 0, seen = false, held = false, over = false, down = false, idle = 0;
+    let ready = false, began = false, fitRaf = 0;
+    const timers: number[] = [];
     const reduce = prefersReducedMotion();
+    if (reduce) { ready = true; setCalPhase("done"); setCalN(6); }
+    else set(0);
+
+    const calibrate = () => {
+      began = true;
+      setCalPhase("tap");
+      LANDMARKS.forEach((_, i) => timers.push(window.setTimeout(() => setCalN(i + 1), 350 + i * TAP_MS)));
+      timers.push(window.setTimeout(() => {
+        setCalPhase("fit");
+        const t0 = performance.now(), D = 1500, TO = MID + SPAN;
+        const step = (now: number) => {
+          const k = Math.min(1, (now - t0) / D);
+          set(TO * (k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2));
+          if (k < 1) fitRaf = requestAnimationFrame(step);
+          else timers.push(window.setTimeout(() => { setCalPhase("done"); ready = true; start(); }, 900));
+        };
+        fitRaf = requestAnimationFrame(step);
+      }, 350 + LANDMARKS.length * TAP_MS + 300));
+    };
 
     const tick = (now: number) => {
       if (last) phase += ((now - last) / PERIOD) * Math.PI * 2;
@@ -140,7 +175,7 @@ export default function TrueLinePage() {
       raf = requestAnimationFrame(tick);
     };
     const start = () => {
-      if (raf || held || !seen || reduce) return;
+      if (raf || held || !seen || reduce || !ready) return;
       phase = Math.asin(Math.max(-1, Math.min(1, (read() - MID) / SPAN)));   // carry on from here
       last = 0;
       raf = requestAnimationFrame(tick);
@@ -153,6 +188,7 @@ export default function TrueLinePage() {
       idle = window.setTimeout(() => { if (!over && !down) { held = false; start(); } }, 2200);
     };
     const take = (clientX: number) => {
+      if (!ready) return;
       held = true; stop();
       const r = el.getBoundingClientRect();
       set(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100)));
@@ -175,13 +211,13 @@ export default function TrueLinePage() {
     addEventListener("pointercancel", up);
 
     const io = new IntersectionObserver(
-      es => es.forEach(e => { seen = e.isIntersecting; if (seen) start(); else stop(); }),
-      { threshold: 0.25 },
+      es => es.forEach(e => { seen = e.isIntersecting; if (seen && !began && !reduce) calibrate(); if (seen) start(); else stop(); }),
+      { threshold: 0.5 },
     );
     io.observe(el);
 
     return () => {
-      stop(); io.disconnect(); clearTimeout(idle);
+      stop(); io.disconnect(); clearTimeout(idle); timers.forEach(clearTimeout); cancelAnimationFrame(fitRaf);
       el.removeEventListener("pointerenter", enter);
       el.removeEventListener("pointerleave", leave);
       el.removeEventListener("pointerdown", pdown);
@@ -206,7 +242,7 @@ export default function TrueLinePage() {
               reprint. This is the name, what it is, and the way down. */}
           <section className={`sec tlhero${ready ? " on" : ""}`} id="tl-top">
             <div className="tlmast">
-              <A className="up in" href="/#projects"><i aria-hidden="true">&#8592;</i> The work</A>
+              <A className="up in" href="/#projects"><i aria-hidden="true">&#8592;</i> Projects</A>
               {/* hidden from the first paint while the name is still flying, so the two
                   copies never overlap; `pre` is the cold-load entrance instead */}
               <h1 ref={title} className={ready ? "" : morphing ? "handoff" : "pre"}>TrueLine</h1>
@@ -220,7 +256,7 @@ export default function TrueLinePage() {
               <a className="store in" {...out} href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
             </div>
             <a className="cue in" href="#tl-seq">
-              <span>One throw, end to end</span>
+              <span>See it run</span>
               <i aria-hidden="true" />
             </a>
           </section>
@@ -239,7 +275,7 @@ export default function TrueLinePage() {
           {/* ---------- the numbers ---------- */}
           <section className="sec" id="tl-read">
             <div className="tlhead in" ref={readRef}>
-              <h2>What it gives you back</h2>
+              <h2>The numbers</h2>
               <p>Nine measurements from one throw. Every one is a lane measurement, a board and a
                 distance, not a number about pixels.</p>
             </div>
@@ -261,19 +297,19 @@ export default function TrueLinePage() {
           {/* ---------- why it's hard ---------- */}
           <section className="sec" id="tl-hard">
             <div className="tlhead in" ref={hardRef}>
-              <h2>Why this is hard</h2>
+              <h2>Why it's hard</h2>
               <p>A lane is 60 feet long and 41.5 inches wide, and the camera sits at one end of it.
                 By the time the ball reaches the pins it is a handful of pixels crossing polished wood
                 that reflects everything in the building.</p>
             </div>
-            <Frame className="strip" seed={2} tag="one throw · eight frames"
+            <Frame className="strip" seed={2} tag="One throw, eight frames"
                    label={<><b>2.3</b> to <b>59.6</b> ft · release to pins</>}>
               <div className="stills" role="region" aria-label="Eight frames of one throw, release to pins" tabIndex={0}>
                 {STILLS.map((s, i) => (
                   <figure key={s.f} style={{ "--i": i } as CSSProperties}>
-                    <img src={`/media/trueline/throw/${s.f}.jpg`} width={420} height={780} loading="lazy"
+                    <img src={`/media/trueline/throw/${s.f}.webp`} width={320} height={595} loading="lazy"
                          alt={`The ball at board ${s.b}, ${s.ft} feet down the lane`} />
-                    <figcaption><b>{s.ft}</b> ft<span>board {s.b}</span></figcaption>
+                    <figcaption><b>{s.ft.toFixed(1)} ft</b><span>board {s.b.toFixed(1)}</span></figcaption>
                   </figure>
                 ))}
               </div>
@@ -303,17 +339,39 @@ export default function TrueLinePage() {
                   app reports afterwards is measured in that space, which is why the numbers survive the
                   phone being in a slightly different spot every time.</p>
                 <p className="tlnote">
-                  A new calibration flow is being built. It's described at the bottom of this page.
+                  The figure shows the guided calibration coming in the next version: six tapped
+                  landmarks instead of four dragged corners, then the fitted lane drawn back over the frame.
                 </p>
               </div>
-              <Frame className="calibfig" seed={1} tag="the lane, solved"
+              <Frame className="calibfig" seed={1} tag="Guided calibration"
                      label={<><b>39</b> boards · <b>60</b> ft foul line to pins</>}>
-                <figure className="wipe" ref={wipe}>
-                  <img src="/media/trueline/lane/calib-clean.jpg" width={938} height={2050} loading="lazy"
+                <figure className={`wipe ${calPhase}`} ref={wipe}>
+                  <img src="/media/trueline/lane/calib-clean.webp" width={700} height={1530} loading="lazy"
                        alt="A frame from the throw, before the lane geometry is drawn on it" />
-                  <img className="over" src="/media/trueline/lane/calib-overlay.jpg" width={938} height={2050} loading="lazy"
+                  <img className="over" src="/media/trueline/lane/calib-overlay.webp" width={700} height={1530} loading="lazy"
                        alt="The same frame with the solved lane drawn back over it: gutters, board seams, the arrows, and a ring on every pin spot" />
-                  <figcaption>Take the divider</figcaption>
+                  <svg className="calmarks" viewBox="0 0 938 2050" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+                    {LANDMARKS.slice(0, calN).map((m, i) => (
+                      <g key={i} className={i === calN - 1 && calPhase === "tap" ? "cur" : ""} transform={`translate(${m.v[0] * 938} ${m.v[1] * 2050})`}>
+                        <circle className="ping" r="40" />
+                        <circle className="dot" r="20" />
+                        <text y="-42">{i + 1}</text>
+                      </g>
+                    ))}
+                  </svg>
+                  {/* the lane as the app's diagram draws it, with the landmark it is asking for */}
+                  <svg className="calmap" viewBox="-4 -4 47 68" aria-hidden="true">
+                    <rect x="0" y="0" width="39" height="60" rx="1" />
+                    {LANDMARKS.map((m, i) => (
+                      <circle key={i} cx={39 - m.l[0]} cy={60 - m.l[1]} r="2.2"
+                              className={i < calN - (calPhase === "tap" ? 1 : 0) ? "done" : i === calN - 1 && calPhase === "tap" ? "cur" : ""} />
+                    ))}
+                  </svg>
+                  <figcaption aria-live="polite">
+                    {calPhase === "wait" ? "Six landmarks" : calPhase === "tap"
+                      ? <>Tap {Math.max(calN, 1)} of 6 · {LANDMARKS[Math.max(calN, 1) - 1].name}</>
+                      : calPhase === "fit" ? "Lane fitted to the six points" : "Drag the divider"}
+                  </figcaption>
                 </figure>
               </Frame>
             </div>
@@ -322,7 +380,7 @@ export default function TrueLinePage() {
           {/* ---------- the pipeline ---------- */}
           <section className="sec" id="tl-pipe">
             <div className="tlhead in" ref={pipeRef}>
-              <h2>What happens to a throw</h2>
+              <h2>The pipeline</h2>
               <p>Five stages, all of them on the phone. Nothing is uploaded anywhere.</p>
             </div>
             <ol className="pipe" ref={pipeListRef}>
@@ -345,7 +403,7 @@ export default function TrueLinePage() {
                 <figure key={n}>
                   <span className="k">{n}</span>
                   <div className="ph">
-                    <img src={`/media/trueline/app/${file}.jpg`} width={660} height={1434} loading="lazy" alt={`${title}: ${note}`} />
+                    <img src={`/media/trueline/app/${file}.webp`} width={660} height={1434} loading="lazy" alt={`${title}: ${note}`} />
                   </div>
                   <figcaption><b>{title}</b><span>{note}</span></figcaption>
                 </figure>
@@ -356,7 +414,7 @@ export default function TrueLinePage() {
           {/* ---------- what's coming ---------- */}
           <section className="sec" id="tl-next">
             <div className="tlhead in" ref={nextRef}>
-              <h2>What I'm working on</h2>
+              <h2>What's coming</h2>
               <p>The next version is in progress. No date; it ships when the accuracy work behind it
                 is finished and checked against real throws.</p>
             </div>
@@ -378,7 +436,7 @@ export default function TrueLinePage() {
               <a className="store big" {...out} href={STORE}>Download on the App Store<i aria-hidden="true">&#8599;</i></a>
             </div>
             <footer className="in">
-              <A href="/#projects">&#8592; Back to the work</A>
+              <A href="/#projects">&#8592; Back to projects</A>
               <span>Adam Zhu, Pittsburgh</span>
             </footer>
           </section>

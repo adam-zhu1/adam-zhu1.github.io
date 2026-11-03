@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** A section of a page. `group` and `n` let the bar's chip read "Projects / 01 TrueLine";
+/** A section of a page. `group` and `n` give a project its pip among the others in the bar's chip;
     `accent` colours its piece of the bar's track. */
 export type Section = { id: string; label: string; group?: string; n?: string; accent?: string };
 

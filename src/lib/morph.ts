@@ -91,11 +91,17 @@ export function land(title: HTMLElement): boolean {
   if (!p) return false;
 
   const to = title.getBoundingClientRect();
-  const scale = parseFloat(getComputedStyle(title).fontSize) / p.size;
+  const tcs = getComputedStyle(title);
+  const scale = parseFloat(tcs.fontSize) / p.size;
   const dx = to.left - p.from.left, dy = to.top - p.from.top;
 
+  /* the h1 is lighter and set tighter than the name on the card, so the ghost takes on its
+     weight and spacing as it flies (spacing divided back out of the scale) and lands at the
+     heading's own width instead of a size too wide */
+  const ls = (parseFloat(tcs.letterSpacing) || 0) / scale;
   const fly = p.ghost.animate(
-    [{ transform: "none" }, { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }],
+    [{ transform: "none" },
+     { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, letterSpacing: `${ls}px`, fontWeight: tcs.fontWeight }],
     { duration: FLY, easing: EASE, fill: "forwards" },
   );
   p.ghost.animate([{ opacity: 1 }, { opacity: 0 }],

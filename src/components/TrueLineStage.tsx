@@ -42,7 +42,7 @@ export function TrueLineStage() {
     <div className="tlstage" ref={stageRef}>
       <Frame className="appwin" seed={1} tag="01 TrueLine" label={<><b>70</b> tracked frames · 2.3 to 59.6 ft</>}>
         <div className="app">
-          <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.jpg"
+          <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.webp"
                  aria-label="A bowling throw, tracked frame by frame">
             <source src="/media/trueline-throw.webm" type="video/webm" />
             <source src="/media/trueline-throw.mp4" type="video/mp4" />

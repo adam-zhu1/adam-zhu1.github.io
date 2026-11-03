@@ -49,9 +49,11 @@ export function TrueLine({ held = false }: { held?: boolean }) {
 
   return (
     <div className="demo" ref={centreRef}>
-      <Frame className="appwin" seed={1}>
+      <Frame className="appwin tlwin" seed={1}>
+        {/* the readout sits inside the frame: beside the footage on a wide stage, under it otherwise */}
+        <div className="tlgrid"><div>
         <div className="app">
-          <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.jpg"
+          <video ref={vid} muted playsInline preload="metadata" poster="/media/trueline-poster.webp"
                  aria-label="A bowling throw, tracked frame by frame">
             <source src="/media/trueline-throw.webm" type="video/webm" />
             <source src="/media/trueline-throw.mp4" type="video/mp4" />
@@ -59,8 +61,10 @@ export function TrueLine({ held = false }: { held?: boolean }) {
           <svg ref={ov} viewBox="0 0 560 560" preserveAspectRatio="none" aria-hidden="true" />
         </div>
         <div className="cap"><span ref={capL}>Run-up</span><span ref={capR}><b>Frame 1</b> of 131</span></div>
+        </div>
+        <div className="nums" ref={nums} />
+        </div>
       </Frame>
-      <div className="nums" ref={nums} />
       <div className="democtl">
         <div className="stages" ref={steps}>
           {STAGES.map(([name, note], i) => (
