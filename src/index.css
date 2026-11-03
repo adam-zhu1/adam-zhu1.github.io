@@ -339,12 +339,16 @@ html.morphing { scroll-behavior: auto; }
 .num b { font-size: 23px; font-weight: 500; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .num b.mint { color: var(--accent); }
 .num i { font-style: normal; font-size: 11.5px; color: var(--mute); margin-left: 4px; }
+/* a degree sign sits up against its number, the size of a superscript, not down with the units */
+.num i.deg, .tile b em.deg { margin-left: 1px; position: relative; top: -.5em; font-size: 15px; color: inherit; }
+.tile b em.deg { font-size: 19px; color: inherit; }
+.num.on i.deg { color: var(--accent); }
 
 p, figcaption, dd, .mwb { text-wrap: pretty; }
 
 /* ---------- 04 contact ---------- */
 .sec.contact { min-height: 70vh; }
-#more { min-height: auto; padding-top: 140px; }
+#more { min-height: auto; padding-top: 96px; }
 .contact h2 { margin: 0; font-size: 14px; font-weight: 500; color: var(--mute); }
 .contact .mailto { display: inline-block; margin: 28px 0 0; font-size: clamp(22px,4.4vw,60px); overflow-wrap: anywhere; font-weight: 500; letter-spacing: -.02em; color: var(--ink); text-decoration: none; position: relative; padding-bottom: 8px; }
 .contact .mailto::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--frame); transform: scaleX(0); transform-origin: left; transition: transform 1s cubic-bezier(.22,1,.36,1) .6s, background .2s; }
@@ -388,8 +392,9 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .mw:has(.mwl > li.on) .mwtap { opacity: 1; }
 @media (hover: none) { .mwtap { display: block; } }
 /* nothing pointed at: the panel says how it works, its arrow nudging toward the list */
-.mwwin.idle { border-style: dashed; }
-.mwwin.idle h3 { color: var(--ink2); }
+/* the empty panel is an instruction, not an entry: quieter than the rows it points at */
+.mwwin.idle h3 { color: var(--ink2); font-size: 20px; }
+.mwwin.idle .mwb { text-wrap: balance; }
 .mwpoint { display: inline-block; margin-top: 22px; font-size: 22px; color: var(--mute); animation: mwpoint 1.8s cubic-bezier(.45,0,.55,1) infinite; }
 @keyframes mwpoint { 0%, 100% { transform: translateX(0) } 50% { transform: translateX(-10px) } }
 /* narrow: no panel; the row you tap opens under its name */
@@ -745,7 +750,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 
 /* the result box: 440x680, fading in over 150 ms, the whole background a drag handle */
 .cl-result { position: absolute; left: 47.5%; top: 11%; width: 49%; height: 80%; container-type: inline-size;
-  display: flex; flex-direction: column; border-radius: 12px; background: rgba(14,20,28,.92); border: .5px solid rgba(255,255,255,.1);
+  display: flex; flex-direction: column; border-radius: 12px; background: rgb(14,20,28); border: .5px solid rgba(255,255,255,.1);
   box-shadow: 0 12px 32px rgba(0,0,0,.45); overflow: hidden; color: rgba(255,255,255,.92);
   opacity: 0; transition: opacity .15s ease-out; pointer-events: none; }
 .cl-result.show { opacity: 1; }

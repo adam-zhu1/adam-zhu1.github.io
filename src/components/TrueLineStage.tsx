@@ -6,7 +6,7 @@ import { createTrueLine } from "../lib/trueline";
 const STAGES = [
   ["Track", "A detector finds the ball in every frame; a Kalman filter joins the detections into one path."],
   ["Calibrate", "The lane is fixed in the frame, then drawn back onto the footage to prove the fit."],
-  ["Translate", "Lane and path leave the video and settle into the app's plan view."],
+  ["Map", "Lane and path leave the video and settle into the app's plan view."],
   ["Read", "This throw entered at board 16.3, a shade right of the pocket."],
 ] as const;
 

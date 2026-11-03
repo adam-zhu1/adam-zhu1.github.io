@@ -39,7 +39,7 @@ const TILES = [
   { n: "Launch Angle", v: 2.8, u: "°", d: "Slope of the first tracked stretch. Positive is toward the gutter." },
   { n: "Entry Board", v: 16.3, u: "board", d: "Tail slope projected to 59.5 ft. Flush pocket is 17.5.", mint: true },
   { n: "Entry Angle", v: 3.9, u: "°", d: "Slope of the smoothed tail at the pins. Steeper carries more.", mint: true },
-  { n: "Breakpoint", v: 5.8, u: "board", d: "The furthest right the ball gets before it turns." },
+  { n: "Breakpoint", v: 5.8, u: "board", d: "The farthest right the ball gets before it turns." },
   { n: "Breakpoint Distance", v: 38.6, u: "ft", d: "How far down the lane that happens." },
   { n: "Hook", v: 10.5, u: "boards", d: "Entry board minus breakpoint. The whole back-end move." },
   { n: "vs Target", v: null, u: "", d: "Board at Arrows minus your session target. Only shown once a target is set." },
@@ -283,7 +283,7 @@ export default function TrueLinePage() {
               {TILES.map(t => (
                 <div className={`tile${t.mint ? " lit" : ""}${t.v === null ? " off" : ""}`} key={t.n}>
                   <small>{t.n}</small>
-                  <b>{t.v === null ? "–" : t.v.toFixed(1)}<em>{t.u}</em></b>
+                  <b>{t.v === null ? "–" : t.v.toFixed(1)}<em className={t.u === "°" ? "deg" : undefined}>{t.u}</em></b>
                   <p>{t.d}</p>
                 </div>
               ))}

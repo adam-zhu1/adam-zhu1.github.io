@@ -21,7 +21,7 @@ const MORE: Item[] = [
     body: "A year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
     tags: "Python, Streamlit", href: "https://github.com/adam-zhu1/march-madness-2026", cta: "GitHub" },
   { year: "2024", when: "2024", name: "Matched binary diagnostic tests", role: "Paper", org: "Mathematics 12(5), 741",
-    body: "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, applied to environmental testing for Salmonella in the United States. I joined at the revision stage: manuscript preparation, literature review and data cleaning.",
+    body: "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, applied to environmental testing for Salmonella in the United States. I joined at the revision stage: manuscript preparation, literature review, and data cleaning.",
     tags: "Lin, Zhu, Wang", href: "https://doi.org/10.3390/math12050741", cta: "Paper" },
   { year: "2024", when: "Jan to Jun 2024", name: "VR evacuation study", role: "Research intern", org: "VRAC, Iowa State",
     stats: [["454", "simulated evacuation trials"], ["227", "participants"]],

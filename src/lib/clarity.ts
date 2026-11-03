@@ -33,10 +33,10 @@ const QUESTION = "why is my binary search not working? visualize where it's mess
 /* The explanation the result box fills with. Illustrative: it is a correct account of this
    bug, written for the page, not a logged model output. */
 const STEPS_TEXT = [
-  ["Step 1 — What the loop is supposed to do.", " Each pass should shrink the window ", "[lo, hi)", " strictly. As long as the window gets smaller every time, the loop has to end."],
-  ["Step 2 — Where it stops shrinking.", " ", "mid = (lo + hi) // 2", " rounds down. When ", "hi - lo == 1", ", that makes ", "mid == lo", ". The branch ", "lo = mid", " then assigns ", "lo", " to itself and the window never changes."],
-  ["Step 3 — The fix.", " Move past the midpoint you already checked: ", "lo = mid + 1", "."],
-  ["Step 4 — Why the hi side is already fine.", " ", "hi = mid", " is correct with a half-open window, because ", "arr[mid]", " has been ruled out and ", "hi", " is exclusive."],
+  ["Step 1: What the loop is supposed to do.", " Each pass should shrink the window ", "[lo, hi)", " strictly. As long as the window gets smaller every time, the loop has to end."],
+  ["Step 2: Where it stops shrinking.", " ", "mid = (lo + hi) // 2", " rounds down. When ", "hi - lo == 1", ", that makes ", "mid == lo", ". The branch ", "lo = mid", " then assigns ", "lo", " to itself and the window never changes."],
+  ["Step 3: The fix.", " Move past the midpoint you already checked: ", "lo = mid + 1", "."],
+  ["Step 4: Why the hi side is already fine.", " ", "hi = mid", " is correct with a half-open window, because ", "arr[mid]", " has been ruled out and ", "hi", " is exclusive."],
 ];
 
 /* the status words the real result box shows for each job status (result.js) */
@@ -168,11 +168,11 @@ export function createClarity(els: Els) {
       /* the stall: the one-wide window pulses, and the fix is offered */
       if (cur.stuck) {
         const pulse = .5 + .5 * Math.sin(v * 5);
-        g.appendChild(el("rect", { x: bx(cur.lo) - 4, y: Y0 - 4, width: BOX + 8, height: BOX + 8, rx: 5, fill: "none", stroke: "#ff8a8a", "stroke-width": 1.2, opacity: .35 + .45 * pulse }));
+        g.appendChild(el("rect", { x: bx(cur.lo) - 4, y: Y0 - 4, width: BOX + 8, height: BOX + 8, rx: 5, fill: "none", stroke: "#f0c27a", "stroke-width": 1.2, opacity: .35 + .45 * pulse }));
         txt(g, 220, 226, "lo = mid + 1   # the fix", { "text-anchor": "middle", fill: "var(--accent)", opacity: seg(v, k * BEAT + .6, k * BEAT + 1.2) });
       }
       const sayO = clamp(kf / .25, 0, 1);
-      txt(g, 220, cur.stuck ? 204 : 212, cur.say, { "text-anchor": "middle", fill: cur.stuck ? "#ff8a8a" : "#c9d6dd", opacity: sayO });
+      txt(g, 220, cur.stuck ? 204 : 212, cur.say, { "text-anchor": "middle", fill: cur.stuck ? "#f0c27a" : "#c9d6dd", opacity: sayO });
     }
     svg.replaceChildren(g);
   }
