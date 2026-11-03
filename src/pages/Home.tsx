@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
-import { ProjectWheel } from "../components/ProjectWheel";
+import { ProjectBand } from "../components/ProjectBand";
 import { PROJECTS_INTRO } from "../components/ProjectStage";
 import { MoreWork } from "../components/MoreWork";
 import type { Entry } from "../data/work";
@@ -97,7 +97,7 @@ export default function Home() {
               <h2>Projects</h2>
               <p>{PROJECTS_INTRO}</p>
             </div>
-            <ProjectWheel onActive={setEntry} />
+            <ProjectBand onActive={setEntry} />
           </section>
 
           <section className="sec" id="more">

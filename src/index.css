@@ -986,7 +986,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 }
 
 /* ======================================================================
-   The wheel draft (branch: wheel)
+   The band draft (branch: wheel)
    ====================================================================== */
 :root, [style*="--accent"] { --acc: color-mix(in oklab, var(--accent) var(--acc-mix), #000); }
 /* the same for the things coloured by --c, the wheel's dots */
@@ -1011,106 +1011,102 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.25) 60%), rgba(241,241,238,.42);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 1px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 18px 40px -18px rgba(0,0,0,.3); }
 
-/* ---- the stage ---- */
-.wstage.pinned { position: relative; margin-top: 8px; }
+/* ---- the band ---- */
+.band.pinned { position: relative; margin-top: 8px; }
+/* the page settles on a project if you let go near one; nothing else on the page is a stop */
+html.snapband { scroll-snap-type: y proximity; }
+.band .snap { position: absolute; left: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
 /* the stage runs edge to edge; the page itself keeps that from scrolling sideways */
 .site { overflow-x: clip; }
-.wstage.pinned .wstick { position: sticky; top: 0; height: 100svh; width: 100vw; margin-left: calc(50% - 50vw); box-sizing: border-box;
-  display: grid; grid-template-columns: var(--rw) minmax(300px, 360px) minmax(0, 1fr); gap: 56px; align-items: center;
-  padding: 84px 48px 76px 0; --rw: clamp(270px, 23vw, 380px); --sz: min(96svh, 980px); }
-@media (min-width: 1700px) { .wstage.pinned .wstick { grid-template-columns: var(--rw) 380px minmax(0, 920px); } }
+.band.pinned .bstick { position: sticky; top: 0; height: 100svh; width: 100vw; margin-left: calc(50% - 50vw); overflow: hidden; }
+.band.pinned .scene { position: absolute; inset: 0; }
 
-/* the rim, mostly off the left edge of the screen; only its right side shows */
-.wring { position: relative; align-self: stretch; margin: -84px 0 -76px; }
-.wring svg { position: absolute; top: 50%; right: 0; height: var(--sz); width: var(--sz); transform: translateY(-50%); overflow: visible; }
-.wring .rim { fill: none; stroke: var(--line2); stroke-width: 1.2; }
-.wring .rim.in { stroke: var(--line); stroke-dasharray: 2 6; }
-.wring .ticks line { stroke: var(--line2); stroke-width: 1.2; }
-.wring .ticks line.long { stroke: var(--frame); opacity: .7; }
-.wring .node { cursor: pointer; transition: opacity .2s linear; }
-.wring .node .hit { fill: transparent; }
-.wring .node .dot { fill: var(--bg); stroke: var(--frame); stroke-width: 2; transition: fill .3s, stroke .3s, r .4s cubic-bezier(.16,1,.3,1); }
-.wring .node.big .dot { stroke: var(--cc, var(--c)); }
-.wring .node.cur .dot { fill: var(--cc, var(--c)); stroke: var(--cc, var(--c)); }
-.wring .node text { fill: var(--mute); font: 400 21px var(--sans); text-anchor: end; letter-spacing: -.01em; transition: fill .3s; }
-.wring .node.big text { fill: var(--ink2); }
-.wring .node.cur text { fill: var(--ink); font-weight: 500; }
-.wring .node:hover text { fill: var(--ink); }
-/* the lens: a bead of glass fixed at the rim's edge that every entry turns through */
-.wring .lens { position: absolute; top: 50%; right: calc(var(--sz) * .032 - 38px); width: 76px; height: 76px; border-radius: 50%;
-  transform: translateY(-50%); pointer-events: none;
-  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.22), rgba(255,255,255,0) 46%),
-              radial-gradient(circle at 50% 50%, transparent 58%, color-mix(in srgb, var(--c) 22%, transparent) 100%);
-  box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 -2px 6px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.16),
-              0 10px 24px -10px rgba(0,0,0,.6);
-  -webkit-backdrop-filter: saturate(1.4) brightness(1.08); backdrop-filter: saturate(1.4) brightness(1.08);
-  transition: background .5s; }
+/* the name behind everything: wider than the window, in the project's colour, drifting left
+   while you read and carried out as the next comes in */
+.bigname { position: absolute; left: 0; right: 0; top: 70px; white-space: nowrap; pointer-events: none; }
+.bigname span { display: inline-block; font-size: min(25vw, 33svh); font-weight: 500; letter-spacing: -.065em; line-height: .78; padding: .1em 0;
+  color: color-mix(in srgb, var(--cc, var(--c)) var(--bn, 22%), transparent);
+  transform: translateX(calc(var(--x, 0) * 92vw + 5vw - var(--drift, 0) * 16vw)); will-change: transform; }
+:root[data-theme="light"] .bigname span { --bn: 30%; }
 
-/* the words: every entry in one cell, only the open one showing */
-.wtext { list-style: none; margin: 0; padding: 0; }
-.pinned .wtext { display: grid; align-self: center; }
-.pinned .wtext > li { grid-area: 1 / 1; opacity: 0; transform: translateY(16px); visibility: hidden;
-  transition: opacity .3s linear, transform .5s cubic-bezier(.16,1,.3,1), visibility 0s .5s; }
-.pinned .wtext > li.on { opacity: 1; transform: none; visibility: visible;
-  transition: opacity .45s linear .12s, transform .7s cubic-bezier(.16,1,.3,1) .12s, visibility 0s; }
-.wtext .wk { margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .02em; color: var(--acc); }
-.wtext .wk span { color: var(--mute); }
-.wtext h3 { margin: 14px 0 0; font-size: clamp(34px, 3.3vw, 52px); font-weight: 500; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
-.wtext .desc { margin: 20px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--ink2); }
-.wtext .meta { margin: 14px 0 0; font-size: 13.5px; color: var(--mute); }
-.wtext .result { margin: 16px 0 0; font-size: 14.5px; color: var(--ink); padding-left: 14px; border-left: 2px solid var(--acc); }
-.wtext .ctas { margin-top: 24px; }
-.wtext .more { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; color: var(--ink); text-decoration: none; }
-.wtext .more i { font-style: normal; transition: transform .2s cubic-bezier(.22,1,.36,1); }
-.wtext .more:hover i { transform: translateX(3px); }
-/* a hairline under the words fills as you read the entry, then hands over */
-.pinned .wtext > li::after { content: ""; display: block; height: 1px; margin-top: 30px; background: linear-gradient(90deg, var(--acc) calc(var(--hold, 0) * 100%), var(--line) 0); }
+.band.pinned .sgrid { position: relative; height: 100%; box-sizing: border-box; max-width: 1440px; margin: 0 auto;
+  padding: 92px 48px 84px; display: grid; grid-template-columns: minmax(300px, 370px) minmax(0, 1fr); gap: 64px; align-items: end; }
+/* the words sit under the name, clear of it; the pane rises up over the name's lower half.
+   Pinned, the big name is the heading, so the small one is kept for screen readers only. */
+.band.pinned .words { padding-bottom: 8px; }
+.band.pinned .words h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.band.pinned .words .desc { margin-top: 14px; }
+@media (max-height: 800px) {
+  .bigname { top: 64px; }
+  .bigname span { font-size: min(22vw, 27svh); }
+  .band.pinned .sgrid { padding-bottom: 76px; }
+  .band.pinned .words .desc { font-size: 14.5px; }
+  .band.pinned .words .result { font-size: 13.5px; }
+  .pane { padding: 12px; }
+  .pane { --sq: calc(100svh - 420px); }
+}
+/* the words and the pane travel with the band, the pane further, so the two part a little in a handover */
+.band.pinned .words { transform: translateX(calc(var(--x, 0) * 80px)); }
+.band.pinned .media { height: 100%; min-width: 0; display: flex; align-items: flex-end; justify-content: center;
+  transform: translateX(calc(var(--x, 0) * 220px)); }
 
-/* the demos sit in one place; the open one wipes up over the last */
-.wmedia { position: relative; height: 100%; container-type: inline-size; }
-.wmedia .layer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  clip-path: inset(100% 0 0 0); visibility: hidden;
-  transition: clip-path .9s cubic-bezier(.16,1,.3,1), visibility 0s linear .9s; }
-.wmedia .layer.on { clip-path: inset(0); visibility: visible; z-index: 1;
-  transition: clip-path .9s cubic-bezier(.16,1,.3,1) .18s, visibility 0s; }
-.wmedia .layer > .demo { width: 100%; transform: scale(1.04); transition: transform 1.3s cubic-bezier(.16,1,.3,1); }
-.wmedia .layer.on > .demo { transform: none; }
+/* the pane: glass round the demo. Its rim bends the name behind; the demo inside stays a screen */
+.pane { position: relative; width: 100%; box-sizing: border-box; padding: 16px; border-radius: 26px;
+  background: linear-gradient(180deg, rgb(255 255 255 / .09), rgb(255 255 255 / .02) 40%, rgb(255 255 255 / .05));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), inset 0 0 0 1px rgb(255 255 255 / .1), inset 0 -1px 0 rgb(255 255 255 / .06),
+              0 40px 80px -40px rgba(0,0,0,.8);
+  -webkit-backdrop-filter: blur(1.5px) saturate(1.5); backdrop-filter: blur(1.5px) saturate(1.5); }
+.pane .appwin { background: #0a0a0c; border-radius: 12px; }
+.pane .democtl { margin-top: 12px; padding: 0 4px; }
+.pane { --sq: calc(100svh - 500px); }
+.pane .demo .app { max-width: min(100%, var(--sq)); }
+/* each pane is as wide as its own demo, so the name shows either side of it */
+.pane.trueline { width: min(100%, calc(var(--sq) + 290px)); }
+/* the readout column kept shorter than the footage, so it is the square that sets the pane's height */
+.pane .tlwin .num { padding: 6px 0 5px; }
+.pane .tlwin .num small { margin-bottom: 2px; }
+.pane .tlwin .num b { font-size: 21px; }
+.pane.clarity { width: min(100%, calc(var(--sq) + 150px)); }
+.pane.nist { width: min(100%, calc(var(--sq) * 1.5 + 60px)); }
+.pane .demo.clproj .app, .pane .demo.clproj .cap { max-width: min(100%, calc(var(--sq) + 100px)); }
+.pane .tlgrid { grid-template-columns: minmax(0, var(--sq)) 150px; }
+:root[data-theme="light"] .pane {
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.2) 40%, rgba(255,255,255,.35));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(0,0,0,.07), 0 40px 80px -40px rgba(0,0,0,.35); }
 
+/* the words */
+.words .wk { margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .02em; color: var(--acc); }
+.words .wk span { color: var(--mute); }
+.words h3 { margin: 14px 0 0; font-size: clamp(34px, 3.3vw, 52px); font-weight: 500; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
+.words .desc { margin: 20px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--ink2); }
+.words .meta { margin: 14px 0 0; font-size: 13.5px; color: var(--mute); }
+.words .result { margin: 16px 0 0; font-size: 14.5px; color: var(--ink); padding-left: 14px; border-left: 2px solid var(--acc); }
+.words .ctas { margin-top: 24px; }
+.words .more { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; color: var(--ink); text-decoration: none; }
+.words .more i { font-style: normal; transition: transform .2s cubic-bezier(.22,1,.36,1); }
+.words .more:hover i { transform: translateX(3px); }
 
-/* ---- flat: a phone, or the list's rows opened ---- */
-.wstage:not(.pinned) .wtext > li { border-top: 1px solid var(--line); padding: 28px 0 56px; }
-.wstage:not(.pinned) .wflat { margin-top: 30px; }
+/* ---- flat: a phone or a short window ---- */
+.band:not(.pinned) .bigname { display: none; }
+.band:not(.pinned) .scene { border-top: 1px solid var(--line); padding: 28px 0 56px; }
+.band:not(.pinned) .media { margin-top: 30px; }
 
-/* ---- the list ---- */
-.wlist { list-style: none; margin: 8px 0 0; padding: 0; border-bottom: 1px solid var(--line); }
-.wlist li { border-top: 1px solid var(--line); animation: wrow .6s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i) * 40ms); }
-@keyframes wrow { from { opacity: 0; transform: translateY(10px) } }
-.wlist button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; align-items: baseline;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 170px 24px; gap: 20px; padding: 22px 8px; border-radius: 4px; transition: background .2s; }
-.wlist button:hover, .wlist button:focus-visible { background: rgb(var(--hi) / .04); }
-.wlist button:focus-visible { outline: 2px solid var(--c); outline-offset: -2px; }
-.wlist .n { font-size: clamp(22px, 2vw, 30px); font-weight: 500; letter-spacing: -.03em; color: var(--ink); display: inline-flex; align-items: center; gap: 14px; }
-.wlist .n i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cc, var(--c)); }
-.wlist .k { font-size: 14.5px; color: var(--ink2); }
-.wlist .w { font-size: 13.5px; color: var(--mute); font-variant-numeric: tabular-nums; }
-.wlist .go { color: var(--mute); transition: transform .2s cubic-bezier(.22,1,.36,1), color .2s; }
-.wlist button:hover .go { color: var(--ink); transform: translateX(4px); }
-
-/* ---- the foot pill: wheel or list, and what is in the lens ---- */
-.foot { position: fixed; left: 50%; bottom: 18px; z-index: 40; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px 0 5px;
+/* ---- the foot pill: the three projects, the one you are in filling as you read it ---- */
+.foot { position: fixed; left: 50%; bottom: 18px; z-index: 40; display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 5px;
   border-radius: 999px; transform: translate(-50%, 160%); opacity: 0; transition: transform .6s cubic-bezier(.16,1,.3,1), opacity .3s;
   background: linear-gradient(180deg, rgb(255 255 255 / .07), rgb(255 255 255 / 0) 55%), rgba(16,16,20,.62);
   -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 1px 2px rgba(0,0,0,.4), 0 18px 40px -16px rgba(0,0,0,.9); font-size: 14px; }
 .foot.on { transform: translate(-50%, 0); opacity: 1; }
-.foot .seg { display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgb(var(--hi) / .06); }
-.foot .seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 999px; color: var(--ink2); transition: background .25s, color .25s; }
-.foot .seg button.on { background: rgb(var(--hi) / .14); color: var(--ink); box-shadow: inset 0 1px 0 rgb(var(--sheen) / .18); }
-.foot .seg button:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
-.foot .where { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; color: var(--ink); }
-.foot .where i { width: 7px; height: 7px; border-radius: 50%; background: var(--cc, var(--c)); transition: background .4s; }
-.foot .where b { font-weight: 500; animation: rollin .44s cubic-bezier(.16,1,.3,1) both; }
-.foot .where em { font-style: normal; font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.foot button { all: unset; position: relative; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px;
+  border-radius: 999px; color: var(--ink2); transition: background .25s, color .25s; }
+.foot button i { width: 6px; height: 6px; border-radius: 50%; background: var(--cc, var(--c)); opacity: .55; transition: opacity .25s, transform .3s cubic-bezier(.16,1,.3,1); }
+.foot button:hover { color: var(--ink); }
+.foot button.on { background: rgb(var(--hi) / .1); color: var(--ink); box-shadow: inset 0 1px 0 rgb(var(--sheen) / .16); }
+.foot button.on i { opacity: 1; transform: scale(1.25); }
+.foot button.on::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: 6px; height: 1.5px; border-radius: 1px;
+  background: linear-gradient(90deg, var(--cc, var(--c)) calc(var(--f, 0) * 100%), rgb(var(--hi) / .14) 0); }
+.foot button:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
 
 /* ---- light mode: the few colours that were written out rather than tokened ---- */
 :root[data-theme="light"] .wheel .rim { stroke: var(--line2); }
@@ -1120,15 +1116,12 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 :root[data-theme="light"] .wheel .spoke { stroke: color-mix(in oklab, var(--c, #8a8a93) 66%, #000); opacity: .85; }
 :root[data-theme="light"] .wheel .sweep { display: none; }
 :root[data-theme="light"] .wheel .key circle { filter: brightness(.62) saturate(1.2); }
-:root[data-theme="light"] .wring .node text { fill: var(--ink2); }
-:root[data-theme="light"] .wring .node.cur text { fill: var(--ink); }
 :root[data-theme="light"] .nist .br .track { background: repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 25%); }
 :root[data-theme="light"] .amb .orb { fill: var(--ink); }
 :root[data-theme="light"] .amb .orb.ring { stroke: var(--ink); fill: none; }
-:root[data-theme="light"] .wring .lens { box-shadow: inset 0 1px 1px rgba(255,255,255,.9), inset 0 -2px 6px rgba(0,0,0,.08), inset 0 0 0 1px rgba(0,0,0,.08), 0 10px 24px -10px rgba(0,0,0,.3); }
 
 @media (prefers-reduced-motion: reduce) {
-  .pinned .wtext > li, .wmedia .layer, .wmedia .layer > .demo, .wlist li, .foot { transition: none; animation: none; }
+  .foot { transition: none; }
 }
 /* On paper every project colour is held to the same lightness rather than darkened by one
    fixed amount, so mint, teal and indigo all land at a readable depth and keep their hue. */

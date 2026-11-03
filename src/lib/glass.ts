@@ -29,12 +29,12 @@ function hostSvg() {
 }
 
 /** R and G carry x and y displacement around a mid-grey of no movement. */
-function drawMap(w: number, h: number, kind: Kind, bezel: number) {
+function drawMap(w: number, h: number, kind: Kind, bezel: number, radius?: number) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const g = c.getContext("2d")!;
   const img = g.createImageData(w, h);
-  const r = kind === "lens" ? Math.min(w, h) / 2 : h / 2;
+  const r = kind === "lens" ? Math.min(w, h) / 2 : Math.min(radius ?? h / 2, h / 2, w / 2);
   const cx = w / 2, cy = h / 2;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const px = x + .5, py = y + .5;
@@ -65,9 +65,11 @@ function drawMap(w: number, h: number, kind: Kind, bezel: number) {
 }
 
 /** Bends the backdrop of `ref` for as long as it is mounted; `base` is the rest of its
-    backdrop-filter, kept after the bend. */
-export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { kind = "pill", scale = 34, bezel = 22, base = "blur(3px) saturate(1.6)", on = true }:
-  { kind?: Kind; scale?: number; bezel?: number; base?: string; on?: boolean } = {}) {
+    backdrop-filter, kept after the bend. A pill is fully round unless `radius` says less.
+    Nothing between the element and what it bends may carry opacity, filter or clip-path:
+    each of those starts a new backdrop, and the glass would see nothing behind it. */
+export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { kind = "pill", scale = 34, bezel = 22, radius, base = "blur(3px) saturate(1.6)", on = true }:
+  { kind?: Kind; scale?: number; bezel?: number; radius?: number; base?: string; on?: boolean } = {}) {
   useEffect(() => {
     const el = ref.current;
     if (!el || !on || !chromium() || prefersReducedMotion()) return;
@@ -93,7 +95,7 @@ export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { kind = "pil
       if (!w || !h || (w === lastW && h === lastH)) return;
       lastW = w; lastH = h;
       for (const n of [f, im]) { n.setAttribute("x", "0"); n.setAttribute("y", "0"); n.setAttribute("width", String(w)); n.setAttribute("height", String(h)); }
-      im.setAttribute("href", drawMap(w, h, kind, bezel));
+      im.setAttribute("href", drawMap(w, h, kind, bezel, radius));
       const v = `url(#${id}) ${base}`;
       el.style.setProperty("backdrop-filter", v);
       el.style.setProperty("-webkit-backdrop-filter", v);
@@ -105,5 +107,5 @@ export function useLiquidGlass(ref: RefObject<HTMLElement | null>, { kind = "pil
       ro.disconnect(); cancelAnimationFrame(raf); f.remove();
       el.style.removeProperty("backdrop-filter"); el.style.removeProperty("-webkit-backdrop-filter");
     };
-  }, [ref, kind, scale, bezel, base, on]);
+  }, [ref, kind, scale, bezel, radius, base, on]);
 }
