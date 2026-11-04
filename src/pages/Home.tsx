@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
-import { ProjectRows } from "../components/ProjectRows";
-import { PROJECTS_INTRO } from "../components/ProjectStage";
+import { ProjectViewer } from "../components/ProjectViewer";
 import { MoreWork } from "../components/MoreWork";
 import type { Entry } from "../data/work";
 import { Bar } from "../components/Bar";
@@ -37,7 +36,6 @@ export default function Home() {
   const [wheelReady, setWheelReady] = useState(false);
 
   const sideRef = useRef<HTMLDivElement>(null);
-  const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const [entry, setEntry] = useState<Entry | null>(null);
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
@@ -93,11 +91,7 @@ export default function Home() {
           </section>
 
           <section className="sec projects" id="projects">
-            <div className="sechead intro in" ref={headProjects}>
-              <h2>Projects</h2>
-              <p>{PROJECTS_INTRO}</p>
-            </div>
-            <ProjectRows onActive={setEntry} />
+            <ProjectViewer onActive={setEntry} />
           </section>
 
           <section className="sec" id="more">
