@@ -1020,14 +1020,19 @@ section.sec.projects { display: block; min-height: 0; padding-bottom: 0; }
 .pslide { position: absolute; top: 0; bottom: 0; left: calc(50% - 50vw); right: calc(50% - 50vw); box-sizing: border-box;
   display: flex; align-items: center; padding: 88px calc(50vw - 50%) 64px;
   background: color-mix(in oklab, var(--accent) 5%, var(--bg)); }
-/* --r: how much of this screen has been uncovered; --o: how much the next has covered it */
-.pslide + .pslide { clip-path: inset(calc((1 - var(--r, 0)) * 100%) 0 0 0); }
-.pslide + .pslide::before { content: ""; position: absolute; left: 0; right: 0; z-index: 2; height: 1px; top: calc((1 - var(--r, 0)) * 100%);
+/* --r: how far this screen has come in; --o: how far it has gone on to the next one */
+/* wipe: the next is drawn up over it from the bottom edge */
+.t-wipe .pslide + .pslide { clip-path: inset(calc((1 - var(--r, 0)) * 100%) 0 0 0); }
+.t-wipe .pslide + .pslide::before { content: ""; position: absolute; left: 0; right: 0; z-index: 2; height: 1px; top: calc((1 - var(--r, 0)) * 100%);
   background: var(--acc); opacity: calc(min(var(--r, 0) * 30, 1) * min((1 - var(--r, 0)) * 30, 1)); }
-.pslide::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #000; opacity: calc(var(--o, 0) * .55); }
-:root[data-theme="light"] .pslide::after { opacity: calc(var(--o, 0) * .14); }
+.t-wipe .pslide::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #000; opacity: calc(var(--o, 0) * .55); }
+:root[data-theme="light"] .t-wipe .pslide::after { opacity: calc(var(--o, 0) * .14); }
+/* fade: it lifts away and is gone before the next rises into its place */
+.t-fade .pslide, .t-zoom .pslide { overflow: clip; opacity: min(clamp(0, (var(--r, 0) - .45) * 1.82, 1), clamp(0, 1 - var(--o, 0) * 1.82, 1)); }
+/* zoom: it grows past you as it fades, and the next comes up from a little way back */
+.t-zoom .pin { --s: calc(1 - (1 - var(--r, 0)) * .12 + var(--o, 0) * .18); }
 .pin { width: 100%; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 72px; align-items: center;
-  transform: translateY(var(--y, 0)); will-change: transform; }
+  transform: translateY(var(--y, 0)) scale(var(--s, 1)); will-change: transform; }
 .pslide .plate { height: calc(100svh - 192px); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
 /* where you are among the three */
 .ptrack { position: absolute; left: 0; right: 0; bottom: 24px; z-index: 10; display: flex; align-items: center; gap: 14px;
@@ -1039,9 +1044,13 @@ section.sec.projects { display: block; min-height: 0; padding-bottom: 0; }
 
 /* a phone, or less motion: the three as plain screens in a row */
 .pwrap.flow .pstage { position: static; height: auto; }
-.pwrap.flow .pslide { position: relative; left: auto; right: auto; margin-inline: calc(50% - 50vw); clip-path: none; min-height: 100svh; }
+.pwrap.flow .pslide { position: relative; left: auto; right: auto; margin-inline: calc(50% - 50vw); clip-path: none; opacity: 1; min-height: 100svh; }
 .pwrap.flow .pslide::before, .pwrap.flow .pslide::after { display: none; }
 .pwrap.flow .pin { transform: none; }
+/* draft only: the switch between the three ways of moving on */
+.ptry { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line2); font-size: 13px; }
+.ptry button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 999px; color: var(--mute); }
+.ptry button.on { background: var(--ink); color: var(--bg); }
 
 /* the plate: a screen laid on the page */
 .plate { border-radius: 12px; padding: 40px; background: #0b0b0e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }

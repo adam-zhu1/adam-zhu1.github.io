@@ -28,6 +28,8 @@ export function ProjectWipe({ onActive }: { onActive: (e: Entry | null) => void 
   const [top, setTop] = useState(-1);
   const [details, setDetails] = useState<number | null>(null);
   const [flow, setFlow] = useState(false);
+  /* draft only: which way the screens move on, to compare (?move=fade|zoom|wipe) */
+  const [move, setMove] = useState(() => new URLSearchParams(location.search).get("move") ?? "fade");
 
   useEffect(() => {
     const mq = matchMedia("(max-width: 63.99rem), (prefers-reduced-motion: reduce)");
@@ -60,8 +62,8 @@ export function ProjectWipe({ onActive }: { onActive: (e: Entry | null) => void 
         if (!s) return;
         const a = into[i], b = into[i + 1] ?? 0;
         const held = clamp((y - (i * (HOLD + MOVE)) * unit) / (HOLD * unit));
-        /* it rises a little as it is uncovered, sinks a little as it is covered, and drifts while held */
-        const lift = (1 - a) * .12 * h - b * .06 * h + (.5 - held) * 20;
+        /* it rises a little as it comes in, lifts a little as it goes, and drifts while held */
+        const lift = (1 - a) * .12 * h - b * (move === "wipe" ? .06 : .1) * h + (.5 - held) * 20;
         s.style.setProperty("--r", a.toFixed(4));
         s.style.setProperty("--o", b.toFixed(4));
         s.style.setProperty("--y", `${lift.toFixed(1)}px`);
@@ -76,7 +78,7 @@ export function ProjectWipe({ onActive }: { onActive: (e: Entry | null) => void 
     addEventListener("scroll", on, { passive: true });
     addEventListener("resize", on);
     return () => { removeEventListener("scroll", on); removeEventListener("resize", on); cancelAnimationFrame(raf); };
-  }, [flow]);
+  }, [flow, move]);
 
   useEffect(() => { onActive(top < 0 ? null : WORK[top]); }, [top, onActive]);
   useEffect(() => () => onActive(null), [onActive]);
@@ -97,7 +99,7 @@ export function ProjectWipe({ onActive }: { onActive: (e: Entry | null) => void 
   };
 
   return (
-    <div className={`pwrap${flow ? " flow" : ""}`} ref={wrap} style={flow ? undefined : { height: `${(SPAN + 1) * 100}svh` }}>
+    <div className={`pwrap t-${move}${flow ? " flow" : ""}`} ref={wrap} style={flow ? undefined : { height: `${(SPAN + 1) * 100}svh` }}>
       {/* where each project starts, for links and the bar's track; the screens themselves never move */}
       {!flow && WORK.map((e, i) => (
         <span key={e.id} id={e.id} className="pmark" aria-hidden="true"
@@ -148,6 +150,11 @@ export function ProjectWipe({ onActive }: { onActive: (e: Entry | null) => void 
           </div>
         )}
       </div>
+      {!flow && (
+        <div className="ptry">
+          {["fade", "zoom", "wipe"].map(m => <button key={m} type="button" className={move === m ? "on" : ""} onClick={() => setMove(m)}>{m}</button>)}
+        </div>
+      )}
     </div>
   );
 }
