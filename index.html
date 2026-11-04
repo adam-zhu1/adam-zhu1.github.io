@@ -19,11 +19,11 @@
     <meta name="author" content="Adam Zhu" />
     <meta name="theme-color" content="#070708" />
     <!-- the theme before first paint, so a light reader never sees a dark flash: what they
-         chose last time, else what their system prefers -->
+         chose last time, else paper -->
     <script>
       (function () {
         var t; try { t = localStorage.getItem("theme"); } catch (e) {}
-        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        if (t !== "light" && t !== "dark") t = "light";
         document.documentElement.dataset.theme = t;
         var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "light" ? "#f1f1ee" : "#070708";
       })();

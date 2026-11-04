@@ -44,7 +44,7 @@
 }
 /* The demos are screens, and a screen stays dark whatever the room is: inside one the
    tokens go back to the dark set. */
-:root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills, .screen) {
+:root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills, .nbplate) {
   --bg: #070708; --ink: #f4f4f2; --ink2: #c2c2c8; --mute: #7c7c85;
   --line: #2a2a30; --line2: #3d3d47; --frame: #8d8d96; --hi: 255 255 255;
   --mint: #40e69e; --acc-mix: 100%;
@@ -986,7 +986,7 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 }
 
 /* ======================================================================
-   The band draft (branch: wheel)
+   The notebook draft (branch: notebook)
    ====================================================================== */
 :root, [style*="--accent"] { --acc: color-mix(in oklab, var(--accent) var(--acc-mix), #000); }
 /* the same for the things coloured by --c, the wheel's dots */
@@ -1007,95 +1007,74 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 .bar .theme:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .bar .theme:hover { color: var(--ink); }
 
-:root[data-theme="light"] .bar.lifted .glass, :root[data-theme="light"] .foot.glass {
+:root[data-theme="light"] .bar.lifted .glass {
   background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.25) 60%), rgba(241,241,238,.42);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 1px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 18px 40px -18px rgba(0,0,0,.3); }
 
-/* ---- the show: one dark stage, the demo filling it, the words on glass over its corner ---- */
-.show.pinned { position: relative; margin-top: 8px; }
-/* the stage runs edge to edge; the page itself keeps that from scrolling sideways */
-.site { overflow-x: clip; }
-.show.pinned .sstick { position: sticky; top: 0; height: 100svh; box-sizing: border-box; padding: 80px 0 82px; }
-.screen { position: relative; height: 100%; border-radius: 28px; overflow: hidden; isolation: isolate;
-  --sq: calc(100svh - 162px - 56px - 124px);
-  background: radial-gradient(rgb(255 255 255 / .085) 1px, transparent 1.5px) 0 0 / 24px 24px, #0b0b0e;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .07), inset 0 1px 0 rgb(255 255 255 / .08); }
-:root[data-theme="light"] .screen { box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 40px 80px -40px rgba(0,0,0,.45); }
+/* ---- the notebook: an index of the three, then a page each ---- */
+.nb { margin-top: 8px; }
+.nbidx { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+.nbidx a { display: grid; grid-template-columns: 44px minmax(120px, 1fr) minmax(0, 1.3fr) minmax(0, 2fr) 128px; gap: 20px; align-items: baseline;
+  padding: 15px 0; border-bottom: 1px solid var(--line); color: var(--ink2); text-decoration: none; font-size: 14.5px; transition: background .2s; }
+.nbidx .n, .nbidx .w { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.nbidx .w { text-align: right; }
+.nbidx .t { font-size: 17px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+.nbidx .l { color: var(--ink); }
+.nbidx a:hover .t, .nbidx a:focus-visible .t { color: var(--acc); }
+.nbidx a:hover .n, .nbidx a:focus-visible .n { color: var(--acc); }
+.nbidx a:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 
-/* a demo leaves by lifting up and away; the next settles in from just below */
-.slide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding: 28px 40px 28px 0;
-  opacity: 0; visibility: hidden; transform: translateY(44px) scale(.985);
-  transition: opacity .45s linear, transform .8s cubic-bezier(.16,1,.3,1), visibility 0s .8s; }
-.slide.past { transform: translateY(-44px) scale(.97); }
-.slide.on { opacity: 1; visibility: visible; transform: none;
-  transition: opacity .55s linear .12s, transform .9s cubic-bezier(.16,1,.3,1) .08s, visibility 0s; }
-.slide .glow { position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(46% 62% at 70% 46%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%); }
-.sdemo { position: relative; min-width: 0; max-width: calc(100% - 420px); }
-.sdemo .demo { width: 100%; }
-.screen .sdemo .app { max-width: min(100%, var(--sq)); }
-.sdemo.trueline { width: calc(var(--sq) + 290px); }
-.screen .sdemo .tlgrid { grid-template-columns: minmax(0, var(--sq)) 150px; }
-.sdemo.clarity { width: calc(var(--sq) + 80px); }
-/* Clarity's caption and controls run taller than TrueLine's, so its square gives a little back */
-.screen .sdemo .demo.clproj .app { max-width: min(100%, calc(var(--sq) - 44px)); }
-.sdemo.nist { width: min(860px, calc(var(--sq) * 1.45)); }
-.screen .appwin, :root[data-theme="light"] .screen .appwin { background: transparent; box-shadow: none; }
+.nbpage { margin-top: 104px; scroll-margin-top: 84px; }
+.nbrule { display: flex; gap: 24px; padding-top: 10px; border-top: 1px solid var(--ink); font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.nbrule span:first-child { color: var(--acc); }
+.nbrule span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nbrule span:last-child { white-space: nowrap; }
+.nbbody { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 64px; align-items: start; margin-top: 28px; }
+.nbtext h3 { margin: 0; font-size: clamp(36px, 3.6vw, 52px); font-weight: 500; letter-spacing: -.045em; line-height: 1; color: var(--ink); }
+.nbdesc { margin: 18px 0 0; font-size: 16px; line-height: 1.6; color: var(--ink2); }
+.nbtext h4 { margin: 34px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--line2); font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--mute); }
+.nbfacts { margin: 0; }
+.nbfacts div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.nbfacts dt { font-size: 14px; color: var(--ink2); }
+.nbfacts dd { margin: 0; font-family: var(--mono); font-size: 14px; color: var(--ink); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nbsteps { list-style: none; margin: 0; padding: 0; counter-reset: st; }
+.nbsteps li { counter-increment: st; display: grid; grid-template-columns: 28px 1fr; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 1.5; color: var(--ink2); }
+.nbsteps li::before { content: counter(st, decimal-leading-zero); font-family: var(--mono); font-size: 11.5px; line-height: 21px; color: var(--acc); }
+.nbsteps b { font-weight: 500; color: var(--ink); }
+.nbmeta { margin: 22px 0 0; font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--mute); }
+.nblinks { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
+.nblinks a { display: inline-flex; gap: 7px; align-items: center; font-size: 15px; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line2); text-underline-offset: 4px; transition: text-decoration-color .2s; }
+.nblinks a:hover { text-decoration-color: var(--acc); }
+.nblinks i { font-style: normal; transition: transform .2s cubic-bezier(.22,1,.36,1); }
+.nblinks a:hover i { transform: translate(2px, -1px); }
 
-/* the card: the words, on glass over the stage's lower left corner */
-.card { position: absolute; left: 22px; bottom: 22px; z-index: 3; width: 384px; max-height: calc(100% - 44px); box-sizing: border-box;
-  padding: 26px 26px 22px; border-radius: 22px; overflow: hidden;
-  background: linear-gradient(180deg, rgb(255 255 255 / .1), rgb(255 255 255 / .035) 55%, rgb(255 255 255 / .06));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), inset 0 0 0 1px rgb(255 255 255 / .08), 0 24px 50px -24px rgba(0,0,0,.8);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); }
-/* the open project's words size the card; the others wait out of the flow, so the card is
-   always as tall as what it says */
-.card > section { position: absolute; left: 26px; right: 26px; bottom: 22px; opacity: 0; visibility: hidden; transform: translateY(10px);
-  transition: opacity .25s linear, transform .5s cubic-bezier(.16,1,.3,1), visibility 0s .5s; }
-.card > section.on { position: relative; left: auto; right: auto; bottom: auto; opacity: 1; visibility: visible; transform: none;
-  transition: opacity .45s linear .18s, transform .7s cubic-bezier(.16,1,.3,1) .18s, visibility 0s; }
+/* the figure: the demo on a dark plate, the way a screen looks pasted onto a page */
+.nbfig { position: sticky; top: 96px; margin: 0; }
+.nbplate { border-radius: 8px; padding: 32px; background: #0b0b0e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
+:root[data-theme="light"] .nbplate { box-shadow: 0 0 0 1px rgba(0,0,0,.12); }
+.nbplate .demo { width: 100%; }
+.nbplate .app { max-width: min(100%, calc(100vh - 330px)); }
+/* beside the footage the readout runs as a column, the way it does on a wide stage */
+.nbplate .tlgrid { display: grid; grid-template-columns: minmax(0, 1fr) 140px; align-items: center; gap: 28px; }
+.nbplate .tlwin .nums { grid-template-columns: 1fr; gap: 4px; margin: 0; }
+.nbplate .tlwin .num { padding: 9px 0 7px; }
+.nbplate .demo.clproj .app, .nbplate .demo.clproj .cap { max-width: min(100%, calc(100vh - 380px)); }
+.nbplate .appwin, :root[data-theme="light"] .nbplate .appwin { background: transparent; box-shadow: none; }
+.nbfig figcaption { margin-top: 12px; font-size: 13.5px; line-height: 1.5; color: var(--ink2); }
+.nbfig figcaption b { margin-right: 6px; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); }
 
-/* the words, on the card or flat */
-.show .wk { margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .02em; color: var(--acc); }
-.show .wk span { color: var(--mute); }
-.show h3 { margin: 10px 0 0; font-size: clamp(30px, 2.6vw, 40px); font-weight: 500; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
-.show .desc { margin: 14px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink2); }
-.show .result { margin: 14px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink); padding-left: 12px; border-left: 2px solid var(--acc); }
-.show .meta { margin: 12px 0 0; font-size: 12.5px; color: var(--mute); }
-.show .ctas { margin-top: 18px; gap: 18px; }
-.show .more { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; color: var(--ink); text-decoration: none; }
-.show .more i { font-style: normal; transition: transform .2s cubic-bezier(.22,1,.36,1); }
-.show .more:hover i { transform: translateX(3px); }
-@media (max-height: 800px) {
-  .show.pinned .sstick { padding: 72px 0 74px; }
-  .screen { --sq: calc(100svh - 146px - 48px - 110px); }
-  .card { width: 350px; padding: 20px 20px 18px; }
-  .card > section { left: 20px; right: 20px; bottom: 18px; }
-  .show .desc { font-size: 13.5px; }
-  .show .result { font-size: 13px; }
-  .show h3 { font-size: 28px; }
+@media (max-width: 63.99rem) {
+  .nbidx a { grid-template-columns: 32px 1fr auto; gap: 4px 14px; }
+  .nbidx .k { display: none; }
+  .nbidx .l { grid-column: 2 / -1; grid-row: 2; font-size: 13.5px; color: var(--ink2); }
+  .nbidx .w { grid-row: 1; grid-column: 3; }
+  .nbpage { margin-top: 72px; }
+  .nbbody { grid-template-columns: 1fr; gap: 32px; }
+  .nbfig { position: static; }
+  .nbplate { padding: 18px; }
+  .nbplate .tlgrid { grid-template-columns: 1fr; }
+  .nbplate .tlwin .nums { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
 }
-
-/* ---- flat: a phone or a short window ---- */
-.show:not(.pinned) .flat { border-top: 1px solid var(--line); padding: 28px 0 56px; }
-.show:not(.pinned) .fdemo { margin-top: 28px; }
-
-/* ---- the foot pill: the three projects, the one you are in filling as you read it ---- */
-.foot { position: fixed; left: 50%; bottom: 18px; z-index: 40; display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 5px;
-  border-radius: 999px; transform: translate(-50%, 160%); opacity: 0; transition: transform .6s cubic-bezier(.16,1,.3,1), opacity .3s;
-  background: linear-gradient(180deg, rgb(255 255 255 / .07), rgb(255 255 255 / 0) 55%), rgba(16,16,20,.62);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 1px 2px rgba(0,0,0,.4), 0 18px 40px -16px rgba(0,0,0,.9); font-size: 14px; }
-.foot.on { transform: translate(-50%, 0); opacity: 1; }
-.foot button { all: unset; position: relative; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px;
-  border-radius: 999px; color: var(--ink2); transition: background .25s, color .25s; }
-.foot button i { width: 6px; height: 6px; border-radius: 50%; background: var(--cc, var(--c)); opacity: .55; transition: opacity .25s, transform .3s cubic-bezier(.16,1,.3,1); }
-.foot button:hover { color: var(--ink); }
-.foot button.on { background: rgb(var(--hi) / .1); color: var(--ink); box-shadow: inset 0 1px 0 rgb(var(--sheen) / .16); }
-.foot button.on i { opacity: 1; transform: scale(1.25); }
-.foot button.on::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: 6px; height: 1.5px; border-radius: 1px;
-  background: linear-gradient(90deg, var(--cc, var(--c)) calc(var(--f, 0) * 100%), rgb(var(--hi) / .14) 0); }
-.foot button:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
 
 /* ---- light mode: the few colours that were written out rather than tokened ---- */
 :root[data-theme="light"] .wheel .rim { stroke: var(--line2); }
@@ -1109,14 +1088,11 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 :root[data-theme="light"] .amb .orb { fill: var(--ink); }
 :root[data-theme="light"] .amb .orb.ring { stroke: var(--ink); fill: none; }
 
-@media (prefers-reduced-motion: reduce) {
-  .foot { transition: none; }
-}
 /* On paper every project colour is held to the same lightness rather than darkened by one
    fixed amount, so mint, teal and indigo all land at a readable depth and keep their hue. */
 @supports (color: oklch(from red l c h)) {
   :root[data-theme="light"], :root[data-theme="light"] [style*="--accent"] { --acc: oklch(from var(--accent) min(l, .56) c h); }
   :root[data-theme="light"] [style*="--c"] { --cc: oklch(from var(--c) min(l, .58) c h); }
-  :root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills, .screen),
-  :root[data-theme="light"] .screen [style*="--accent"] { --acc: var(--accent); --cc: var(--c); }
+  :root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills, .nbplate),
+  :root[data-theme="light"] .nbplate [style*="--accent"] { --acc: var(--accent); --cc: var(--c); }
 }
