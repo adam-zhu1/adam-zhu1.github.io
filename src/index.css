@@ -1011,21 +1011,37 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.25) 60%), rgba(241,241,238,.42);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 1px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 18px 40px -18px rgba(0,0,0,.3); }
 
-/* ---- the deck: a card a screen tall per project, each sliding up over the last ---- */
+/* ---- one screen per project: the screen holds, and the next project is wiped up over it ---- */
 section.sec.projects { display: block; min-height: 0; padding-bottom: 0; }
-.deck { position: relative; margin-top: 8px; }
-/* --p is how far the next card has come up over this one: this one sinks back and dims under it */
-/* each card runs the full width of the window, its content held to the page's column */
-.dcard { position: sticky; top: 0; box-sizing: border-box; min-height: 100svh; display: flex; align-items: center; padding: 88px 0 40px;
-  margin-inline: calc(50% - 50vw); padding-inline: calc(50vw - 50%);
-  background: var(--bg); transform-origin: 50% 0; transform: scale(calc(1 - var(--p, 0) * .06)); border-radius: calc(var(--p, 0) * 28px); }
-.dcard + .dcard { border-top: 1px solid var(--line); border-radius: 28px 28px 0 0; box-shadow: 0 -30px 60px -40px rgba(0,0,0,.5); }
-.dcard::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: #000; opacity: calc(var(--p, 0) * .45); }
-:root[data-theme="light"] .dcard::after { opacity: calc(var(--p, 0) * .12); }
-:root[data-theme="light"] .dcard + .dcard { box-shadow: 0 -24px 50px -36px rgba(0,0,0,.35); }
-.dcin { width: 100%; display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: 64px; align-items: center; }
-.dcard .plate { height: calc(100svh - 168px); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
-@media (prefers-reduced-motion: reduce) { .dcard { transform: none; } }
+.pwrap { position: relative; display: block; margin-top: 8px; }
+.pmark { position: absolute; left: 0; width: 1px; pointer-events: none; }
+.pstage { position: sticky; top: 0; height: 100svh; }
+/* each screen runs the full width of the window, its content held to the page's column */
+.pslide { position: absolute; top: 0; bottom: 0; left: calc(50% - 50vw); right: calc(50% - 50vw); box-sizing: border-box;
+  display: flex; align-items: center; padding: 88px calc(50vw - 50%) 64px;
+  background: color-mix(in oklab, var(--accent) 5%, var(--bg)); }
+/* --r: how much of this screen has been uncovered; --o: how much the next has covered it */
+.pslide + .pslide { clip-path: inset(calc((1 - var(--r, 0)) * 100%) 0 0 0); }
+.pslide + .pslide::before { content: ""; position: absolute; left: 0; right: 0; z-index: 2; height: 1px; top: calc((1 - var(--r, 0)) * 100%);
+  background: var(--acc); opacity: calc(min(var(--r, 0) * 30, 1) * min((1 - var(--r, 0)) * 30, 1)); }
+.pslide::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #000; opacity: calc(var(--o, 0) * .55); }
+:root[data-theme="light"] .pslide::after { opacity: calc(var(--o, 0) * .14); }
+.pin { width: 100%; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 72px; align-items: center;
+  transform: translateY(var(--y, 0)); will-change: transform; }
+.pslide .plate { height: calc(100svh - 192px); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+/* where you are among the three */
+.ptrack { position: absolute; left: 0; right: 0; bottom: 24px; z-index: 10; display: flex; align-items: center; gap: 14px;
+  font-family: var(--mono); font-size: 11px; color: var(--mute); pointer-events: none; }
+.ptrack span { transition: color .3s; }
+.ptrack span.on { color: var(--acc); }
+.ptrack i { flex: 1; height: 1px; background: var(--line); position: relative; }
+.ptrack i::after { content: ""; position: absolute; inset: 0; background: var(--ink2); transform-origin: 0 50%; transform: scaleX(var(--f, 0)); }
+
+/* a phone, or less motion: the three as plain screens in a row */
+.pwrap.flow .pstage { position: static; height: auto; }
+.pwrap.flow .pslide { position: relative; left: auto; right: auto; margin-inline: calc(50% - 50vw); clip-path: none; min-height: 100svh; }
+.pwrap.flow .pslide::before, .pwrap.flow .pslide::after { display: none; }
+.pwrap.flow .pin { transform: none; }
 
 /* the plate: a screen laid on the page */
 .plate { border-radius: 12px; padding: 40px; background: #0b0b0e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
@@ -1086,15 +1102,19 @@ section.sec.projects { display: block; min-height: 0; padding-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { .pvsum, .pvdet { transition: none; } }
 @media (max-height: 760px) and (min-width: 64rem) {
   .plate { padding: 28px; }
+  .pslide { padding-top: 76px; padding-bottom: 52px; }
+  .pslide .plate { height: calc(100svh - 148px); }
+  .plate .app { max-width: min(100%, calc(100svh - 420px)); }
+  .ptrack { bottom: 18px; }
   .pvsum h3 { font-size: 44px; }
   .rowstats { margin-top: 24px; } .rowlinks { margin-top: 26px; }
 }
 
-/* a phone: the same deck; a card longer than the screen is read to its end, then held */
+/* a phone: each project a screen of its own, words first and the demo under them */
 @media (max-width: 63.99rem) {
-  .dcard { padding-top: 72px; padding-bottom: 28px; align-items: flex-start; }
-  .dcin { grid-template-columns: 1fr; gap: 26px; }
-  .dcard .plate { height: auto; padding: 18px; }
+  .pwrap.flow .pslide { padding-top: 72px; padding-bottom: 40px; align-items: flex-start; }
+  .pin { grid-template-columns: 1fr; gap: 26px; }
+  .pslide .plate { height: auto; padding: 18px; }
   .plate .tlgrid { grid-template-columns: 1fr; }
   .plate .tlwin .nums { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
   .pvdet { max-height: none; overflow: visible; }
