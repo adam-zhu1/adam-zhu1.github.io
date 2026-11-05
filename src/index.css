@@ -1011,46 +1011,71 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
   background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.25) 60%), rgba(241,241,238,.42);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 0 0 1px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.06), 0 18px 40px -18px rgba(0,0,0,.3); }
 
-/* ---- one screen per project: the screen holds, and the next project is wiped up over it ---- */
+/* ---- one screen per project: the screen never moves, and the next project rolls in through it ---- */
 section.sec.projects { display: block; min-height: 0; padding-bottom: 0; }
 .pwrap { position: relative; display: block; margin-top: 8px; }
 .pmark { position: absolute; left: 0; width: 1px; pointer-events: none; }
 .pstage { position: sticky; top: 0; height: 100svh; }
-/* each screen runs the full width of the window, its content held to the page's column */
+/* the screens lie one on another in the same place; each runs the window's width, its content held to the column */
 .pslide { position: absolute; top: 0; bottom: 0; left: calc(50% - 50vw); right: calc(50% - 50vw); box-sizing: border-box;
-  display: flex; align-items: center; padding: 88px calc(50vw - 50%) 64px;
-  background: color-mix(in oklab, var(--accent) 5%, var(--bg)); }
-/* --r: how far this screen has come in; --o: how far it has gone on to the next one */
-/* wipe: the next is drawn up over it from the bottom edge */
-.t-wipe .pslide + .pslide { clip-path: inset(calc((1 - var(--r, 0)) * 100%) 0 0 0); }
-.t-wipe .pslide + .pslide::before { content: ""; position: absolute; left: 0; right: 0; z-index: 2; height: 1px; top: calc((1 - var(--r, 0)) * 100%);
-  background: var(--acc); opacity: calc(min(var(--r, 0) * 30, 1) * min((1 - var(--r, 0)) * 30, 1)); }
-.t-wipe .pslide::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: #000; opacity: calc(var(--o, 0) * .55); }
-:root[data-theme="light"] .t-wipe .pslide::after { opacity: calc(var(--o, 0) * .14); }
-/* fade: it lifts away and is gone before the next rises into its place */
-.t-fade .pslide, .t-zoom .pslide { overflow: clip; opacity: min(clamp(0, (var(--r, 0) - .45) * 1.82, 1), clamp(0, 1 - var(--o, 0) * 1.82, 1)); }
-/* zoom: it grows past you as it fades, and the next comes up from a little way back */
-.t-zoom .pin { --s: calc(1 - (1 - var(--r, 0)) * .12 + var(--o, 0) * .18); }
-.pin { width: 100%; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 72px; align-items: center;
-  transform: translateY(var(--y, 0)) scale(var(--s, 1)); will-change: transform; }
+  display: flex; align-items: center; padding: 96px calc(50vw - 50%) 96px; }
+.pin { width: 100%; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 72px; align-items: center; }
 .pslide .plate { height: calc(100svh - 192px); box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
-/* where you are among the three */
-.ptrack { position: absolute; left: 0; right: 0; bottom: 24px; z-index: 10; display: flex; align-items: center; gap: 14px;
-  font-family: var(--mono); font-size: 11px; color: var(--mute); pointer-events: none; }
-.ptrack span { transition: color .3s; }
-.ptrack span.on { color: var(--acc); }
-.ptrack i { flex: 1; height: 1px; background: var(--line); position: relative; }
-.ptrack i::after { content: ""; position: absolute; inset: 0; background: var(--ink2); transform-origin: 0 50%; transform: scaleX(var(--f, 0)); }
+
+/* --r: how far this project has come in; --o: how far it has gone on to the next.
+   A letter leaves in the first half of the change, first letter first, and the next name's
+   letters arrive in the second half the same way, so the slot is never holding two. */
+.roll { display: inline-flex; overflow: clip; vertical-align: top; padding-bottom: .12em; margin-bottom: -.12em; }
+.roll > span { display: inline-block; white-space: pre;
+  transform: translateY(calc((clamp(0, (1 - var(--r, 1)) * 2.727 - (1 - var(--k)) * .5, 1) - clamp(0, var(--o, 0) * 2.727 - var(--k) * .5, 1)) * 115%)); }
+/* the line and the link go out just after the name and come in just after it */
+.rwhat { overflow: clip; }
+.rline, .rlinks { --d: max(clamp(0, (1 - var(--r, 1)) * 2.4 - .1, 1), clamp(0, (var(--o, 0) - .08) * 2.4, 1));
+  --s: calc(clamp(0, (1 - var(--r, 1)) * 2.4 - .1, 1) - clamp(0, (var(--o, 0) - .08) * 2.4, 1)); }
+.rline { display: block; transform: translateY(calc(var(--s) * 110%)); }
+.rlinks { opacity: calc(1 - var(--d)); }
+/* the demo dissolves: out through a blur as the name leaves, in out of one as the next arrives */
+.proll .plate { position: relative; isolation: isolate; --din: clamp(0, (1 - var(--r, 1)) / .55, 1); --dout: clamp(0, var(--o, 0) / .45, 1); }
+.proll .plate > * { opacity: calc((1 - var(--din)) * (1 - var(--dout))); filter: blur(calc((var(--din) + var(--dout)) * 14px));
+  transform: scale(calc(1 + var(--dout) * .02 - var(--din) * .02)); }
+
+.rlab { display: flex; gap: 14px; margin: 0; font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.rlab .rnum { color: var(--acc); }
+.pvsum h3 { margin: 18px 0 0; font-size: clamp(48px, 5vw, 76px); font-weight: 500; letter-spacing: -.055em; line-height: 1; color: var(--ink); }
+.pvsum h3 > span { display: inline-block; }
+.rwhat { margin: 20px 0 0; max-width: 30ch; font-size: 18px; line-height: 1.5; color: var(--ink2); }
+.rlinks { margin-top: 36px; }
+.rmore { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink);
+  padding-bottom: 4px; border-bottom: 1px solid var(--line2); transition: border-color .2s; }
+.rmore:hover { border-color: var(--ink); }
+.rmore b { font-weight: 400; transition: transform .2s cubic-bezier(.22,1,.36,1); }
+.rmore:hover b { transform: translateX(3px); }
+.rmore:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 2px; }
+.pvdet .rowlinks { margin-top: 22px; }
+
+/* no frame: on dark the demo sits straight on the page. On paper it keeps its own dark
+   screen, edge to edge, because the demos are screens and stay dark whatever the room is */
+.proll .plate { padding: 0; background: none; box-shadow: none; border-radius: 0; }
+:root[data-theme="light"] .proll .plate { padding: 36px; }
+/* the screen itself holds still through the change: the next one's takes over at the moment
+   this one's content has gone and the next's has not begun, so only what is on it changes */
+:root[data-theme="light"] .proll .plate::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 16px; background: #0b0b0e;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 40px 80px -40px rgba(0,0,0,.35); opacity: clamp(0, (var(--r, 1) - .45) * 1000, 1); }
+
+/* where you are: one hairline per project, filling as it is read */
+.rtrack { position: absolute; left: 0; right: 0; bottom: 36px; z-index: 10; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin: 0; padding: 0; list-style: none; pointer-events: none; }
+.rtrack li { position: relative; padding-top: 12px; font-size: 12px; color: var(--mute); transition: color .3s; }
+.rtrack li::before, .rtrack li::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--line); }
+.rtrack li::after { background: var(--acc); transform-origin: 0 50%; transform: scaleX(var(--f, 0)); }
+.rtrack li.on { color: var(--ink); }
 
 /* a phone, or less motion: the three as plain screens in a row */
 .pwrap.flow .pstage { position: static; height: auto; }
-.pwrap.flow .pslide { position: relative; left: auto; right: auto; margin-inline: calc(50% - 50vw); clip-path: none; opacity: 1; min-height: 100svh; }
-.pwrap.flow .pslide::before, .pwrap.flow .pslide::after { display: none; }
-.pwrap.flow .pin { transform: none; }
-/* draft only: the switch between the three ways of moving on */
-.ptry { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line2); font-size: 13px; }
-.ptry button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 999px; color: var(--mute); }
-.ptry button.on { background: var(--ink); color: var(--bg); }
+.pwrap.flow .pslide { position: relative; left: auto; right: auto; margin-inline: calc(50% - 50vw); min-height: 100svh; }
+.pwrap.flow .roll > span, .pwrap.flow .rline { transform: none; }
+.pwrap.flow .rlinks, .pwrap.flow .plate > * { opacity: 1; filter: none; transform: none; }
+:root[data-theme="light"] .pwrap.flow .plate::before { opacity: 1; }
 
 /* the plate: a screen laid on the page */
 .plate { border-radius: 12px; padding: 40px; background: #0b0b0e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
@@ -1111,11 +1136,11 @@ section.sec.projects { display: block; min-height: 0; padding-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { .pvsum, .pvdet { transition: none; } }
 @media (max-height: 760px) and (min-width: 64rem) {
   .plate { padding: 28px; }
-  .pslide { padding-top: 76px; padding-bottom: 52px; }
-  .pslide .plate { height: calc(100svh - 148px); }
+  .pslide { padding-top: 76px; padding-bottom: 72px; }
+  .pslide .plate { height: calc(100svh - 156px); }
   .plate .app { max-width: min(100%, calc(100svh - 420px)); }
-  .ptrack { bottom: 18px; }
-  .pvsum h3 { font-size: 44px; }
+  .rtrack { bottom: 22px; }
+  .pvsum h3 { font-size: 52px; }
   .rowstats { margin-top: 24px; } .rowlinks { margin-top: 26px; }
 }
 
