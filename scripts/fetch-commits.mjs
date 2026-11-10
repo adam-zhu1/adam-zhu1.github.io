@@ -19,7 +19,7 @@ const headers = { Accept: "application/vnd.github+json", "User-Agent": USER, ...
 
 async function api(path) {
   const res = await fetch(`https://api.github.com${path}`, { headers });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${path}`);
+  if (!res.ok) throw Object.assign(new Error(`${res.status} ${res.statusText} for ${path}`), { status: res.status });
   return res.json();
 }
 
@@ -37,6 +37,8 @@ for (const full of [...owned, ...GUEST]) {
       if (commits.length < 100) break;
     }
   } catch (err) {
+    /* a repo with no commits yet (GitHub answers 409) has nothing for the wheel; skip it */
+    if (err.status === 409) { console.warn(`skipping ${full}: empty repository`); continue; }
     if (owned.includes(full)) throw err;
     console.warn(`skipping ${full}: ${err.message}`);
   }
