@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
 import { ProjectRoll } from "../components/ProjectRoll";
-import { PROJECTS_INTRO } from "../components/ProjectStage";
 import { MoreWork } from "../components/MoreWork";
 import type { Entry } from "../data/work";
 import { Bar } from "../components/Bar";
@@ -39,7 +38,7 @@ export default function Home() {
   const sideRef = useRef<HTMLDivElement>(null);
   const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
   const [entry, setEntry] = useState<Entry | null>(null);
-  const headMore = useReveal<HTMLDivElement>({ threshold: 0.9 });
+  const headMore = useReveal<HTMLDivElement>({ threshold: 0.4 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
   const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
@@ -65,6 +64,19 @@ export default function Home() {
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", entry ? entry.accent : SITE_ACCENT);
   }, [entry]);
+
+  /* leaving the top: its contents fade and lift away over the first part of the scroll, so the
+     move onto the projects reads as one scene giving way to the next rather than a slide */
+  useEffect(() => {
+    const hero = document.getElementById("adam");
+    if (!hero) return;
+    let raf = 0;
+    const read = () => { raf = 0; hero.style.setProperty("--leave", Math.min(Math.max(scrollY / (innerHeight * .6), 0), 1).toFixed(3)); };
+    const on = () => { if (!raf) raf = requestAnimationFrame(read); };
+    read();
+    addEventListener("scroll", on, { passive: true });
+    return () => { removeEventListener("scroll", on); cancelAnimationFrame(raf); };
+  }, []);
 
   return (
     <>
@@ -95,7 +107,6 @@ export default function Home() {
           <section className="sec projects" id="projects">
             <div className="sechead intro in" ref={headProjects}>
               <h2>Projects</h2>
-              <p>{PROJECTS_INTRO}</p>
             </div>
             <ProjectRoll onActive={setEntry} />
           </section>
