@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import commits from "../data/commits.json";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
 import { ProjectRoll } from "../components/ProjectRoll";
 import { MoreWork } from "../components/MoreWork";
@@ -25,6 +26,14 @@ const SECTIONS: Section[] = [
    takes a quiet indigo. The colours themselves live with the projects in ProjectStage. */
 const SITE_ACCENT = "#f4f4f2";
 
+
+/* "Last commit 2 days ago", from the same history the wheel draws */
+const lastCommit = (() => {
+  const t = Math.max(...(commits as { t: string }[]).map(c => Date.parse(c.t + ":00Z")).filter(n => !isNaN(n)));
+  if (!isFinite(t)) return "";
+  const d = Math.floor((Date.now() - t) / 86_400_000);
+  return `Last commit ${d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`}`;
+})();
 
 export default function Home() {
   const cur = useCurrentSection(SECTIONS);
@@ -59,7 +68,15 @@ export default function Home() {
     return () => ts.forEach(clearTimeout);
   }, [reduce]);
 
-  useEffect(() => { if (wheelReady && !reduce) wheel.current?.play(); }, [wheelReady, reduce]);
+  /* the wheel draws itself the first time the footer comes into view */
+  const footWheel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = footWheel.current;
+    if (!wheelReady || reduce || !el) return;
+    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { wheel.current?.play(); io.disconnect(); } }, { threshold: .4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [wheelReady, reduce]);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", entry ? entry.accent : SITE_ACCENT);
@@ -85,23 +102,25 @@ export default function Home() {
       <main className="site">
         <div className="wrap">
           <section className="sec hero" id="adam">
-            <div className="grid1">
-              <div className={`side${reduce ? " on" : ""}`} ref={sideRef}>
-                <h1 className={step < 2 ? "pre" : ""}>Adam Zhu</h1>
-                <p className="kick in">Statistics and machine learning at Carnegie Mellon. Looking for Summer 2027 internships in software, ML, data science, or quant.</p>
-                <ul className="in">
+            {/* one sentence, bright then grey, and the facts beside it; the name itself is the picture */}
+            <div className={`htop${reduce ? " on" : ""}`} ref={sideRef}>
+              <p className="hline in"><b>Statistics and machine learning at Carnegie Mellon.</b> Looking for Summer 2027 internships in software, ML, data science, or quant.</p>
+              <div className="hside in">
+                <dl className="now">
+                  <dt>Now</dt><dd>ScottyLabs AI, on Bark, CMU&rsquo;s campus AI assistant</dd>
+                  <dt>Previously</dt><dd>Research intern at NIST, CSAFE, and VRAC</dd>
+                </dl>
+                <ul>
                   <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
                   <li><a {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
                   <li><a href="mailto:adamzhu@andrew.cmu.edu">Email</a></li>
                   <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
                 </ul>
-                <dl className="now in">
-                  <dt>Now</dt><dd>ScottyLabs AI, on Bark, CMU&rsquo;s campus AI assistant</dd>
-                  <dt>Previously</dt><dd>Research intern at NIST, CSAFE, and VRAC</dd>
-                </dl>
               </div>
-              <div className="wheel"><YearWheel onReady={onWheelReady} intro={!reduce} /></div>
             </div>
+            <h1 className={`mega${step < 2 ? " pre" : ""}`} aria-label="Adam Zhu">
+              {[..."Adam Zhu"].map((c, i) => <span key={i} aria-hidden="true" style={{ "--i": i } as CSSProperties}>{c === " " ? "\u00a0" : c}</span>)}
+            </h1>
           </section>
 
           <section className="sec projects" id="projects">
@@ -129,7 +148,14 @@ export default function Home() {
                 <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
               </ul>
             </div>
-            <footer className="in"><span>Adam Zhu, Pittsburgh</span></footer>
+            {/* the year of work, small: every commit as a spoke, today at the top */}
+            <footer className="in sitefoot">
+              <div className="minwheel wheel" ref={footWheel}><YearWheel onReady={onWheelReady} intro={!reduce} /></div>
+              <div className="footmeta">
+                <span>{lastCommit}</span>
+                <span>Adam Zhu, Pittsburgh</span>
+              </div>
+            </footer>
           </section>
         </div>
       </main>

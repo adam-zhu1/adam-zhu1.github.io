@@ -253,24 +253,6 @@ html.morphing { scroll-behavior: auto; }
 .boot.hint-on .hint { opacity: .7; }
 
 /* ---------- 01 hero ---------- */
-.hero .grid1 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 72px; align-items: center; }
-@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
-  .hero .grid1 { opacity: calc(1 - var(--leave, 0)); transform: translateY(calc(var(--leave, 0) * -32px)); }
-}
-.hero h1 { margin: 0; font-size: clamp(52px, 7.4vw, 112px); font-weight: 500; letter-spacing: -.045em; line-height: .95;
-  clip-path: inset(0 0 -20% 0); transform: none;
-  transition: clip-path .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1); }
-.hero h1.pre { clip-path: inset(108% 0 -20% 0); transform: translateY(.14em); }
-.hero .kick { font-size: 18px; color: var(--ink2); margin: 22px 0 0; }
-.hero ul { display: flex; flex-wrap: wrap; gap: 26px; margin: 32px 0 0; padding: 0; list-style: none; }
-.hero a { font-size: 16px; color: var(--ink); text-decoration: none; position: relative; display: inline-block; padding: 6px 0 3px; }
-.hero a:focus-visible, .contact a:focus-visible, .tlpage a:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 3px; }
-.hero a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .18s cubic-bezier(.4,0,.2,1); }
-.hero a:hover::after, .hero a:focus-visible::after { transform: scaleX(1); }
-.hero .kick { max-width: 34em; line-height: 1.5; }
-.hero .now { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; margin: 40px 0 0; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14.5px; max-width: 34em; }
-.hero .now dt { color: var(--mute); }
-.hero .now dd { margin: 0; color: var(--ink2); }
 
 /* the mark in the top bar: a dial of how far down the page you are. It spins a full turn
    when you point at it. */
@@ -457,8 +439,6 @@ footer { padding: 70px 0 40px; font-size: 12.5px; color: var(--mute); display: f
 @media (max-width: 980px) {
   :root { --rail: 24px }
   .wrap { padding-right: 24px }
-  .hero .grid1 { grid-template-columns: 1fr }
-  .wheel { max-width: 420px; margin: 24px auto 0 }
 }
 @media (max-width: 560px) {
   :root { --rail: 18px }
@@ -1244,3 +1224,49 @@ section.projects:has(> .pwrap:not(.flow)) > .sechead { display: none; }
 .bar .theme i { background: var(--pbg); box-shadow: 0 0 0 1px var(--pedge), 0 1px 3px rgba(0,0,0,.15); }
 :root:not([data-theme="light"]) .bar .theme i { background: rgba(255,255,255,.16); box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .bar .links .hov { transition: opacity .2s; } }
+
+/* ---------- the big type: the page's name and its sections' names, set huge ----------
+   One display size for "Adam Zhu" and "Projects", so the two read as one system. The letters
+   rise out of a slot on load (the name) or roll with the scroll (the sections). */
+:root { --mega: min(20.5vw, 296px); }
+.mega { margin: 0; font-size: var(--mega); font-weight: 500; letter-spacing: -.06em; line-height: .86; color: var(--ink); white-space: nowrap; }
+
+section.sec.hero { min-height: 100svh; justify-content: space-between; padding: 128px 0 32px; gap: 48px; }
+.hero .htop { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 64px; align-items: start; }
+.hero .hline { margin: 0; max-width: 24em; font-size: clamp(22px, 2.1vw, 30px); line-height: 1.3; letter-spacing: -.02em; color: var(--mute); text-wrap: pretty; }
+.hero .hline b { font-weight: 500; color: var(--ink); }
+.hero .hside { display: flex; flex-direction: column; gap: 28px; padding-top: 6px; }
+.hero .now { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; margin: 0; font-size: 14.5px; }
+.hero .now dt { color: var(--mute); }
+.hero .now dd { margin: 0; color: var(--ink2); }
+.hero ul { display: flex; flex-wrap: wrap; gap: 24px; margin: 0; padding: 0; list-style: none; }
+.hero ul a { font-size: 15px; color: var(--ink); text-decoration: none; position: relative; display: inline-block; padding: 4px 0 3px; }
+.hero ul a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .18s cubic-bezier(.4,0,.2,1); }
+.hero ul a:hover::after, .hero ul a:focus-visible::after { transform: scaleX(1); }
+.hero a:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 3px; }
+/* the name sits on the floor of the first screen; each letter rises out of the baseline in turn */
+.hero .mega { overflow: clip; padding-bottom: .06em; margin-left: -.05em; }
+.hero .mega span { display: inline-block; transition: transform 1.1s cubic-bezier(.16,1,.3,1) calc(var(--i) * 45ms); }
+.hero .mega.pre span { transform: translateY(105%); }
+.hero .htop .in { opacity: 0; transform: translateY(10px); transition: opacity .6s, transform .8s cubic-bezier(.16,1,.3,1); }
+.hero .htop.on .in, .hero .htop .in.on { opacity: 1; transform: none; }
+@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+  .hero .htop, .hero .mega { opacity: calc(1 - var(--leave, 0)); transform: translateY(calc(var(--leave, 0) * -32px)); }
+}
+@media (max-width: 980px) { .hero .htop { grid-template-columns: 1fr; gap: 32px; } }
+
+/* the Projects screen: the word alone, as big as the name, with the way on under it */
+.ptitle .ptbox { width: 100%; display: flex; flex-direction: column; gap: 22px; }
+.ptitle .mega { margin-left: -.05em; }
+.ptitle .mega .roll { padding-bottom: .1em; margin-bottom: -.1em; }
+
+/* ---------- the footer: the year of work, small ---------- */
+.sitefoot { display: flex; align-items: center; justify-content: flex-start; gap: 28px; margin-top: 96px; padding: 28px 0 40px; border-top: 1px solid var(--line); }
+.minwheel { flex: none; width: 200px; }
+.minwheel.wheel { max-width: none; margin: 0; }
+/* at this size the month names and the key would be specks; the spokes and the count carry it */
+.minwheel .mon, .minwheel .mtick, .minwheel .key { display: none; }
+.contact a:focus-visible, .tlpage a:focus-visible { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 3px; }
+.footmeta { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--mute); }
+.footmeta span:first-child { color: var(--ink2); }
+@media (max-width: 560px) { .sitefoot { flex-direction: column; align-items: flex-start; } .minwheel { width: 160px; } }

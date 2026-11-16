@@ -1,18 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { A, out } from "../lib/router";
 import { morphInto } from "../lib/morph";
 import { TrueLine } from "./TrueLine";
 import { Clarity } from "./Clarity";
 import { NistFigure } from "./ProjectStage";
 import { WORK, type Entry } from "../data/work";
-import { TitleArt, type ArtKind } from "./TitleArt";
-
-/* draft switch while they are compared: the three project scenes by default; ?art=walks, tree, galton, nn, likelihood, donut or contour show the others */
-const ART: ArtKind = (() => {
-  const a = typeof location === "undefined" ? null : new URLSearchParams(location.search).get("art");
-  const map: Record<string, ArtKind> = { walks: "walks", tree: "tree", galton: "galton", nn: "nn", likelihood: "descent", donut: "ascii", contour: "contour" };
-  return (a && map[a]) || "trio";
-})();
 
 const num = (i: number) => String(i + 1).padStart(2, "0");
 /* The stage holds N screens: the section's own title first, then one per project. In screen
@@ -106,12 +98,6 @@ export function ProjectRoll({ onActive }: { onActive: (e: Entry | null) => void 
 
   useEffect(() => { onActive(top < 1 ? null : WORK[top - 1]); setDetails(null); }, [top, onActive]);
 
-  /* while the title screen plays its three scenes, the track below fills the piece for the scene
-     playing, in that project's colour, with no names: the screens after it say what each was */
-  const cue = useCallback((i: number, p: number) => {
-    track.current?.querySelectorAll<HTMLElement>("li").forEach((li, k) => li.style.setProperty("--cue", k === i ? p.toFixed(3) : "0"));
-  }, []);
-  useEffect(() => { if (top !== 0) track.current?.querySelectorAll<HTMLElement>("li").forEach(li => li.style.setProperty("--cue", "0")); }, [top]);
   useEffect(() => () => onActive(null), [onActive]);
 
   /* No scroll lock: the page scrolls natively, with the trackpad's own momentum, and every
@@ -196,16 +182,11 @@ export function ProjectRoll({ onActive }: { onActive: (e: Entry | null) => void 
       <div className="pstage" ref={stage}>
         {!flow && (
           <section className="pslide ptitle" ref={el => { slides.current[0] = el; }} style={{ zIndex: 1 }} aria-label="Projects" inert={top > 0}>
-            <div className="pin">
-              <div className="pvtext">
-                <div className="pvsum">
-                  <p className="rlab" aria-hidden="true"><Roll text={`${WORK.length} projects`} /></p>
-                  <h2 aria-label="Projects"><Roll text="Projects" /></h2>
-                  <p className="rwhat pcue" aria-hidden="true"><span className="rline"><i />Scroll</span></p>
-                </div>
-              </div>
-              {/* something to look at while the title is read; it gives nothing away about the projects */}
-              <div className="tartwrap"><TitleArt kind={ART} on={top === 0} onScene={cue} /></div>
+            {/* the section's name, as big as the page's own name, rolling out letter by letter as TrueLine rolls in */}
+            <div className="ptbox">
+              <p className="rlab" aria-hidden="true"><Roll text={`${WORK.length} projects`} /></p>
+              <h2 className="mega" aria-label="Projects"><Roll text="Projects" /></h2>
+              <p className="rwhat pcue" aria-hidden="true"><span className="rline"><i />Scroll</span></p>
             </div>
           </section>
         )}
