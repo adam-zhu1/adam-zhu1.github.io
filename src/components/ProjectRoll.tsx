@@ -16,16 +16,12 @@ const ART: ArtKind = (() => {
 
 const num = (i: number) => String(i + 1).padStart(2, "0");
 /* The stage holds N screens: the section's own title first, then one per project. In screen
-   heights: how long a screen holds, and how long the change to the next takes. The scroll is
-   locked to whole screens, so a reader rests in the middle of a hold and HOLD is only slack. */
+   heights: how long a screen holds, and how long the change to the next takes. The hold is long
+   enough that a normal scroll lands on each project rather than sailing past it. */
 const N = WORK.length + 1;
-const HOLD = .2, MOVE = 1;
+const HOLD = .45, MOVE = 1;
 const SPAN = N * HOLD + (N - 1) * MOVE;
 const clamp = (v: number) => Math.min(Math.max(v, 0), 1);
-/* quick off the mark, soft landing: a move starts the moment you ask for it */
-const ease = (t: number) => 1 - (1 - t) ** 3.2;
-/* a page move starts at once (no slow wind-up after the swipe) and settles softly */
-const glide = (t: number) => 1 - (1 - t) ** 2.4;
 /* where screen s rests, in screen heights from the top of the stage */
 const rest = (s: number) => s * (HOLD + MOVE) + HOLD / 2;
 
@@ -118,144 +114,60 @@ export function ProjectRoll({ onActive }: { onActive: (e: Entry | null) => void 
   useEffect(() => { if (top !== 0) track.current?.querySelectorAll<HTMLElement>("li").forEach(li => li.style.setProperty("--cue", "0")); }, [top]);
   useEffect(() => () => onActive(null), [onActive]);
 
-  /* The scroll lock. Inside the stage a swipe, a wheel notch or a key moves exactly one screen,
-     gliding there over a fixed time so every change plays whole; the page cannot be flung past
-     a project. From the top of the page one move reaches the title; after the last project the
-     next move carries the page onto More work, and scrolling back up from there returns to it.
-     Inside More work and below, the page scrolls as normal. */
+  /* No scroll lock: the page scrolls natively, with the trackpad's own momentum, and every
+     change on the stage follows the scroll position. A light settle: once the scroll has fully
+     stopped (momentum included), a page left between two projects finishes the change in the
+     direction you were going (or, if you barely moved, drifts back), so no screen is left
+     half-rolled. Any new input cancels the settle at once; above and below the stage nothing settles. */
   useEffect(() => {
     const w = wrap.current;
-    if (!w || flow) return;
-    let anim = 0, busy = false;
-    const geo = () => {
-      const h = innerHeight, top = w.getBoundingClientRect().top + scrollY;
-      const unit = (w.offsetHeight - h) / SPAN;
-      const rests = Array.from({ length: N }, (_, s) => Math.round(top + rest(s) * unit));
-      const head = document.querySelector<HTMLElement>("#more .sechead");
-      const max = document.documentElement.scrollHeight - h;
-      const exit = Math.min(head ? Math.round(head.getBoundingClientRect().top + scrollY - 136) : rests[N - 1] + h, max);
-      return { h, rests, exit };
-    };
-    /* where one move in `dir` goes from here, or null to let the page scroll by itself */
-    const target = (dir: 1 | -1) => {
-      const { rests, exit } = geo(), y = scrollY;
-      /* the top of the page counts as the first screen: from it one move reaches the title */
-      const stops = [0, ...rests, exit];
-      if (y > exit + 4) return null;
-      if (dir > 0) return y >= exit - 4 ? null : stops.find(r => r > y + 4) ?? null;
-      return y <= 4 ? null : [...stops].reverse().find(r => r < y - 4) ?? null;
-    };
-    /* a move queued by a fresh gesture that arrived while the last move was still gliding */
-    let queued: 1 | -1 | 0 = 0;
-    const go = (to: number) => {
-      const from = scrollY, dist = Math.abs(to - from);
-      /* a move that carries the whole page (onto the stage from the top, or off it to More work)
-         runs a little longer and settles more softly; a move between projects, where the screen
-         holds still, is quicker. Both start the moment the swipe lands */
-      const { rests } = geo();
-      const page = Math.min(from, to) < rests[0] - 4 || Math.max(from, to) > rests[N - 1] + 4;
-      const dur = page ? 680 : Math.min(Math.max(320 + (dist / innerHeight) * 240, 420), 600);
-      const curve = page ? glide : ease;
-      const t0 = performance.now();
-      busy = true;
-      cancelAnimationFrame(anim);
+    if (!w || flow || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let idle = 0, anim = 0, down = false, lastY = scrollY, dir = 1;
+    const stop = () => { cancelAnimationFrame(anim); anim = 0; };
+    const settle = () => {
+      if (down) return;
+      const h = innerHeight, top = w.getBoundingClientRect().top + scrollY, y = scrollY;
+      const rests = Array.from({ length: N }, (_, s) => top + rest(s) * h);
+      if (y > rests[N - 1] + 2) return;
+      let to: number;
+      if (y < rests[0]) {
+        /* between the hero and the title: only a stop already close to the title settles */
+        if (rests[0] - y > h * .2) return;
+        to = rests[0];
+      } else {
+        const i = rests.findIndex(r => r > y);
+        const a = rests[i - 1], b = rests[i];
+        if (b == null) return;
+        const p = (y - a) / (b - a);
+        to = dir > 0 ? (p > .18 ? b : a) : (p < .82 ? a : b);
+      }
+      const d = to - y;
+      if (Math.abs(d) < 2) return;
+      const t0 = performance.now(), dur = Math.min(260 + Math.abs(d) * .45, 650);
       const tick = (t: number) => {
         const k = Math.min((t - t0) / dur, 1);
-        scrollTo({ top: from + (to - from) * curve(k), behavior: "instant" });
-        if (k < 1) { anim = requestAnimationFrame(tick); return; }
-        busy = false;
-        const q = queued; queued = 0;
-        const next = q ? target(q) : null;
-        if (next != null) go(next);
+        scrollTo({ top: y + d * (1 - (1 - k) ** 3), behavior: "instant" });
+        anim = k < 1 ? requestAnimationFrame(tick) : 0;
       };
       anim = requestAnimationFrame(tick);
     };
-    /* a panel inside the stage that can still scroll that way (Details, a demo's log) keeps the wheel */
-    const scrollsInside = (el: EventTarget | null, dir: number) => {
-      for (let n = el as HTMLElement | null; n && n !== w; n = n.parentElement) {
-        const o = getComputedStyle(n).overflowY;
-        if ((o === "auto" || o === "scroll") && n.scrollHeight > n.clientHeight + 1)
-          return dir > 0 ? n.scrollTop + n.clientHeight < n.scrollHeight - 1 : n.scrollTop > 0;
-      }
-      return false;
+    const onScroll = () => {
+      if (anim) return;
+      const y = scrollY; if (y !== lastY) dir = y > lastY ? 1 : -1; lastY = y;
+      clearTimeout(idle); idle = window.setTimeout(settle, 180);
     };
-
-    /* Telling one gesture from the next. A trackpad keeps sending a long, fading tail of
-       momentum after the fingers lift; that tail belongs to the swipe that already moved the
-       stage and must not move it again. A new gesture is a pause, a change of direction, or,
-       once the glide is over, deltas that climb again out of a fading tail. */
-    let lastT = 0, lastSign = 0, used = false;
-    const hist: number[] = [];
-    const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(a.length, 1);
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
-      const d = e.deltaY, abs = Math.abs(d), dir = d > 0 ? 1 : -1, now = performance.now();
-      const gap = now - lastT;
-      hist.push(abs); if (hist.length > 8) hist.shift();
-      const rising = !busy && hist.length >= 6 && abs > 6 && mean(hist.slice(-2)) > mean(hist.slice(0, -2)) * 1.6 + 2;
-      const fresh = gap > 110 || dir !== lastSign || rising;
-      if (gap > 110 || dir !== lastSign) hist.length = 0, hist.push(abs);
-      lastT = now; lastSign = dir;
-      if (fresh) used = false;
-      if (scrollsInside(e.target, dir)) return;
-      if (busy) {
-        e.preventDefault();
-        if (fresh && !used) { queued = dir; used = true; }
-        return;
-      }
-      const to = target(dir);
-      if (to == null) {
-        /* the coasting tail of a swipe that just landed on More work (or on the title) stops there */
-        if (used) e.preventDefault();
-        return;
-      }
-      e.preventDefault();
-      /* the first event of a gesture inside the stage moves it, even one already under way when it arrived */
-      if (!used && abs >= 1) { used = true; go(to); }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
-      const t = e.target as HTMLElement;
-      if (t.closest("input, textarea, select, [contenteditable]")) return;
-      const k = e.key;
-      const dir = k === "ArrowDown" || k === "PageDown" || (k === " " && !e.shiftKey) ? 1
-        : k === "ArrowUp" || k === "PageUp" || (k === " " && e.shiftKey) ? -1 : 0;
-      if (!dir || (k === " " && t.closest("button, a"))) return;
-      if (scrollsInside(t, dir)) return;
-      if (busy) { e.preventDefault(); return; }
-      const to = target(dir as 1 | -1);
-      if (to == null) return;
-      e.preventDefault();
-      go(to);
-    };
-    /* a wide touch screen: a swipe is one move, decided when the finger lifts */
-    let y0 = 0, moveTo: number | null = null;
-    const onTouchStart = (e: TouchEvent) => { y0 = e.touches[0].clientY; moveTo = null; };
-    const onTouchMove = (e: TouchEvent) => {
-      const dy = y0 - e.touches[0].clientY;
-      if (Math.abs(dy) < 6) return;
-      const dir = dy > 0 ? 1 : -1;
-      if (scrollsInside(e.target, dir)) return;
-      if (busy) { e.preventDefault(); return; }
-      const to = target(dir);
-      if (to == null) return;
-      e.preventDefault();
-      moveTo = Math.abs(dy) > 36 ? to : null;
-    };
-    const onTouchEnd = () => { if (moveTo != null && !busy) go(moveTo); moveTo = null; };
-
-    addEventListener("wheel", onWheel, { passive: false });
-    addEventListener("keydown", onKey);
-    addEventListener("touchstart", onTouchStart, { passive: true });
-    addEventListener("touchmove", onTouchMove, { passive: false });
-    addEventListener("touchend", onTouchEnd);
+    const onInput = () => { stop(); clearTimeout(idle); };
+    const onDown = () => { down = true; onInput(); };
+    const onUp = () => { down = false; onScroll(); };
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("wheel", onInput, { passive: true });
+    addEventListener("keydown", onInput);
+    addEventListener("touchstart", onDown, { passive: true });
+    addEventListener("touchend", onUp);
     return () => {
-      cancelAnimationFrame(anim);
-      removeEventListener("wheel", onWheel);
-      removeEventListener("keydown", onKey);
-      removeEventListener("touchstart", onTouchStart);
-      removeEventListener("touchmove", onTouchMove);
-      removeEventListener("touchend", onTouchEnd);
+      stop(); clearTimeout(idle);
+      removeEventListener("scroll", onScroll); removeEventListener("wheel", onInput); removeEventListener("keydown", onInput);
+      removeEventListener("touchstart", onDown); removeEventListener("touchend", onUp);
     };
   }, [flow]);
 
