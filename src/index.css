@@ -1215,3 +1215,32 @@ section.projects:has(> .pwrap:not(.flow)) > .sechead { display: none; }
   :root[data-theme="light"] :is(.appwin, .wipe, .tip, .stills, .plate),
   :root[data-theme="light"] .plate [style*="--accent"] { --acc: var(--accent); --cc: var(--c); }
 }
+
+/* ---- the pill, plain: a near-solid surface that frosts only lightly, a hairline edge, a soft
+   two-step shadow. One filled button (Resume) is the only weight in it; the links are bare text
+   with a single highlight that slides between them. ---- */
+.bar .pill { --pbg: rgba(255,255,255,.78); --pedge: rgba(15,15,18,.07); --phov: rgba(15,15,18,.05);
+  --pshadow: 0 1px 1px rgba(0,0,0,.04), 0 10px 30px -12px rgba(0,0,0,.18); height: 50px; }
+:root:not([data-theme="light"]) .bar .pill { --pbg: rgba(18,18,21,.74); --pedge: rgba(255,255,255,.08); --phov: rgba(255,255,255,.07);
+  --pshadow: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 1px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.7); }
+.bar.lifted .pill, :root[data-theme="light"] .bar.lifted .pill { background: var(--pbg);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+  box-shadow: 0 0 0 1px var(--pedge), var(--pshadow); }
+@media (prefers-reduced-transparency: reduce) {
+  .bar.lifted .pill { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+.bar .links { position: relative; }
+.bar .links .hov { position: absolute; left: 0; top: 50%; height: 34px; margin-top: -17px; border-radius: 999px; background: var(--phov);
+  opacity: 0; pointer-events: none; z-index: 0;
+  transition: transform .32s cubic-bezier(.22,1,.36,1), width .32s cubic-bezier(.22,1,.36,1), opacity .2s; }
+.bar .links a { position: relative; z-index: 1; color: var(--ink2); }
+.bar .links a:not(.cv):hover { background: none; color: var(--ink); }
+.bar .links .cv { background: var(--ink); color: var(--bg); border: 0; box-shadow: none; padding: 8px 15px; font-weight: 500;
+  transition: transform .2s cubic-bezier(.22,1,.36,1), opacity .2s; }
+.bar .links .cv i { color: inherit; opacity: .7; }
+.bar .links .cv:hover { background: var(--ink); opacity: .88; }
+.bar .links .cv:active { transform: scale(.97); }
+.bar .theme { border: 0; background: var(--phov); box-shadow: none; }
+.bar .theme i { background: var(--pbg); box-shadow: 0 0 0 1px var(--pedge), 0 1px 3px rgba(0,0,0,.15); }
+:root:not([data-theme="light"]) .bar .theme i { background: rgba(255,255,255,.16); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .bar .links .hov { transition: opacity .2s; } }

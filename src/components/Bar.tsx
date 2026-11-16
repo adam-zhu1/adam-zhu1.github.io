@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { A, out } from "../lib/router";
-import { useLiquidGlass } from "../lib/glass";
 import { setTheme, useTheme } from "../lib/theme";
 import type { Section } from "./Index";
 
@@ -41,18 +40,32 @@ function ThemeSwitch() {
 
 /**
  * The top bar, the same object on every route. At the top of a page it lies flat: the mark
- * and the links. Once you scroll it gathers into a pill of glass that bends the page passing
- * under it. It only carries the way out (the links, the resume) and the light switch; where
+ * and the links. Once you scroll it gathers into a plain pill: a near-solid surface, a hairline
+ * edge and a soft shadow, nothing refracted. It only carries the way out (the links, the resume) and the light switch; where
  * you are inside the projects is the wheel's to show, not the bar's.
  */
 export function Bar({ home = true }: { home?: boolean; sections?: Section[]; cur?: string }) {
   const pill = useRef<HTMLDivElement>(null);
   const lifted = useLifted();
-  useLiquidGlass(pill, { scale: 30, bezel: 18, on: lifted });
+  const links = useRef<HTMLElement>(null);
+  const hov = useRef<HTMLSpanElement>(null);
+  /* one soft highlight that slides from link to link under the pointer, instead of each lighting up on its own */
+  const over = (e: React.PointerEvent) => {
+    const a = (e.target as HTMLElement).closest<HTMLElement>(".links > a:not(.cv)");
+    const h = hov.current, box = links.current;
+    if (!h || !box) return;
+    if (!a) { h.style.opacity = "0"; return; }
+    const was = h.style.opacity === "1";
+    h.style.transition = was ? "" : "none";
+    h.style.transform = `translateX(${a.offsetLeft}px)`;
+    h.style.width = `${a.offsetWidth}px`;
+    if (!was) { void h.offsetWidth; h.style.transition = ""; }
+    h.style.opacity = "1";
+  };
 
   return (
     <header className={`bar${lifted ? " lifted" : ""}`}>
-      <div className="pill glass" ref={pill}>
+      <div className="pill" ref={pill}>
         <A className="mark" href={home ? "#adam" : "/#projects"}
            aria-label={home ? "Adam Zhu, back to the top" : "Adam Zhu, back to the projects"}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -66,7 +79,8 @@ export function Bar({ home = true }: { home?: boolean; sections?: Section[]; cur
           <span>Adam Zhu</span>
         </A>
 
-        <nav className="links" aria-label="Site">
+        <nav className="links" aria-label="Site" ref={links} onPointerOver={over} onPointerLeave={() => { if (hov.current) hov.current.style.opacity = "0"; }}>
+          <span className="hov" ref={hov} aria-hidden="true" />
           {home ? <>
             <a href="#projects">Projects</a>
             <a href="#contact">Contact</a>
