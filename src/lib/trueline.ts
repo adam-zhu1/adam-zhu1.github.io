@@ -76,9 +76,9 @@ export function createTrueLine(els: Els) {
   let lastSaid = "";
   const NUMS = ["Speed", "Board at Arrows", "Entry Board", "Entry Angle", "Breakpoint", "Hook"];
   const M0 = n => TRACK.metrics.find(m => m.n === n);
-  nums.replaceChildren(...NUMS.map(n => { const d = document.createElement("div"); d.className = "num"; const m = M0(n); d.innerHTML = `<small>${m.n}</small><b class="${n === "Entry Angle" ? "mint" : ""}">–</b><i${m.u === "deg" ? ' class="deg"' : ""}>${m.u === "deg" ? "°" : m.u}</i>`; return d; }));
+  nums.replaceChildren(...NUMS.map(n => { const d = document.createElement("div"); d.className = "num"; const m = M0(n); d.innerHTML = `<small>${m.n}</small><b class="${n === "Entry Angle" ? "mint" : ""}">${m.v.toFixed(1)}</b><i${m.u === "deg" ? ' class="deg"' : ""}>${m.u === "deg" ? "°" : m.u}</i>`; return d; }));
   function numsShow(k) { [...nums.children].forEach((d, i) => { const o = clamp(k * 6 - i * .9, 0, 1); if (o <= 0) return; d.classList.add("on"); d.querySelector("b").textContent = (M0(NUMS[i]).v * eOut(o)).toFixed(1); }); }
-  function numsReset() { [...nums.children].forEach(d => { d.classList.remove("on"); d.querySelector("b").textContent = "–"; }); }
+  function numsReset() { [...nums.children].forEach((d, i) => { d.classList.remove("on"); d.querySelector("b").textContent = M0(NUMS[i]).v.toFixed(1); }); }
   const T = { play: .6, hold: .6 + CLIP_END, cal: .6 + CLIP_END + 2.9, mv: .6 + CLIP_END + 4.3, plan: .6 + CLIP_END + 6.1, met: .6 + CLIP_END + 6.9, end: .6 + CLIP_END + 11.2 };
   /* calibrating, in three beats after the clip: the landmarks are found, the lane is fitted
      to them, and a sweep down the lane lays the arrows and pins in once the fit holds */

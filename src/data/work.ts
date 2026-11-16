@@ -11,7 +11,7 @@ export type Entry = {
   id: string; name: string; when: string;
   kind: string; accent: string; demo: "trueline" | "clarity" | "nist";
   body: string; meta?: string; result?: string;
-  line: string; what: string; fig: string; facts: [string, string][]; steps: [string, string][];
+  line: string; what: string; big: [string, string]; fig: string; facts: [string, string][]; steps: [string, string][];
   links?: { href: string; label: string; page?: boolean }[];
 };
 
@@ -25,6 +25,7 @@ export const WORK: Entry[] = [
       { href: "/trueline/", label: "How it works", page: true },
     ],
     line: "6 of 6 unseen clips tracked down the full lane",
+    big: ["6 of 6", "unseen clips tracked down the full lane"],
     what: "An iPhone app that tracks a bowling ball down the lane from one video.",
     fig: "One throw, tracked frame by frame and played through the stages of the pipeline.",
     facts: [
@@ -46,6 +47,7 @@ export const WORK: Entry[] = [
     result: "Built in two days at HackCMU, team of four. I built the Mac app.",
     links: [{ href: CLARITY_SITE, label: "Clarity’s site" }],
     line: "Built in two days at HackCMU, team of four",
+    big: ["2 days", "to build it at HackCMU, team of four"],
     what: "A Mac app that explains any problem on your screen.",
     fig: "One capture, from the hotkey to the video, rebuilt from the app’s own windows.",
     facts: [
@@ -61,6 +63,7 @@ export const WORK: Entry[] = [
     meta: "Python, pandas, scikit-learn · Gaithersburg, MD · No public code",
     result: "A random forest using only behavioral signals reached F1 = 0.94. An isolation forest surfaced a disguised scraper, and the cleaning rules built from it raised the measured automated share from 21.7% to 41.9%.",
     line: "Random forest F1 = 0.94 on behavioral signals only",
+    big: ["0.94", "random forest F1 on behavioral signals only"],
     what: "Telling automated traffic from people in the logs of NIST’s public data portal.",
     fig: "Share of portal requests classified as automated, at each stage of the cleaning.",
     facts: [

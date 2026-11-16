@@ -1,6 +1,5 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { out } from "../lib/router";
-import { useEachReveal } from "../lib/useReveal";
 
 type Item = {
   year: string; when: string; name: string; role: string; org?: string;
@@ -33,68 +32,60 @@ const MORE: Item[] = [
     tags: "Forensic statistics" },
 ];
 
-function Detail({ it }: { it: Item }) {
-  return (
-    <>
-      <p className="mwk">{it.role}{it.org && <> · {it.org}</>} · {it.when}</p>
-      <h3>{it.name}</h3>
-      {it.stats && (
-        <dl className="mws">
-          {it.stats.map(([v, l]) => <div key={l}><dt>{l}</dt><dd>{v}</dd></div>)}
-        </dl>
-      )}
-      <p className="mwb">{it.body}</p>
-      <p className="mwt">{it.tags}</p>
-      {it.href && <a className="store" {...out} href={it.href}>{it.cta}<i aria-hidden="true">&#8599;</i></a>}
-    </>
-  );
-}
-
 /**
- * The rest of the work as a dated index: a row each, newest first, the year shown once per
- * year. On a wide screen the row you point at (or tab to) opens in the panel beside the list,
- * and with nothing pointed at the panel says how it works; on a touch screen a tapped row
- * opens under its name and a second tap closes it.
+ * The rest of the work as a dated list, newest first: year, name, role. One soft highlight
+ * follows the pointer down the rows (the same one the nav uses), and a row opens in place
+ * to show what I did, the numbers behind it, and a link where there is one.
  */
 export function MoreWork() {
-  const [cur, setCur] = useState<number | null>(null);
-  const list = useEachReveal<HTMLOListElement>({ selector: ":scope > li" });
-  const touch = () => !matchMedia("(hover: hover)").matches;
-  const it = cur == null ? null : MORE[cur];
-  /* a row takes the panel only once the pointer rests on it, so crossing the other rows on
-     the way over to the panel's link does not swap the panel out from under you */
-  const wait = useRef(0);
-  const point = (i: number | null) => { clearTimeout(wait.current); wait.current = window.setTimeout(() => setCur(i), cur == null ? 0 : 140); };
+  const [open, setOpen] = useState<number | null>(null);
+  const list = useRef<HTMLOListElement>(null);
+  const hov = useRef<HTMLSpanElement>(null);
+  const over = (e: React.PointerEvent) => {
+    const row = (e.target as HTMLElement).closest<HTMLElement>(".mwrow");
+    const h = hov.current, box = list.current;
+    if (!h || !box) return;
+    if (!row) { h.style.opacity = "0"; return; }
+    const was = h.style.opacity === "1";
+    h.style.transition = was ? "" : "none";
+    h.style.transform = `translateY(${row.offsetTop}px)`;
+    h.style.height = `${row.offsetHeight}px`;
+    if (!was) { void h.offsetWidth; h.style.transition = ""; }
+    h.style.opacity = "1";
+  };
   return (
-    <div className="mw" onMouseLeave={() => { if (!touch()) point(null); }}
-         onBlur={e => { if (!touch() && !(e.relatedTarget as Element | null)?.closest?.(".mw")) setCur(null); }}>
-      <div>
-        <p className="mwtap">Tap a row to open it.</p>
-        <ol className="mwl" ref={list}>
-          {MORE.map((m, i) => (
-            <li key={m.name} data-cur={cur === i || undefined} style={{ "--i": i } as CSSProperties}>
-              <button type="button" className="mwr" aria-expanded={cur === i} aria-controls="mw-panel"
-                      onMouseEnter={() => { if (!touch()) point(i); }} onFocus={() => setCur(i)}
-                      onClick={() => setCur(c => touch() && c === i ? null : i)}>
-                <span className="y">{MORE[i - 1]?.year === m.year ? "" : m.year}</span>
-                <span className="n">{m.name}</span>
-                <span className="r">{m.role}</span>
-              </button>
-              <div className="mwd"><div><Detail it={m} /></div></div>
-            </li>
-          ))}
-        </ol>
-      </div>
-      <aside className="mwp" id="mw-panel" aria-live="polite" onMouseEnter={() => clearTimeout(wait.current)}>
-        {it ? <div className="win mwwin" key={cur}><Detail it={it} /></div> : (
-          <div className="win mwwin idle" key="idle">
-            <p className="mwk">{MORE.length} entries · {MORE.at(-1)!.year} to {MORE[0].year}</p>
-            <h3>Hover over a row to open it here</h3>
-            <p className="mwb">Each one shows what I did, the numbers behind it, and a link where there is one.</p>
-            <span className="mwpoint" aria-hidden="true">&#8592;</span>
-          </div>
-        )}
-      </aside>
-    </div>
+    <ol className="mwlist" ref={list} onPointerOver={over} onPointerLeave={() => { if (hov.current) hov.current.style.opacity = "0"; }}>
+      <span className="mwhov" ref={hov} aria-hidden="true" />
+      {MORE.map((m, i) => {
+        const on = open === i;
+        return (
+          <li key={m.name} className={on ? "open" : ""} style={{ "--i": i } as CSSProperties}>
+            <button type="button" className="mwrow" aria-expanded={on} aria-controls={`mw-${i}`} onClick={() => setOpen(on ? null : i)}>
+              <span className="y">{MORE[i - 1]?.year === m.year ? "" : m.year}</span>
+              <span className="n">{m.name}</span>
+              <span className="r">{m.role}{m.org && <> · {m.org}</>}</span>
+              <i aria-hidden="true">&#8595;</i>
+            </button>
+            <div className="mwx" id={`mw-${i}`} inert={!on}>
+              <div>
+                <div className="mwin">
+                  <p className="mwk">{m.when}</p>
+                  <p className="mwb">{m.body}</p>
+                  {m.stats && (
+                    <dl className="mws">
+                      {m.stats.map(([v, l]) => <div key={l}><dd>{v}</dd><dt>{l}</dt></div>)}
+                    </dl>
+                  )}
+                  <div className="mwfoot">
+                    <span className="mwt">{m.tags}</span>
+                    {m.href && <a {...out} href={m.href}>{m.cta}<i aria-hidden="true">&#8599;</i></a>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

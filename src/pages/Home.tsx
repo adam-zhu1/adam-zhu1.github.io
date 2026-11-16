@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import commits from "../data/commits.json";
 import { YearWheel, type WheelHandle } from "../components/YearWheel";
-import { ProjectRoll } from "../components/ProjectRoll";
+import { ProjectStack } from "../components/ProjectStack";
 import { MoreWork } from "../components/MoreWork";
 import type { Entry } from "../data/work";
 import { Bar } from "../components/Bar";
@@ -9,8 +9,6 @@ import { useCurrentSection, type Section } from "../components/Index";
 import { useReveal, prefersReducedMotion } from "../lib/useReveal";
 import { out } from "../lib/router";
 
-/* What the page watches to know where you are. Which entry of the work is open is the
-   wheel's to say. */
 const SECTIONS: Section[] = [
   { id: "adam", label: "Adam Zhu" },
   { id: "projects", label: "Projects" },
@@ -18,52 +16,78 @@ const SECTIONS: Section[] = [
   { id: "contact", label: "Contact" },
 ];
 
-/* The site itself is monochrome. Colour belongs to the projects: each one names its accent
-   here, the section paints itself in it, and the chrome that is always on screen (the index
-   chip, the mark's today dot, focus rings) takes the accent of the project you are on. Mint is
-   TrueLine's own, the colour its overlay draws the pocket in; lens teal is Clarity's, the
-   secondary from its identity standard, picked over its mint so the two read apart; NIST
-   takes a quiet indigo. The colours themselves live with the projects in ProjectStage. */
+/* The site itself is monochrome. Colour belongs to the projects: the one in view lends its
+   accent to the chrome that is always on screen (the mark's today dot, focus rings). */
 const SITE_ACCENT = "#f4f4f2";
 
+const LINKS = [
+  { href: "https://github.com/adam-zhu1", label: "GitHub", ext: true },
+  { href: "https://www.linkedin.com/in/adam-zhu-cmu/", label: "LinkedIn", ext: true },
+  { href: "mailto:adamzhu@andrew.cmu.edu", label: "Email", ext: false },
+  { href: "/Adam-Zhu-Resume.pdf", label: "Resume", ext: true },
+];
 
-/* "Last commit 2 days ago", from the same history the wheel draws */
-const lastCommit = (() => {
-  const t = Math.max(...(commits as { t: string }[]).map(c => Date.parse(c.t + ":00Z")).filter(n => !isNaN(n)));
-  if (!isFinite(t)) return "";
-  const d = Math.floor((Date.now() - t) / 86_400_000);
-  return `Last commit ${d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`}`;
-})();
+/* The latest commit: the history the build fetched, then GitHub's public events once the
+   page is open, whichever is newer. Repo names only, never messages. */
+type Push = { t: number; r: string };
+const LOCAL: Push = (commits as { r: string; t: string }[])
+  .map(c => ({ t: Date.parse(c.t + ":00Z"), r: c.r }))
+  .filter(c => !isNaN(c.t))
+  .reduce<Push>((a, c) => c.t > a.t ? c : a, { t: 0, r: "" });
+
+function useLastPush() {
+  const [p, setP] = useState<Push>(LOCAL);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const ac = new AbortController();
+    fetch("https://api.github.com/users/adam-zhu1/events/public?per_page=30", { signal: ac.signal })
+      .then(r => r.ok ? r.json() : [])
+      .then((ev: { type: string; created_at: string; repo: { name: string } }[]) => {
+        const push = ev.find(e => e.type === "PushEvent");
+        if (!push) return;
+        const t = Date.parse(push.created_at);
+        setP(cur => t > cur.t ? { t, r: push.repo.name.split("/")[1] ?? push.repo.name } : cur);
+      })
+      .catch(() => {});
+    const id = setInterval(() => tick(n => n + 1), 60_000);
+    return () => { ac.abort(); clearInterval(id); };
+  }, []);
+  return p;
+}
+
+const ago = (t: number) => {
+  const m = Math.max(0, Math.round((Date.now() - t) / 60_000));
+  if (m < 60) return m <= 1 ? "just now" : `${m} minutes ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return h === 1 ? "an hour ago" : `${h} hours ago`;
+  const d = Math.round(h / 24);
+  return d === 1 ? "yesterday" : `${d} days ago`;
+};
 
 export default function Home() {
   const cur = useCurrentSection(SECTIONS);
   const wheel = useRef<WheelHandle | null>(null);
-  /* Content first. The name rises and the lines under it follow straight away, while the
-     wheel assembles beside them; nothing on the page waits for the wheel to finish. */
   const reduce = prefersReducedMotion();
   const [step, setStep] = useState(reduce ? 3 : 0);
   const [wheelReady, setWheelReady] = useState(false);
+  const push = useLastPush();
 
-  const sideRef = useRef<HTMLDivElement>(null);
-  const headProjects = useReveal<HTMLDivElement>({ threshold: 0.9 });
+  const topRef = useRef<HTMLDivElement>(null);
   const [entry, setEntry] = useState<Entry | null>(null);
   const headMore = useReveal<HTMLDivElement>({ threshold: 0.4 });
   const contactRef = useReveal<HTMLDivElement>({ threshold: 0.35 });
 
   const onWheelReady = useCallback((h: WheelHandle) => { wheel.current = h; setWheelReady(true); }, []);
 
+  /* the name rises letter by letter out of its baseline, and the strip above it settles in */
   useEffect(() => {
     if (reduce) return;
     const ts = [
-      setTimeout(() => setStep(2), 60),                                     // the name rises out of its baseline
-      setTimeout(() => {                                                    // the lines under it follow
+      setTimeout(() => setStep(2), 60),
+      setTimeout(() => {
         setStep(3);
-        const e = sideRef.current;
-        if (e) {
-          e.classList.add("on");
-          e.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${i * 70}ms`; b.classList.add("on"); });
-        }
-      }, 220),
+        topRef.current?.querySelectorAll<HTMLElement>(".in").forEach((b, i) => { b.style.transitionDelay = `${i * 70}ms`; b.classList.add("on"); });
+      }, 380),
     ];
     return () => ts.forEach(clearTimeout);
   }, [reduce]);
@@ -82,77 +106,62 @@ export default function Home() {
     document.documentElement.style.setProperty("--accent", entry ? entry.accent : SITE_ACCENT);
   }, [entry]);
 
-  /* leaving the top: its contents fade and lift away over the first part of the scroll, so the
-     move onto the projects reads as one scene giving way to the next rather than a slide */
-  useEffect(() => {
-    const hero = document.getElementById("adam");
-    if (!hero) return;
-    let raf = 0;
-    const read = () => { raf = 0; hero.style.setProperty("--leave", Math.min(Math.max(scrollY / (innerHeight * .6), 0), 1).toFixed(3)); };
-    const on = () => { if (!raf) raf = requestAnimationFrame(read); };
-    read();
-    addEventListener("scroll", on, { passive: true });
-    return () => { removeEventListener("scroll", on); cancelAnimationFrame(raf); };
-  }, []);
+  const fresh = push.t > 0 && Date.now() - push.t < 86_400_000;
 
   return (
     <>
       <Bar sections={SECTIONS} cur={cur} />
+      <div className="topfade" aria-hidden="true" />
 
       <main className="site">
         <div className="wrap">
           <section className="sec hero" id="adam">
-            {/* one sentence, bright then grey, and the facts beside it; the name itself is the picture */}
-            <div className={`htop${reduce ? " on" : ""}`} ref={sideRef}>
-              <p className="hline in"><b>Statistics and machine learning at Carnegie Mellon.</b> Looking for Summer 2027 internships in software, ML, data science, or quant.</p>
-              <div className="hside in">
-                <dl className="now">
-                  <dt>Now</dt><dd>ScottyLabs AI, on Bark, CMU&rsquo;s campus AI assistant</dd>
-                  <dt>Previously</dt><dd>Research intern at NIST, CSAFE, and VRAC</dd>
-                </dl>
-                <ul>
-                  <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
-                  <li><a {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
-                  <li><a href="mailto:adamzhu@andrew.cmu.edu">Email</a></li>
-                  <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
-                </ul>
+            {/* the facts in a strip, small, the way a spec sheet opens */}
+            <div className={`hstrip${reduce ? " on" : ""}`} ref={topRef}>
+              <div className="in"><span className="k">Now</span><span>ScottyLabs AI, on Bark, CMU&rsquo;s campus AI assistant</span></div>
+              <div className="in"><span className="k">Previously</span><span>Research intern at NIST, CSAFE, and VRAC</span></div>
+              <div className="in act">
+                <span className="k">Activity</span>
+                {push.t > 0
+                  ? <span><i className={`dot${fresh ? " live" : ""}`} aria-hidden="true" />Last commit {ago(push.t)}{push.r && <>, in <a {...out} href={`https://github.com/adam-zhu1/${push.r}`}>{push.r}</a></>}</span>
+                  : <span>On <a {...out} href="https://github.com/adam-zhu1">GitHub</a></span>}
+              </div>
+              <div className="in"><span className="k">Links</span>
+                <span className="hl">{LINKS.map(l => <a key={l.label} href={l.href} {...(l.ext ? out : {})}>{l.label}</a>)}</span>
               </div>
             </div>
             <h1 className={`mega${step < 2 ? " pre" : ""}`} aria-label="Adam Zhu">
-              {[..."Adam Zhu"].map((c, i) => <span key={i} aria-hidden="true" style={{ "--i": i } as CSSProperties}>{c === " " ? "\u00a0" : c}</span>)}
+              {[..."Adam Zhu"].map((c, i) => <span key={i} aria-hidden="true" style={{ "--i": i } as CSSProperties}>{c === " " ? " " : c}</span>)}
             </h1>
+            <p className={`hline${step >= 3 ? " on" : ""}`}><b>Statistics and machine learning at Carnegie Mellon.</b> Looking for Summer 2027 internships in software, ML, data science, or quant.</p>
           </section>
 
           <section className="sec projects" id="projects">
-            <div className="sechead intro in" ref={headProjects}>
-              <h2>Projects</h2>
-            </div>
-            <ProjectRoll onActive={setEntry} />
+            <ProjectStack onActive={setEntry} />
           </section>
 
           <section className="sec" id="more">
-            <div className="sechead intro in" ref={headMore}>
-              <h2>More work</h2>
-              <p>Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
+            <div className="sh" ref={headMore}>
+              <h2 className="h2big in">More work</h2>
+              <p className="in">Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
             </div>
             <MoreWork />
           </section>
 
           <section className="sec contact" id="contact" ref={contactRef}>
-            <div>
-              <h2 className="in">Contact</h2>
-              <a className="mailto in" href="mailto:adamzhu@andrew.cmu.edu">adamzhu@andrew.cmu.edu</a>
-              <ul className="links in">
-                <li><a {...out} href="https://github.com/adam-zhu1">GitHub</a></li>
-                <li><a {...out} href="https://www.linkedin.com/in/adam-zhu-cmu/">LinkedIn</a></li>
-                <li><a {...out} href="/Adam-Zhu-Resume.pdf">Resume</a></li>
-              </ul>
+            <div className="sh">
+              <h2 className="h2big in">Contact</h2>
+              <p className="in">The fastest way to reach me is email.</p>
             </div>
+            <a className="mailto in" href="mailto:adamzhu@andrew.cmu.edu">adamzhu@andrew.cmu.edu</a>
+            <ul className="links in">
+              {LINKS.filter(l => l.label !== "Email").map(l => <li key={l.label}><a {...out} href={l.href}>{l.label}</a></li>)}
+            </ul>
             {/* the year of work, small: every commit as a spoke, today at the top */}
-            <footer className="in sitefoot">
+            <footer className="sitefoot">
               <div className="minwheel wheel" ref={footWheel}><YearWheel onReady={onWheelReady} intro={!reduce} /></div>
               <div className="footmeta">
-                <span>{lastCommit}</span>
+                <span>Every commit from the last year, one spoke per day.</span>
                 <span>Adam Zhu, Pittsburgh</span>
               </div>
             </footer>
