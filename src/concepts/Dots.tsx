@@ -6,14 +6,14 @@ import { useEffect, useRef } from "react";
  * to 100 (the readout is the real running mean and spread of the draws). Scatter: the cloud
  * loosens. Form: the dots pull together into a turning 3D object, and the page lands on it.
  * After that the object keeps turning, leans toward the pointer, and every few seconds
- * re-forms into another shape. It belongs to no project: a sphere, a knot, a twisted band.
+ * re-forms into another shape. It belongs to no project: a knot and a twisted band.
  * Each dot has its own place on the object and flies there in turn, so the object is built
  * dot by dot rather than faded in.
  */
 
 const N = 1900, BIG = 56;
 const T_BOOT = 1900, FLY = 800, T_SCAT = 600, SPREAD = 1100, D_FLY = 800, HOLD = 9000, MORPH = 1100;
-const NAMES = ["sphere", "knot", "band"];
+const NAMES = ["knot", "band"];
 
 type Dot = { x: number; y: number; s: number; al: number; t0: number; fd: number; md: number; ox: number; oy: number; lx: number; ly: number };
 
@@ -24,19 +24,16 @@ const out = (t: number) => 1 - Math.pow(1 - t, 4);
 const io3 = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 function shapes(): Float32Array[] {
-  const knot = new Float32Array(N * 3), sphere = new Float32Array(N * 3), band = new Float32Array(N * 3);
+  const knot = new Float32Array(N * 3), band = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
     /* a trefoil knot, given a little thickness */
     const t = (i + rnd()) / N * Math.PI * 2, r = (2 + Math.cos(3 * t)) / 3, j = .038;
     knot[i * 3] = r * Math.cos(2 * t) + gauss() * j; knot[i * 3 + 1] = r * Math.sin(2 * t) + gauss() * j; knot[i * 3 + 2] = Math.sin(3 * t) * .42 + gauss() * j;
-    /* a sphere, evenly covered */
-    const y = 1 - (i + .5) / N * 2, q = Math.sqrt(1 - y * y), a = i * 2.39996323;
-    sphere[i * 3] = Math.cos(a) * q * .9; sphere[i * 3 + 1] = y * .9; sphere[i * 3 + 2] = Math.sin(a) * q * .9;
     /* a band with a half twist */
     const u = (i + rnd()) / N * Math.PI * 2, v = (rnd() - .5) * .8, w = 1 + v * Math.cos(u / 2);
     band[i * 3] = w * Math.cos(u) * .82; band[i * 3 + 1] = v * Math.sin(u / 2) * .82; band[i * 3 + 2] = w * Math.sin(u) * .82;
   }
-  return [sphere, knot, band];
+  return [knot, band];
 }
 
 export function Dots({ onDone }: { onDone: () => void }) {
