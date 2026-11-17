@@ -4,8 +4,8 @@ import { seenRecently, touch } from "./seen";
 /**
  * The bootup and the object behind the name. Sampling: for about a second the screen is only
  * dots, appearing at random across it while a counter runs to 100 (the small readout is the
- * real running mean and spread of the draws). Form: the name lands and every dot glides at
- * once, each to its own place, into a turning 3D object. After that the object keeps turning,
+ * real running mean and spread of the draws). Form: every dot glides at once, each to its own
+ * place, into a turning 3D object, and only then does the page arrive on it. After that the object keeps turning,
  * leans toward the pointer, and every few seconds re-forms into the other shape: a knot and
  * a twisted band. It belongs to no project.
  *
@@ -78,8 +78,8 @@ export function Dots({ onReady }: { onReady: () => void }) {
       raf = 0;
       if (frame++ % 20 === 0) ink = getComputedStyle(c).color;
       const el = now - start, b = clamp(el / T_BOOT), p = clamp((el - T_BOOT) / T_FORM), e = ease(p);
-      /* the name and the rest of the page land as the dots set off */
-      if (!landed && el >= T_BOOT) { landed = true; hud.current?.classList.add("off"); ready.current(); }
+      /* the name and the rest of the page arrive once the object has formed */
+      if (!landed && el >= T_BOOT + T_FORM * .86) { landed = true; hud.current?.classList.add("off"); ready.current(); }
       const small = w < 820, cx = w / 2, cy = h * (small ? .3 : .45), u = Math.min(w, h) * .105;
       const R = small ? w * .36 : Math.min(w, h) * .34;
       if (!finished && p >= 1) { finished = true; morphAt = now + HOLD; active(); }

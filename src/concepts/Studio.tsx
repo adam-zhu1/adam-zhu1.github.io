@@ -32,6 +32,32 @@ const ICON: Record<string, ReactNode> = {
 };
 const ORDER = ["Resume", "LinkedIn", "GitHub", "Email"].map(l => LINKS.find(x => x.label === l)!);
 
+/* A line of text that settles out of noise, left to right. */
+const NOISE = "abcdefghijklmnopqrstuvwxyz";
+function Decode({ text, on, delay }: { text: string; on: boolean; delay: number }) {
+  const [shown, setShown] = useState(on ? text : "");
+  const skip = useRef(on);
+  useEffect(() => {
+    if (!on || skip.current) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { const id = requestAnimationFrame(() => setShown(text)); return () => cancelAnimationFrame(id); }
+    const t0 = performance.now() + delay, dur = 26 * text.length;
+    let raf = 0, last = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, Math.max(0, (now - t0) / dur)), n = Math.floor(p * text.length);
+      if (now - last > 34) {
+        last = now;
+        let tail = "";
+        for (let i = n; i < Math.min(text.length, n + 5) && p > 0; i++) tail += text[i] === " " ? " " : NOISE[Math.floor(Math.random() * NOISE.length)];
+        setShown(text.slice(0, n) + tail);
+      }
+      if (p < 1) raf = requestAnimationFrame(tick); else setShown(text);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [on, text, delay]);
+  return <span className="st-dec" aria-hidden="true">{shown || "\u00a0"}</span>;
+}
+
 function Demo({ w }: { w: Entry }) {
   return w.demo === "trueline" ? <TrueLine /> : w.demo === "clarity" ? <Clarity /> : <NistFigure on />;
 }
@@ -52,7 +78,8 @@ function Fit({ width, children }: { width: number; children: ReactNode }) {
 export default function Studio() {
   const theme = useTheme();
   const [page, setPage] = useState(readPage);
-  const [ready, setReady] = useState(() => seenRecently() || !!readPage());
+  const [instant] = useState(() => seenRecently() || !!readPage());
+  const [ready, setReady] = useState(instant);
   const root = useRef<HTMLDivElement>(null);
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
@@ -159,22 +186,29 @@ export default function Studio() {
   }
 
   return (
-    <div className={`st${ready ? " ready" : ""}`} ref={root} key="home">
+    <div className={`st${ready ? " ready" : ""}${instant ? " now" : ""}`} ref={root} key="home">
       <style>{CSS}</style>
       {bar}
 
       <section className="st-hero" id="top">
         <Dots onReady={() => setReady(true)} />
-        <h1 className="st-in" style={d(0)}>Adam Zhu</h1>
+        <h1 aria-label="Adam Zhu">
+          {["Adam", "Zhu"].map((word, wi) => (
+            <span key={word} aria-hidden="true">{wi > 0 && " "}{[...word].map((ch, i) => <span key={i} className="ch" style={{ "--i": wi * 4 + i } as CSSProperties}>{ch}</span>)}</span>
+          ))}
+        </h1>
         <div className="st-id">
-          <p className="st-in" style={d(2)}>Carnegie Mellon University<br />Statistics and Machine Learning</p>
-          <div className="st-links st-in" style={d(4)}>
-            {ORDER.map(l => <a key={l.label} href={l.href} {...(l.label === "Email" ? {} : out)}>{ICON[l.label]}<span>{l.label}</span></a>)}
+          <p aria-label="Carnegie Mellon University, Statistics and Machine Learning">
+            <Decode text="Carnegie Mellon University" on={ready} delay={520} /><br />
+            <Decode text="Statistics and Machine Learning" on={ready} delay={760} />
+          </p>
+          <div className="st-links">
+            {ORDER.map((l, i) => <a key={l.label} href={l.href} style={{ "--i": i } as CSSProperties} {...(l.label === "Email" ? {} : out)}>{ICON[l.label]}<span>{l.label}</span></a>)}
           </div>
         </div>
-        <nav className="st-feat st-in" style={d(6)} aria-label="Projects">
+        <nav className="st-feat" aria-label="Projects">
           {WORK.map((w, i) => (
-            <a key={w.id} href={href(slug(w))} onClick={go(slug(w))}>
+            <a key={w.id} href={href(slug(w))} onClick={go(slug(w))} style={{ "--i": i } as CSSProperties}>
               <span>{two(i + 1)}</span><b>{w.name}</b><em>{w.kind}</em><i>→</i>
             </a>
           ))}
@@ -280,6 +314,24 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-in { opacity: 0; transform: translateY(18px); filter: blur(6px); transition: opacity .8s var(--d, 0ms), transform .9s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), filter .8s var(--d, 0ms); }
 .st.ready .st-in { opacity: 1; transform: none; filter: none; }
 .st-hero h1 { position: absolute; left: 0; right: 0; top: 45%; margin: 0; text-align: center; font-weight: 500; font-size: clamp(64px, 12.4vw, 216px); line-height: 1; letter-spacing: -.065em; white-space: nowrap; translate: 0 -54%; pointer-events: none; }
+/* how the first screen arrives, once the object has formed: the name's letters swing up out
+   of a slot one after another, the two lines settle out of noise, the links pop in, the rule
+   along the bottom draws itself and the three projects rise off it */
+.st-hero h1 { overflow: hidden; padding: .08em 0 .02em; }
+.st-hero h1 .ch { display: inline-block; transform: translateY(118%) rotate(9deg); transform-origin: 0 100%; }
+.st.ready .st-hero h1 .ch { animation: st-letter 1.15s cubic-bezier(.16, 1, .3, 1) calc(var(--i) * 55ms) both; }
+@keyframes st-letter { from { transform: translateY(118%) rotate(9deg); } to { transform: none; } }
+.st-dec { white-space: pre; }
+.st-id .st-links a { opacity: 0; }
+.st.ready .st-id .st-links a { animation: st-pop .75s cubic-bezier(.2, 1.35, .35, 1) calc(1.15s + var(--i) * 85ms) both; }
+@keyframes st-pop { from { opacity: 0; transform: translateY(14px) scale(.72); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+.st-feat::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--ln); transform: scaleX(0); transform-origin: 0 50%; }
+.st.ready .st-feat::before { animation: st-rule 1.3s cubic-bezier(.16, 1, .3, 1) .9s both; }
+@keyframes st-rule { from { transform: scaleX(0); } to { transform: none; } }
+.st-feat a { opacity: 0; }
+.st.ready .st-feat a { animation: st-rise .9s cubic-bezier(.16, 1, .3, 1) calc(1.35s + var(--i) * 110ms) both; }
+@keyframes st-rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+.st.now .st-hero * , .st.now .st-feat::before { animation-duration: 1ms !important; animation-delay: 0s !important; }
 .st-id { position: absolute; left: 0; right: 0; top: calc(45% + clamp(32px, 6.2vw, 108px) + 6px); display: grid; justify-items: center; gap: 22px; padding: 0 22px; text-align: center; }
 .st-id p { margin: 0; font-size: clamp(17px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; }
 .st-links { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -288,7 +340,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-links svg { width: 17px; height: 17px; flex: none; }
 .st-links a:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .st-links a:active { transform: scale(.97); }
-.st-feat { position: absolute; left: 22px; right: 22px; bottom: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ln); }
+.st-feat { position: absolute; left: 22px; right: 22px; bottom: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .st-feat a { display: flex; align-items: baseline; gap: 12px; padding: 18px 16px 20px 0; min-width: 0; transition: padding .3s cubic-bezier(.2,.7,.2,1); }
 .st-feat a + a { padding-left: 16px; border-left: 1px solid var(--ln); }
 .st-feat span { font: 400 11px/1 var(--mono); color: var(--mut); }
@@ -408,5 +460,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 }
 @media (prefers-reduced-motion: reduce) {
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
+  .st-hero h1 .ch, .st-id .st-links a, .st-feat a, .st-feat::before { animation: none !important; opacity: 1; transform: none; }
 }
 `;
