@@ -14,7 +14,7 @@ import { seenRecently, touch } from "./seen";
  */
 
 const N = 1900, BIG = 56;
-const T_BOOT = 1250, T_FORM = 3000, HOLD = 9000, MORPH = 2800;
+const T_BOOT = 900, T_FORM = 2400, HOLD = 9000, MORPH = 2800;
 
 type Dot = { x: number; y: number; s: number; al: number; t0: number; ox: number; oy: number; lx: number; ly: number };
 
@@ -79,7 +79,7 @@ export function Dots({ onReady }: { onReady: () => void }) {
       if (frame++ % 20 === 0) ink = getComputedStyle(c).color;
       const el = now - start, b = clamp(el / T_BOOT), p = clamp((el - T_BOOT) / T_FORM), e = ease(p);
       /* the name and the rest of the page arrive once the object has formed */
-      if (!landed && el >= T_BOOT + T_FORM * .86) { landed = true; hud.current?.classList.add("off"); ready.current(); }
+      if (!landed && el >= T_BOOT + T_FORM * .82) { landed = true; hud.current?.classList.add("off"); ready.current(); }
       const small = w < 820, cx = w / 2, cy = h * (small ? .3 : .45), u = Math.min(w, h) * .105;
       const R = small ? w * .36 : Math.min(w, h) * .34;
       if (!finished && p >= 1) { finished = true; morphAt = now + HOLD; active(); }
@@ -94,8 +94,9 @@ export function Dots({ onReady }: { onReady: () => void }) {
 
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = ink; ctx.strokeStyle = ink;
-      /* on the way in, the whole field turns a little about the centre, so every path curves */
-      const turn = (1 - e) * .85, ct = Math.cos(turn), st = Math.sin(turn), late = e * e * e, moving = p > 0 && p < 1 || m > 0 && m < 1;
+      /* on the way in, the whole field turns a little about the centre, so every path curves
+         (no turn at rest, so the dots start spread over the whole screen, not a tilted block) */
+      const turn = Math.sin(Math.PI * p) * .35, ct = Math.cos(turn), st = Math.sin(turn), late = e * e * e, moving = p > 0 && p < 1 || m > 0 && m < 1;
       for (let i = 0; i < dots.length; i++) {
         const d = dots[i];
         /* each dot switches on at its own moment during the count, a little large, then settles */
