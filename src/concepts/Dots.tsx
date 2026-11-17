@@ -36,7 +36,7 @@ function shapes(): Float32Array[] {
   return [knot, band];
 }
 
-export function Dots({ onDone }: { onDone: () => void }) {
+export function Dots({ onDone, instant = false }: { onDone: () => void; instant?: boolean }) {
   const cv = useRef<HTMLCanvasElement>(null);
   const hud = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLSpanElement>(null);
@@ -61,7 +61,7 @@ export function Dots({ onDone }: { onDone: () => void }) {
 
     const END = T_BOOT + T_SCAT + SPREAD + D_FLY + 300;
     let w = 0, h = 0, raf = 0, visible = true, finished = false, ink = "#fff", frame = 0, label = "";
-    let start = performance.now() - (still ? END : 0);
+    let start = performance.now() - (still || instant ? END : 0);
     let from = 0, to = 0, morphAt = 0;
     const mouse = { x: -9999, y: -9999, tx: 0, ty: 0, sx: 0, sy: 0 };
 
@@ -145,7 +145,7 @@ export function Dots({ onDone }: { onDone: () => void }) {
     const kick = () => { if (!raf) raf = requestAnimationFrame(draw); };
 
     size();
-    if (still) finish(); else document.documentElement.style.overflow = "hidden";
+    if (still || instant) finish(); else document.documentElement.style.overflow = "hidden";
     kick();
     const io = new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible) kick(); });
     io.observe(c);
@@ -165,7 +165,7 @@ export function Dots({ onDone }: { onDone: () => void }) {
       removeEventListener("pointermove", move); removeEventListener("resize", resize);
       removeEventListener("pointerdown", skip); removeEventListener("keydown", skip);
     };
-  }, []);
+  }, [instant]);
 
   return (
     <>

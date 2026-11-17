@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import commits from "../data/commits.json";
-import { WORK } from "../data/work";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
+import { WORK, type Entry } from "../data/work";
 import { MORE } from "../components/MoreWork";
 import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
@@ -11,98 +11,195 @@ import { NistFigure } from "../components/ProjectStage";
 import { LINKS } from "./links";
 
 /**
- * Draft: a bootup of dots that counts to 100 and settles behind the name; a first screen
- * with the name in the middle and small things spaced far apart around it; one project per
- * screen, words on the left and the real thing on the right (the throw footage, the app's
- * windows, the chart); the rest of the work as numbered rows.
+ * Draft. Home is two things: a first screen that says who this is (the name over the dot
+ * object, the school, the major, four links, and the three projects along the bottom), and
+ * an index of the projects as preview cards. Each project then has a page of its own, in
+ * its own colour, reached from its card: ?concept=studio&p=trueline. The bootup plays once
+ * per visit, not again on the way back from a project.
  */
 
 const MAIL = LINKS[0].href.replace("mailto:", "");
 const d = (i: number) => ({ "--d": `${i * 70}ms` }) as CSSProperties;
+const slug = (w: Entry) => w.id.replace(/^p-/, "");
+const two = (n: number) => String(n).padStart(2, "0");
+const readPage = () => typeof location === "undefined" ? null : new URLSearchParams(location.search).get("p");
+let booted = false;
+
+const ICON: Record<string, ReactNode> = {
+  Resume: <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /><path d="M5.6 7.5h4.8M5.6 9.8h4.8M5.6 12.1h3" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>,
+  LinkedIn: <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 5.6h2.5V14H2zM3.25 1.8a1.45 1.45 0 1 1 0 2.9 1.45 1.45 0 0 1 0-2.9zM6.3 5.6h2.4v1.15c.4-.75 1.3-1.35 2.55-1.35 2.3 0 2.75 1.5 2.75 3.5V14h-2.5V9.4c0-.95-.2-1.75-1.25-1.75S8.8 8.4 8.8 9.4V14H6.3z" /></svg>,
+  GitHub: <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" /></svg>,
+  Email: <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.6" y="3.2" width="12.8" height="9.6" rx="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m2.2 4.4 5.8 4.4 5.8-4.4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
+};
+const ORDER = ["Resume", "LinkedIn", "GitHub", "Email"].map(l => LINKS.find(x => x.label === l)!);
+
+function Demo({ w }: { w: Entry }) {
+  return w.demo === "trueline" ? <TrueLine /> : w.demo === "clarity" ? <Clarity /> : <NistFigure on />;
+}
+
+/* The real demo, laid out at desktop width and scaled down to fit a preview card. */
+function Fit({ width, children }: { width: number; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const b = box.current!, n = inner.current!;
+    const fit = () => { const k = b.clientWidth / width; n.style.transform = `scale(${k})`; b.style.height = `${n.offsetHeight * k}px`; };
+    const ro = new ResizeObserver(fit);
+    ro.observe(b); ro.observe(n); fit();
+    return () => ro.disconnect();
+  }, [width]);
+  return <div className="st-fit" ref={box}><div ref={inner} style={{ width }} inert>{children}</div></div>;
+}
 
 export default function Studio() {
   const theme = useTheme();
-  const [ready, setReady] = useState(false);
-  const [seen, setSeen] = useState<Record<string, boolean>>({});
+  const [page, setPage] = useState(readPage);
+  const [ready, setReady] = useState(booted || !!readPage());
   const root = useRef<HTMLDivElement>(null);
+  const cur = WORK.findIndex(w => slug(w) === page);
+  const proj = cur < 0 ? null : WORK[cur];
+
+  /* move between home and a project's page without a reload */
+  const go = (to: string | null, anchor?: string) => (e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    const u = new URL(location.href);
+    if (to) u.searchParams.set("p", to); else u.searchParams.delete("p");
+    u.hash = "";
+    history.pushState({}, "", u);
+    const apply = () => {
+      flushSync(() => setPage(to));
+      const el = anchor ? document.getElementById(anchor) : null;
+      if (el) el.scrollIntoView(); else scrollTo(0, 0);
+    };
+    const vt = (document as Document & { startViewTransition?: (f: () => void) => unknown }).startViewTransition;
+    if (vt && !matchMedia("(prefers-reduced-motion: reduce)").matches) vt.call(document, apply); else apply();
+  };
+  const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
+
+  useEffect(() => {
+    const sync = () => setPage(readPage());
+    addEventListener("popstate", sync);
+    return () => removeEventListener("popstate", sync);
+  }, []);
 
   /* things below the first screen rise in as they are reached */
   useEffect(() => {
     const els = root.current?.querySelectorAll<HTMLElement>("[data-rv]") ?? [];
     const io = new IntersectionObserver(es => es.forEach(e => {
-      if (!e.isIntersecting) return;
-      e.target.classList.add("on"); io.unobserve(e.target);
-      const id = (e.target as HTMLElement).dataset.seen;
-      if (id) setSeen(s => ({ ...s, [id]: true }));
-    }), { threshold: .15, rootMargin: "0px 0px -6% 0px" });
+      if (e.isIntersecting) { e.target.classList.add("on"); io.unobserve(e.target); }
+    }), { threshold: .12, rootMargin: "0px 0px -5% 0px" });
     els.forEach(e => io.observe(e));
     return () => io.disconnect();
-  }, []);
+  }, [page]);
+
+  const bar = (
+    <header className="st-bar">
+      <a className="st-mark" href={href(null)} onClick={go(null)}>Adam Zhu</a>
+      <div className="st-theme" role="group" aria-label="Theme">
+        <button type="button" className={theme === "dark" ? "on" : ""} onClick={() => setTheme("dark")}>dark</button>
+        <button type="button" className={theme === "light" ? "on" : ""} onClick={() => setTheme("light")}>light</button>
+      </div>
+      <nav>
+        <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}>Projects</a>
+        <a className="st-pill" href="/Adam-Zhu-Resume.pdf" {...out}>Resume <i>↗</i></a>
+        <a className="st-pill acc" href={LINKS[0].href}>Email</a>
+      </nav>
+    </header>
+  );
+
+  if (proj) {
+    const next = WORK[(cur + 1) % WORK.length];
+    return (
+      <div className="st pj ready" ref={root} key={proj.id} style={{ "--accent": proj.accent } as CSSProperties}>
+        <style>{CSS}</style>
+        {bar}
+        <main className="pj-main">
+          <div className="pj-top">
+            <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>
+            <span className="pj-idx"><b>{two(cur + 1)}</b> / {two(WORK.length)}</span>
+          </div>
+
+          <div className="pj-head">
+            <div>
+              <h1 style={{ viewTransitionName: `pj-${slug(proj)}` } as CSSProperties}>{proj.name}</h1>
+              <p className="what">{proj.what}</p>
+              <p className="kind">{proj.kind} · {proj.when}</p>
+              {proj.links && <div className="st-pills">{proj.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
+            </div>
+            <div className="pj-stat"><b>{proj.big[0]}</b><span>{proj.big[1]}</span></div>
+          </div>
+
+          <div className="pj-demo" data-rv><Demo w={proj} /></div>
+
+          <div className="pj-cols">
+            <section data-rv>
+              <h2>What it is</h2>
+              <p className="lead">{proj.body}</p>
+              {proj.result && <p className="lead">{proj.result}</p>}
+              {proj.meta && <p className="meta">{proj.meta}</p>}
+            </section>
+            <section data-rv style={d(1)}>
+              <h2>Results</h2>
+              <dl className="pj-facts">{proj.facts.map(([k, v]) => <div key={k}><dd>{v}</dd><dt>{k}</dt></div>)}</dl>
+            </section>
+          </div>
+
+          <section className="pj-steps" data-rv>
+            <h2>How it works</h2>
+            <ol>{proj.steps.map(([k, v], i) => <li key={k}><span>{two(i + 1)}</span><b>{k}</b><p>{v}</p></li>)}</ol>
+          </section>
+
+          <a className="pj-next" href={href(slug(next))} onClick={go(slug(next))} style={{ "--accent": next.accent } as CSSProperties} data-rv>
+            <span>Next project</span>
+            <b>{next.name} <i>→</i></b>
+            <em>{next.what}</em>
+          </a>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div className={`st${ready ? " ready" : ""}`} ref={root}>
+    <div className={`st${ready ? " ready" : ""}`} ref={root} key="home">
       <style>{CSS}</style>
-
-      <header className="st-bar">
-        <a className="st-mark" href="#top">adamzhu.dev</a>
-        <div className="st-theme" role="group" aria-label="Theme">
-          <button type="button" className={theme === "dark" ? "on" : ""} onClick={() => setTheme("dark")}>dark</button>
-          <button type="button" className={theme === "light" ? "on" : ""} onClick={() => setTheme("light")}>light</button>
-        </div>
-        <nav>
-          <a className="st-pill" href="#projects">Projects</a>
-          <a className="st-pill" href="/Adam-Zhu-Resume.pdf" {...out}>Resume <i>↗</i></a>
-          <a className="st-pill" href="/">Current site</a>
-        </nav>
-      </header>
+      {bar}
 
       <section className="st-hero" id="top">
-        <Dots onDone={() => setReady(true)} />
+        <Dots instant={booted} onDone={() => { booted = true; setReady(true); }} />
         <h1 className="st-in" style={d(0)}>Adam Zhu</h1>
-
-        <ul className="st-col a st-in" style={d(2)}><li>statistics</li><li>machine learning</li><li>software</li></ul>
-        <ul className="st-col b st-in" style={d(3)}><li>Carnegie Mellon</li><li>Pittsburgh</li></ul>
-        <ul className="st-col c st-in" style={d(4)}><li>TrueLine</li><li>Clarity</li><li>NIST</li></ul>
-
-        <div className="st-bl">
-          <div className="st-tiles st-in" style={d(5)}>
-            <div><b>6/6</b><span>clips tracked</span></div>
-            <div><b>0.94</b><span>F1 at NIST</span></div>
-            <div><b>2 d</b><span>HackCMU build</span></div>
-            <div><b>{(commits as unknown[]).length}</b><span>commits</span></div>
-          </div>
-          <p className="st-in" style={d(6)}>Statistics and machine learning at Carnegie Mellon. Looking for Summer 2027 internships in software, ML, data science, or quant.</p>
-          <div className="st-pills st-in" style={d(7)}>
-            {LINKS.slice(1).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
-            <a className="st-pill acc" href={LINKS[0].href}>Email <i>↗</i></a>
+        <div className="st-id">
+          <p className="st-in" style={d(2)}>Carnegie Mellon University<br />Statistics and Machine Learning</p>
+          <div className="st-links st-in" style={d(4)}>
+            {ORDER.map(l => <a key={l.label} href={l.href} {...(l.label === "Email" ? {} : out)}>{ICON[l.label]}<span>{l.label}</span></a>)}
           </div>
         </div>
-
-        <a className="st-pill st-next st-in" style={d(6)} href="#projects">Projects <i>↓</i></a>
+        <nav className="st-feat st-in" style={d(6)} aria-label="Projects">
+          {WORK.map((w, i) => (
+            <a key={w.id} href={href(slug(w))} onClick={go(slug(w))}>
+              <span>{two(i + 1)}</span><b>{w.name}</b><em>{w.kind}</em><i>→</i>
+            </a>
+          ))}
+        </nav>
       </section>
 
       <section className="st-sec" id="projects">
         <div className="st-head">
-          <h2 data-rv>Projects <i>↗</i></h2>
-          <p data-rv style={d(1)}>Three things I built or researched, one screen each.</p>
+          <h2 data-rv>Projects</h2>
+          <p data-rv style={d(1)}>Three projects. Each one opens on its own page.</p>
+        </div>
+        <div className="st-cards">
+          {WORK.map((w, i) => (
+            <article key={w.id} className="st-card" data-rv style={{ ...d(i), "--accent": w.accent } as CSSProperties}>
+              <div className="top"><span>{two(i + 1)}</span><em>{w.kind}</em></div>
+              <div className="pv"><Fit width={w.demo === "nist" ? 620 : 880}><Demo w={w} /></Fit></div>
+              <h3 style={{ viewTransitionName: `pj-${slug(w)}` } as CSSProperties}>{w.name}</h3>
+              <p className="what">{w.what}</p>
+              <p className="res"><b>{w.big[0]}</b> {w.big[1]}</p>
+              <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>Open {w.name}</span><i>→</i></a>
+            </article>
+          ))}
         </div>
       </section>
-
-      {WORK.map((w, i) => (
-        <section key={w.id} id={w.id} className="st-proj" style={{ "--accent": w.accent } as CSSProperties}>
-          <div className="txt">
-            <p className="idx" data-rv><b>{String(i + 1).padStart(2, "0")}</b> / {String(WORK.length).padStart(2, "0")}<em>{w.kind}</em></p>
-            <h3 data-rv style={d(1)}>{w.name}</h3>
-            <p className="what" data-rv style={d(2)}>{w.what}</p>
-            <p className="stat" data-rv style={d(3)}><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
-            <p className="body" data-rv style={d(4)}>{w.body}</p>
-            {w.links && <div className="st-pills" data-rv style={d(5)}>{w.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
-          </div>
-          <div className="vis" data-rv data-seen={w.id} style={d(2)}>
-            {w.demo === "trueline" ? <TrueLine /> : w.demo === "clarity" ? <Clarity /> : <NistFigure on={!!seen[w.id]} />}
-          </div>
-        </section>
-      ))}
 
       <section className="st-sec" id="more">
         <div className="st-head">
@@ -113,9 +210,9 @@ export default function Studio() {
           {MORE.map((m, i) => {
             const row = (
               <>
-                <span className="i">{String(i + 1).padStart(2, "0")}</span>
-                <span className="n">{m.name}</span>
-                <span className="b">{m.body}<em>{m.role}{m.org && <> · {m.org}</>} · {m.when}</em></span>
+                <span className="i">{two(i + 1)}</span>
+                <span className="n">{m.name}<em>{m.role}{m.org && <> · {m.org}</>} · {m.when}</em></span>
+                <span className="b">{m.body}</span>
                 <span className="go">{m.href ? "↗" : ""}</span>
               </>
             );
@@ -128,7 +225,7 @@ export default function Studio() {
         <h2 data-rv>Get in touch</h2>
         <div data-rv style={d(1)}>
           <a className="mail" href={LINKS[0].href}>{MAIL}</a>
-          <div className="st-pills">{LINKS.slice(1).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}</div>
+          <div className="st-links">{ORDER.slice(0, 3).map(l => <a key={l.label} href={l.href} {...out}>{ICON[l.label]}<span>{l.label}</span></a>)}</div>
         </div>
       </section>
 
@@ -164,10 +261,12 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
 .st.ready .st-bar { opacity: 1; transform: none; }
-.st-mark { font-size: 15px; letter-spacing: -.02em; }
+.st-mark { font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
 .st-bar nav { display: flex; gap: 8px; justify-content: flex-end; }
 .st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(10px); }
 .st-bar .st-pill:hover { background: var(--ink); }
+.st-bar .st-pill.acc { background: var(--acc); }
+.st-bar .st-pill.acc:hover { background: var(--ink); }
 .st-theme { display: flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--ln); }
 .st-theme button { all: unset; cursor: pointer; font-size: 12px; padding: 5px 13px; border-radius: 999px; color: var(--mut); transition: background .25s, color .25s; }
 .st-theme button.on { background: var(--ink); color: var(--bg); }
@@ -181,70 +280,129 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-hud.off span { opacity: 0; }
 .st-in { opacity: 0; transform: translateY(18px); filter: blur(6px); transition: opacity .8s var(--d, 0ms), transform .9s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), filter .8s var(--d, 0ms); }
 .st.ready .st-in { opacity: 1; transform: none; filter: none; }
-.st h1 { position: absolute; left: 0; right: 0; top: 45%; margin: 0; text-align: center; font-weight: 500; font-size: clamp(64px, 12.4vw, 216px); line-height: 1; letter-spacing: -.065em; white-space: nowrap; translate: 0 -54%; pointer-events: none; }
-.st-col { position: absolute; top: 61%; font-size: 12px; line-height: 1.35; color: var(--ink); }
-.st-col.a { left: 22px; } .st-col.b { left: 15.5%; } .st-col.c { right: 22px; text-align: right; }
-.st-bl { position: absolute; left: 22px; bottom: 22px; width: min(430px, calc(100vw - 44px)); }
-.st-tiles { display: flex; gap: 6px; margin-bottom: 16px; }
-.st-tiles div { flex: 1; min-width: 0; padding: 10px 10px 9px; border-radius: 9px; background: color-mix(in srgb, var(--ink) 9%, transparent); backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 5px; }
-.st-tiles b { font-weight: 400; font-size: 21px; letter-spacing: -.04em; line-height: 1; }
-.st-tiles span { font-size: 10.5px; color: var(--mut); white-space: nowrap; }
-.st-bl p { margin: 0 0 18px; font-size: 14.5px; line-height: 1.4; text-indent: 1.2em; max-width: 31em; }
+.st-hero h1 { position: absolute; left: 0; right: 0; top: 45%; margin: 0; text-align: center; font-weight: 500; font-size: clamp(64px, 12.4vw, 216px); line-height: 1; letter-spacing: -.065em; white-space: nowrap; translate: 0 -54%; pointer-events: none; }
+.st-id { position: absolute; left: 0; right: 0; top: calc(45% + clamp(32px, 6.2vw, 108px) + 6px); display: grid; justify-items: center; gap: 22px; padding: 0 22px; text-align: center; }
+.st-id p { margin: 0; font-size: clamp(17px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; }
+.st-links { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.st-links a { display: inline-flex; align-items: center; gap: 9px; height: 42px; padding: 0 17px 0 14px; border-radius: 999px; font-size: 15px; border: 1px solid var(--ln);
+  background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(10px); transition: background .2s, color .2s, border-color .2s, transform .2s cubic-bezier(.2,.7,.2,1); }
+.st-links svg { width: 17px; height: 17px; flex: none; }
+.st-links a:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.st-links a:active { transform: scale(.97); }
+.st-feat { position: absolute; left: 22px; right: 22px; bottom: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ln); }
+.st-feat a { display: flex; align-items: baseline; gap: 12px; padding: 18px 16px 20px 0; min-width: 0; transition: padding .3s cubic-bezier(.2,.7,.2,1); }
+.st-feat a + a { padding-left: 16px; border-left: 1px solid var(--ln); }
+.st-feat span { font: 400 11px/1 var(--mono); color: var(--mut); }
+.st-feat b { font-weight: 500; font-size: 19px; letter-spacing: -.03em; }
+.st-feat em { font-style: normal; font-size: 14px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.st-feat i { margin-left: auto; font-size: 15px; transition: transform .25s cubic-bezier(.2,.7,.2,1); }
+.st-feat a:hover i { transform: translateX(5px); }
 .st-pills { display: flex; flex-wrap: wrap; gap: 6px; }
-.st-next { position: absolute; right: 22px; bottom: 22px; }
-
 
 /* sections */
 .st-sec { padding: clamp(90px, 14vh, 170px) 22px 0; }
+#projects { padding-top: 84px; scroll-margin-top: 0; }
+#projects .st-head { margin-bottom: 22px; }
+#projects h2 { font-size: clamp(44px, 5.6vw, 88px); }
 .st-head { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: end; gap: 32px; margin-bottom: 34px; }
 .st h2 { margin: 0; font-weight: 400; font-size: clamp(54px, 8.4vw, 136px); line-height: .95; letter-spacing: -.055em; }
 .st h2 i { display: inline-block; font-size: .8em; }
-.st-head p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.4; max-width: 30em; }
+.st-head p { margin: 0 0 12px; font-size: 18px; letter-spacing: -.015em; line-height: 1.4; max-width: 30em; }
 [data-rv] { opacity: 0; transform: translateY(34px); transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1); }
 [data-rv].on { opacity: 1; transform: none; }
 
-/* one project per screen */
-.st-proj { min-height: 100svh; padding: 96px 22px 40px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 4vw, 72px); align-items: center; border-top: 1px solid var(--ln); margin-top: clamp(40px, 8vh, 90px); scroll-margin-top: 0; }
-.st-proj .idx { margin: 0 0 22px; font: 400 11.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); display: flex; gap: 6px; }
-.st-proj .idx b { font-weight: 400; color: var(--ink); } .st-proj .idx em { font-style: normal; margin-left: auto; }
-.st-proj h3 { margin: 0 0 20px; font-weight: 400; font-size: clamp(60px, 9.2vw, 150px); line-height: .9; letter-spacing: -.06em; }
-.st-proj .what { margin: 0 0 30px; font-size: clamp(18px, 1.55vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
-.st-proj .stat { margin: 0 0 22px; padding-top: 20px; border-top: 1px solid var(--ln); display: flex; align-items: baseline; gap: 14px; }
-.st-proj .stat b { font-weight: 400; font-size: clamp(38px, 4.2vw, 64px); letter-spacing: -.05em; line-height: 1; white-space: nowrap; }
-.st-proj .stat span { font-size: 13.5px; line-height: 1.35; color: var(--mut); }
-.st-proj .body { margin: 0 0 22px; font-size: 14px; line-height: 1.5; color: var(--mut); max-width: 36em; }
-.st-proj .vis { min-width: 0; }
-.st-proj .vis[data-rv] { transform: translateY(40px) scale(.97); filter: blur(8px); transition: opacity .9s var(--d, 0ms), transform 1.1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), filter .9s var(--d, 0ms); }
-.st-proj .vis[data-rv].on { transform: none; filter: none; }
+/* project previews */
+.st-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.st-card { position: relative; display: flex; flex-direction: column; padding: 18px 18px 20px; border-radius: 22px; min-width: 0;
+  background: color-mix(in srgb, var(--accent) 11%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); }
+.st-card[data-rv] { transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), border-color .25s, background .25s; }
+.st-card:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 17%, var(--card)); }
+.st-card .top { display: flex; justify-content: space-between; gap: 12px; font: 400 11.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); margin-bottom: 16px; }
+.st-card .top span { color: var(--ink); } .st-card .top em { font-style: normal; text-align: right; }
+.st-card .pv { aspect-ratio: 16 / 11; overflow: hidden; border-radius: 12px; background: #08080a; margin-bottom: 22px; }
+.st-card .pv .st-fit { transition: transform .7s cubic-bezier(.2,.7,.2,1); transform-origin: 50% 0; }
+.st-card:hover .pv .st-fit { transform: scale(1.035); }
+.st-fit { overflow: hidden; } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
+.st-card h3 { margin: 0 0 10px; font-weight: 500; font-size: clamp(38px, 4.4vw, 68px); line-height: .95; letter-spacing: -.055em; width: fit-content; }
+.st-card .what { margin: 0 0 16px; font-size: 17px; line-height: 1.35; letter-spacing: -.015em; }
+.st-card .res { margin: 0 0 22px; font-size: 14.5px; line-height: 1.4; color: var(--mut); }
+.st-card .res b { font-weight: 500; color: var(--ink); }
+.st-card .open { margin-top: auto; display: flex; align-items: center; justify-content: space-between; height: 46px; padding: 0 18px; border-radius: 999px; font-size: 15px;
+  background: var(--ink); color: var(--bg); transition: background .2s, color .2s; }
+.st-card .open::after { content: ""; position: absolute; inset: 0; border-radius: 22px; }
+.st-card .open i { transition: transform .25s cubic-bezier(.2,.7,.2,1); }
+.st-card:hover .open { background: var(--accent); color: #06110c; }
+.st-card:hover .open i { transform: translateX(5px); }
+
+/* a project's own page */
+.st.pj { --bg: color-mix(in srgb, var(--accent) 8%, #000); --card: color-mix(in srgb, var(--accent) 10%, #0b0b0d); --ln: color-mix(in srgb, var(--accent) 20%, #26262a); --hl: var(--accent); min-height: 100svh; }
+:root[data-theme="light"] .st.pj { --bg: color-mix(in srgb, var(--accent) 17%, #f4f4f2); --card: color-mix(in srgb, var(--accent) 26%, #ebebe8); --ln: color-mix(in srgb, var(--accent) 35%, #cfcfca); --hl: var(--ink); }
+.pj-main { padding: 96px 22px 22px; max-width: 1500px; margin: 0 auto; }
+.pj-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: clamp(28px, 5vh, 56px); }
+.pj-idx { font: 400 12px/1 var(--mono); letter-spacing: .04em; color: var(--mut); } .pj-idx b { font-weight: 400; color: var(--ink); }
+.pj-head { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 40px; align-items: end; margin-bottom: clamp(32px, 6vh, 64px); }
+.st.pj h1 { margin: 0 0 22px; font-weight: 500; font-size: clamp(76px, 15vw, 250px); line-height: .84; letter-spacing: -.065em; color: var(--hl); width: fit-content; margin-left: -.04em; }
+.pj-head .what { margin: 0 0 12px; font-size: clamp(22px, 2.3vw, 34px); line-height: 1.2; letter-spacing: -.03em; max-width: 22em; }
+.pj-head .kind { margin: 0 0 22px; font-size: 16px; color: var(--mut); }
+.pj-stat { padding: 22px 0 6px; border-top: 1px solid var(--ln); }
+.pj-stat b { display: block; font-weight: 400; font-size: clamp(56px, 7vw, 112px); line-height: .9; letter-spacing: -.06em; margin-bottom: 12px; white-space: nowrap; }
+.pj-stat span { font-size: 17px; line-height: 1.35; }
+.pj-demo { max-width: 1180px; margin: 0 auto clamp(48px, 9vh, 100px); }
+.st.pj h2 { margin: 0 0 20px; font: 400 12px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mut); }
+.pj-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); padding-top: 26px; border-top: 1px solid var(--ln); margin-bottom: clamp(48px, 9vh, 100px); }
+.pj-cols .lead { margin: 0 0 16px; font-size: clamp(18px, 1.5vw, 22px); line-height: 1.42; letter-spacing: -.015em; max-width: 32em; }
+.pj-cols .meta { margin: 20px 0 0; font-size: 15px; color: var(--mut); }
+.pj-facts { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pj-facts div { padding: 18px 18px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--ln); }
+.pj-facts dd { margin: 0 0 8px; font-size: clamp(28px, 2.9vw, 44px); line-height: 1; letter-spacing: -.05em; color: var(--hl); white-space: nowrap; }
+.pj-facts dt { font-size: 14.5px; line-height: 1.35; color: var(--mut); }
+.pj-steps { padding-top: 26px; border-top: 1px solid var(--ln); margin-bottom: clamp(48px, 9vh, 100px); }
+.pj-steps li { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(0, 2fr); gap: 20px; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--ln); }
+.pj-steps li:first-child { border-top: 1px solid var(--ln); }
+.pj-steps span { font: 400 11.5px/1 var(--mono); color: var(--mut); }
+.pj-steps b { font-weight: 400; font-size: clamp(22px, 2.3vw, 34px); letter-spacing: -.04em; }
+.pj-steps p { margin: 0; font-size: 17px; line-height: 1.45; }
+.pj-next { display: grid; gap: 10px; padding: clamp(28px, 5vw, 64px); border-radius: 26px; background: color-mix(in srgb, var(--accent) 14%, #0b0b0d); border: 1px solid color-mix(in srgb, var(--accent) 30%, #26262a); transition: border-color .25s, background .25s; }
+:root[data-theme="light"] .pj-next { background: color-mix(in srgb, var(--accent) 26%, #ebebe8); border-color: color-mix(in srgb, var(--accent) 40%, #cfcfca); }
+.pj-next:hover { border-color: var(--accent); }
+.pj-next span { font: 400 12px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mut); }
+.pj-next b { font-weight: 500; font-size: clamp(54px, 9vw, 150px); line-height: .9; letter-spacing: -.06em; }
+.pj-next b i { display: inline-block; font-size: .7em; transition: transform .3s cubic-bezier(.2,.7,.2,1); }
+.pj-next:hover b i { transform: translateX(.12em); }
+.pj-next em { font-style: normal; font-size: 18px; }
 
 .st-rows { border-top: 1px solid var(--ln); }
 .st-rows li > * { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1.25fr) 40px; gap: 20px; align-items: start; padding: 24px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
 .st-rows li > a:hover { padding-left: 14px; padding-right: 14px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .st-rows .i { font: 400 11px/2.6 var(--mono); color: var(--mut); }
 .st-rows .n { font-size: clamp(22px, 2.4vw, 34px); letter-spacing: -.04em; line-height: 1.1; }
-.st-rows .b { font-size: 13.5px; line-height: 1.45; color: var(--mut); }
-.st-rows .b em { display: block; font-style: normal; margin-top: 8px; font-size: 11.5px; color: var(--ink); opacity: .75; }
+.st-rows .b { font-size: 16px; line-height: 1.45; }
+.st-rows .n em { display: block; font-style: normal; margin-top: 10px; font-size: 14px; letter-spacing: 0; line-height: 1.3; color: var(--mut); }
 .st-rows .go { justify-self: end; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ln); display: grid; place-items: center; font-size: 12px; transition: background .2s, color .2s, border-color .2s; }
 .st-rows .go:empty { visibility: hidden; }
 .st-rows a:hover .go { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
 
 .st-contact { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: end; }
+.st-contact .st-links { justify-content: flex-start; }
 .st-contact .mail { display: inline-block; font-size: clamp(20px, 2.5vw, 36px); letter-spacing: -.035em; border-bottom: 1px solid var(--ln); padding-bottom: 6px; margin-bottom: 20px; transition: border-color .2s; }
 .st-contact .mail:hover { border-color: var(--ink); }
 .st-foot { padding: clamp(70px, 12vh, 150px) 22px 22px; }
 .st-foot .big { font-weight: 500; font-size: 23.2vw; line-height: .8; letter-spacing: -.07em; white-space: nowrap; margin-left: -.05em; }
-.st-foot .meta { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--ln); font-size: 12px; color: var(--mut); }
+.st-foot .meta { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--ln); font-size: 14px; color: var(--mut); }
 
 @media (max-width: 820px) {
   .st-bar { grid-template-columns: auto 1fr; padding: 0 14px; } .st-bar nav { display: none; } .st-theme { justify-self: end; }
-  .st h1 { top: 30%; font-size: 19vw; }
-  .st-col { top: 40%; } .st-col.a { left: 14px; } .st-col.b { display: none; } .st-col.c { right: 14px; }
-  .st-bl { left: 14px; bottom: 14px; width: calc(100vw - 28px); }
-  .st-next { display: none; }
+  .st-hero h1 { top: 30%; font-size: 19vw; }
+  .st-id { top: calc(30% + 9.5vw + 14px); padding: 0 14px; gap: 18px; }
+  .st-feat { left: 14px; right: 14px; grid-template-columns: 1fr; }
+  .st-feat a { padding: 13px 0; } .st-feat a + a { padding-left: 0; border-left: 0; border-top: 1px solid var(--ln); }
+  .st-cards { grid-template-columns: 1fr; }
+  .pj-main { padding: 80px 14px 14px; }
+  .pj-head, .pj-cols { grid-template-columns: 1fr; gap: 28px; }
+  .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
   .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; } .st-hud .bl { left: 14px; bottom: 18px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
   .st-head, .st-contact { grid-template-columns: 1fr; gap: 16px; align-items: start; }
-  .st-proj { grid-template-columns: 1fr; padding: 72px 14px 24px; align-items: start; }
   .st-rows li > * { grid-template-columns: 30px minmax(0, 1fr) 34px; }
   .st-rows .b { grid-column: 2 / 3; grid-row: 2; }
   .st-foot { padding-left: 14px; padding-right: 14px; }
