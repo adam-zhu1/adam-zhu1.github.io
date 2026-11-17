@@ -5,6 +5,7 @@ import { MORE } from "../components/MoreWork";
 import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
 import { Dots } from "./Dots";
+import { seenRecently } from "./seen";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
@@ -14,8 +15,7 @@ import { LINKS } from "./links";
  * Draft. Home is two things: a first screen that says who this is (the name over the dot
  * object, the school, the major, four links, and the three projects along the bottom), and
  * an index of the projects as preview cards. Each project then has a page of its own, in
- * its own colour, reached from its card: ?concept=studio&p=trueline. The bootup plays once
- * per visit, not again on the way back from a project.
+ * its own colour, reached from its card: ?concept=studio&p=trueline.
  */
 
 const MAIL = LINKS[0].href.replace("mailto:", "");
@@ -23,7 +23,6 @@ const d = (i: number) => ({ "--d": `${i * 70}ms` }) as CSSProperties;
 const slug = (w: Entry) => w.id.replace(/^p-/, "");
 const two = (n: number) => String(n).padStart(2, "0");
 const readPage = () => typeof location === "undefined" ? null : new URLSearchParams(location.search).get("p");
-let booted = false;
 
 const ICON: Record<string, ReactNode> = {
   Resume: <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /><path d="M5.6 7.5h4.8M5.6 9.8h4.8M5.6 12.1h3" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>,
@@ -53,7 +52,9 @@ function Fit({ width, children }: { width: number; children: ReactNode }) {
 export default function Studio() {
   const theme = useTheme();
   const [page, setPage] = useState(readPage);
-  const [ready, setReady] = useState(booted || !!readPage());
+  const [ready, setReady] = useState(() => seenRecently() || !!readPage());
+  /* the name and the rest come in as the page opens; nothing waits for the dots */
+  useEffect(() => { const id = requestAnimationFrame(() => setReady(true)); return () => cancelAnimationFrame(id); }, []);
   const root = useRef<HTMLDivElement>(null);
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
@@ -165,7 +166,7 @@ export default function Studio() {
       {bar}
 
       <section className="st-hero" id="top">
-        <Dots instant={booted} onDone={() => { booted = true; setReady(true); }} />
+        <Dots />
         <h1 className="st-in" style={d(0)}>Adam Zhu</h1>
         <div className="st-id">
           <p className="st-in" style={d(2)}>Carnegie Mellon University<br />Statistics and Machine Learning</p>
@@ -276,7 +277,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-dots { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink); }
 .st-hud span { position: absolute; font: 400 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); transition: opacity .5s; white-space: pre; }
 .st-hud b { font-weight: 400; color: var(--ink); }
-.st-hud .tl { left: 22px; top: 26px; } .st-hud .tr { right: 22px; top: 62px; } .st-hud .bl { left: 22px; bottom: 26px; }
+.st-hud .bl { left: 22px; top: 76px; }
 .st-hud.off span { opacity: 0; }
 .st-in { opacity: 0; transform: translateY(18px); filter: blur(6px); transition: opacity .8s var(--d, 0ms), transform .9s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), filter .8s var(--d, 0ms); }
 .st.ready .st-in { opacity: 1; transform: none; filter: none; }
@@ -400,7 +401,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .pj-main { padding: 80px 14px 14px; }
   .pj-head, .pj-cols { grid-template-columns: 1fr; gap: 28px; }
   .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
-  .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; } .st-hud .bl { left: 14px; bottom: 18px; }
+  .st-hud .bl { left: 14px; top: 66px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
   .st-head, .st-contact { grid-template-columns: 1fr; gap: 16px; align-items: start; }
   .st-rows li > * { grid-template-columns: 30px minmax(0, 1fr) 34px; }
