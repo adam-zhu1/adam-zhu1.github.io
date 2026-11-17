@@ -6,34 +6,37 @@ import { useEffect, useRef } from "react";
  * to 100 (the readout is the real running mean and spread of the draws). Scatter: the cloud
  * loosens. Form: the dots pull together into a turning 3D object, and the page lands on it.
  * After that the object keeps turning, leans toward the pointer, and every few seconds
- * re-forms into another shape. It belongs to no project: a knot, a sphere, a twisted band.
+ * re-forms into another shape. It belongs to no project: a sphere, a knot, a twisted band.
+ * Each dot has its own place on the object and flies there in turn, so the object is built
+ * dot by dot rather than faded in.
  */
 
 const N = 1900, BIG = 56;
-const T_BOOT = 1900, FLY = 800, T_SCAT = 600, T_FORM = 1300, HOLD = 9000, MORPH = 1900;
-const NAMES = ["knot", "sphere", "band"];
+const T_BOOT = 1900, FLY = 800, T_SCAT = 600, SPREAD = 1100, D_FLY = 800, HOLD = 9000, MORPH = 1100;
+const NAMES = ["sphere", "knot", "band"];
 
-type Dot = { x: number; y: number; s: number; al: number; t0: number; fd: number; md: number; ox: number; oy: number };
+type Dot = { x: number; y: number; s: number; al: number; t0: number; fd: number; md: number; ox: number; oy: number; lx: number; ly: number };
 
 const rnd = Math.random;
 const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
 const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
+const out = (t: number) => 1 - Math.pow(1 - t, 4);
 const io3 = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 function shapes(): Float32Array[] {
   const knot = new Float32Array(N * 3), sphere = new Float32Array(N * 3), band = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
     /* a trefoil knot, given a little thickness */
-    const t = rnd() * Math.PI * 2, r = (2 + Math.cos(3 * t)) / 3, j = .038;
+    const t = (i + rnd()) / N * Math.PI * 2, r = (2 + Math.cos(3 * t)) / 3, j = .038;
     knot[i * 3] = r * Math.cos(2 * t) + gauss() * j; knot[i * 3 + 1] = r * Math.sin(2 * t) + gauss() * j; knot[i * 3 + 2] = Math.sin(3 * t) * .42 + gauss() * j;
     /* a sphere, evenly covered */
     const y = 1 - (i + .5) / N * 2, q = Math.sqrt(1 - y * y), a = i * 2.39996323;
     sphere[i * 3] = Math.cos(a) * q * .9; sphere[i * 3 + 1] = y * .9; sphere[i * 3 + 2] = Math.sin(a) * q * .9;
     /* a band with a half twist */
-    const u = rnd() * Math.PI * 2, v = (rnd() - .5) * .8, w = 1 + v * Math.cos(u / 2);
+    const u = (i + rnd()) / N * Math.PI * 2, v = (rnd() - .5) * .8, w = 1 + v * Math.cos(u / 2);
     band[i * 3] = w * Math.cos(u) * .82; band[i * 3 + 1] = v * Math.sin(u / 2) * .82; band[i * 3 + 2] = w * Math.sin(u) * .82;
   }
-  return [knot, sphere, band];
+  return [sphere, knot, band];
 }
 
 export function Dots({ onDone }: { onDone: () => void }) {
@@ -52,14 +55,14 @@ export function Dots({ onDone }: { onDone: () => void }) {
     for (let i = 0; i < N + BIG; i++) {
       const big = i >= N, wide = !big && rnd() < .22 ? 3.2 : 1, a = rnd() * 6.2832, r = 1.8 + rnd() * 6.5;
       dots.push(big
-        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: 1.5 + rnd() * 3, al: .3 + rnd() * .6, t0: rnd() * .9, fd: 0, md: 0, ox: 0, oy: 0 }
-        : { x: gauss() * wide, y: gauss() * wide, s: rnd() < .14 ? 1.9 : 1.2, al: .35 + rnd() * .6, t0: i / N, fd: rnd() * 500, md: rnd() * 700, ox: 0, oy: 0 });
+        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: 1.5 + rnd() * 3, al: .3 + rnd() * .6, t0: rnd() * .9, fd: 0, md: 0, ox: 0, oy: 0, lx: NaN, ly: NaN }
+        : { x: gauss() * wide, y: gauss() * wide, s: rnd() < .14 ? 1.9 : 1.2, al: .35 + rnd() * .6, t0: rnd(), fd: i / N * SPREAD + rnd() * 140, md: i / N * 900 + rnd() * 200, ox: 0, oy: 0, lx: NaN, ly: NaN });
     }
     const mean = new Float32Array(N), sd = new Float32Array(N);
     let sum = 0, sq = 0;
     for (let i = 0; i < N; i++) { const x = dots[i].x; sum += x; sq += x * x; const m = sum / (i + 1); mean[i] = m; sd[i] = Math.sqrt(Math.max(0, sq / (i + 1) - m * m)); }
 
-    const END = T_BOOT + T_SCAT + T_FORM + 500;
+    const END = T_BOOT + T_SCAT + SPREAD + D_FLY + 300;
     let w = 0, h = 0, raf = 0, visible = true, finished = false, ink = "#fff", frame = 0, label = "";
     let start = performance.now() - (still ? END : 0);
     let from = 0, to = 0, morphAt = 0;
@@ -85,9 +88,9 @@ export function Dots({ onDone }: { onDone: () => void }) {
       const el = now - start, p = Math.min(1, el / T_BOOT), ft = el - T_BOOT - T_SCAT;
       const small = w < 820, cx = w / 2, cy = h * (small ? .3 : .45), u = Math.min(w, h) * .105;
       const R = small ? w * .36 : Math.min(w, h) * .34;
-      const loose = 1 + .4 * io3(clamp((el - T_BOOT) / T_SCAT));
+      const sc = io3(clamp((el - T_BOOT) / T_SCAT)), loose = 1 + .4 * sc, far = 1 + 1.5 * sc;
       /* the object: which shapes, how far between them, and how it is turned */
-      if (finished && now > morphAt + MORPH + 700) { from = to; morphAt = now + HOLD; }
+      if (finished && now > morphAt + MORPH + 1150) { from = to; morphAt = now + HOLD; }
       if (finished && now > morphAt && to === from) to = (from + 1) % S.length;
       mouse.sx += (mouse.tx - mouse.sx) * .04; mouse.sy += (mouse.ty - mouse.sy) * .04;
       const ay = now * .00022 + mouse.sx * .7, ax = .42 + mouse.sy * .45;
@@ -95,16 +98,18 @@ export function Dots({ onDone }: { onDone: () => void }) {
       const A = S[from], B = S[to], dim = finished ? .8 : 1;
 
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = ink;
+      ctx.fillStyle = ink; ctx.strokeStyle = ink;
       for (let i = 0; i < dots.length; i++) {
         const d = dots[i], born = d.t0 * T_BOOT;
         if (el < born) continue;
         const q = clamp((el - born) / FLY), k = 1 - Math.pow(1 - q, 3);
-        let x = cx + d.x * u * k * loose, y = cy + d.y * u * k * loose, s = d.s, al = d.al * Math.min(1, q * 4);
+        const sp = i < N ? far : loose;
+        let x = cx + d.x * u * k * sp, y = cy + d.y * u * k * sp, s = d.s, al = d.al * Math.min(1, q * 4), fly = false;
         if (i < N) {
-          const e = io3(clamp((ft - d.fd) / T_FORM));
+          const e = out(clamp((ft - d.fd) / D_FLY));
           if (e > 0) {
             const m = to === from ? 0 : io3(clamp((now - morphAt - d.md) / MORPH)), j = i * 3;
+            fly = (e < .97) || (m > .03 && m < .97);
             const px = A[j] + (B[j] - A[j]) * m, py = A[j + 1] + (B[j + 1] - A[j + 1]) * m, pz = A[j + 2] + (B[j + 2] - A[j + 2]) * m;
             const rx = px * cay + pz * say_, rz = pz * cay - px * say_;
             const ry = py * cax - rz * sax, rz2 = py * sax + rz * cax;
@@ -120,15 +125,23 @@ export function Dots({ onDone }: { onDone: () => void }) {
         let tx = 0, ty = 0;
         if (m2 < 16900) { const mm = Math.sqrt(m2) || 1, f = (1 - mm / 130) ** 2 * 34; tx = mx / mm * f; ty = my / mm * f; }
         d.ox += (tx - d.ox) * .1; d.oy += (ty - d.oy) * .1;
-        ctx.globalAlpha = al * dim;
-        if (i >= N || s > 2.2) { ctx.beginPath(); ctx.arc(x + d.ox, y + d.oy, i >= N ? s : s * .55, 0, 6.2832); ctx.fill(); }
-        else ctx.fillRect(x + d.ox, y + d.oy, s, s);
+        const fx = x + d.ox, fy = y + d.oy;
+        /* a dot on its way to its place leaves a short streak, so the trip is visible */
+        if (fly && d.lx === d.lx) {
+          ctx.globalAlpha = Math.min(1, al * 1.3) * .55; ctx.lineWidth = s * .7;
+          const vx = d.lx - fx, vy = d.ly - fy, vl = Math.sqrt(vx * vx + vy * vy) || 1, g = Math.min(22, vl * 1.6) / vl;
+          ctx.beginPath(); ctx.moveTo(fx + vx * g, fy + vy * g); ctx.lineTo(fx, fy); ctx.stroke();
+        }
+        d.lx = fx; d.ly = fy;
+        ctx.globalAlpha = fly ? Math.min(1, al * 1.3) : al * dim;
+        if (i >= N || s > 2.2) { ctx.beginPath(); ctx.arc(fx, fy, i >= N ? s : s * .55, 0, 6.2832); ctx.fill(); }
+        else ctx.fillRect(fx, fy, s, s);
       }
       if (!finished) {
         const n = Math.min(N, Math.max(1, Math.floor(p * N)));
         say(el < T_BOOT ? `00 — sampling   ${String(Math.floor(p * 100)).padStart(3, "0")} / 100` : ft < 0 ? "01 — scatter" : `02 — form · ${NAMES[0]}`);
         if (stat.current) stat.current.textContent = `n ${String(n).padStart(4, "0")}  mean ${(mean[n - 1] >= 0 ? "+" : "") + mean[n - 1].toFixed(3)}  sd ${sd[n - 1].toFixed(3)}`;
-        if (ft > T_FORM * .72) finish();
+        if (ft > SPREAD + D_FLY * .5) finish();
       }
       if (visible && !still) raf = requestAnimationFrame(draw);
     };
