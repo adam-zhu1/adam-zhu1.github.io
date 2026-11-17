@@ -53,8 +53,6 @@ export default function Studio() {
   const theme = useTheme();
   const [page, setPage] = useState(readPage);
   const [ready, setReady] = useState(() => seenRecently() || !!readPage());
-  /* the name and the rest come in as the page opens; nothing waits for the dots */
-  useEffect(() => { const id = requestAnimationFrame(() => setReady(true)); return () => cancelAnimationFrame(id); }, []);
   const root = useRef<HTMLDivElement>(null);
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
@@ -166,7 +164,7 @@ export default function Studio() {
       {bar}
 
       <section className="st-hero" id="top">
-        <Dots />
+        <Dots onReady={() => setReady(true)} />
         <h1 className="st-in" style={d(0)}>Adam Zhu</h1>
         <div className="st-id">
           <p className="st-in" style={d(2)}>Carnegie Mellon University<br />Statistics and Machine Learning</p>
@@ -277,7 +275,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-dots { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink); }
 .st-hud span { position: absolute; font: 400 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); transition: opacity .5s; white-space: pre; }
 .st-hud b { font-weight: 400; color: var(--ink); }
-.st-hud .bl { left: 22px; top: 76px; }
+.st-hud .tl { left: 22px; top: 26px; } .st-hud .tr { right: 22px; top: 26px; } .st-hud .bl { left: 22px; bottom: 26px; }
 .st-hud.off span { opacity: 0; }
 .st-in { opacity: 0; transform: translateY(18px); filter: blur(6px); transition: opacity .8s var(--d, 0ms), transform .9s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), filter .8s var(--d, 0ms); }
 .st.ready .st-in { opacity: 1; transform: none; filter: none; }
@@ -401,7 +399,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .pj-main { padding: 80px 14px 14px; }
   .pj-head, .pj-cols { grid-template-columns: 1fr; gap: 28px; }
   .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
-  .st-hud .bl { left: 14px; top: 66px; }
+  .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; top: 46px; } .st-hud .bl { left: 14px; bottom: 18px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
   .st-head, .st-contact { grid-template-columns: 1fr; gap: 16px; align-items: start; }
   .st-rows li > * { grid-template-columns: 30px minmax(0, 1fr) 34px; }
