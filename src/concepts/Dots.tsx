@@ -3,8 +3,8 @@ import { seenRecently, touch } from "./seen";
 
 /**
  * The bootup and the object behind the name. Sampling: for about a second the screen is only
- * dots, appearing at random across it while a counter runs to 100 (the small readout is the
- * real running mean and spread of the draws). Form: every dot glides at once, each to its own
+ * dots, appearing at random all over it while a counter runs to 100 (the small readout is the
+ * real running mean and spread of a normal sample being drawn). Form: every dot glides at once, each to its own
  * place, into a turning 3D object, and only then does the page arrive on it. After that the object keeps turning,
  * leans toward the pointer, and every few seconds re-forms into the other shape: a knot and
  * a twisted band. It belongs to no project.
@@ -14,15 +14,15 @@ import { seenRecently, touch } from "./seen";
  */
 
 const N = 1900, BIG = 56;
-const T_BOOT = 1250, T_FORM = 2400, HOLD = 9000, MORPH = 2800;
+const T_BOOT = 1250, T_FORM = 3000, HOLD = 9000, MORPH = 2800;
 
-type Dot = { x: number; y: number; s: number; al: number; t0: number; ox: number; oy: number };
+type Dot = { x: number; y: number; s: number; al: number; t0: number; ox: number; oy: number; lx: number; ly: number };
 
 const rnd = Math.random;
 const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
 const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
 /* slow out of rest, slow into place */
-const ease = (t: number) => t < .5 ? 16 * t ** 5 : 1 - Math.pow(-2 * t + 2, 5) / 2;
+const ease = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 function shapes(): Float32Array[] {
   const knot = new Float32Array(N * 3), band = new Float32Array(N * 3);
@@ -53,12 +53,12 @@ export function Dots({ onReady }: { onReady: () => void }) {
     for (let i = 0; i < N + BIG; i++) {
       const a = rnd() * 6.2832, r = 1.8 + rnd() * 6.5;
       dots.push(i >= N
-        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: .45 + rnd() ** 2 * 1.75, al: .3 + rnd() * .6, t0: rnd() * .8, ox: 0, oy: 0 }
-        : { x: gauss(), y: gauss(), s: rnd() < .14 ? 1.9 : 1.2, al: .35 + rnd() * .6, t0: i / N, ox: 0, oy: 0 });
+        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: .45 + rnd() ** 2 * 1.75, al: .3 + rnd() * .6, t0: rnd() * .8, ox: 0, oy: 0, lx: NaN, ly: NaN }
+        : { x: (rnd() - .5) * 1.12, y: (rnd() - .5) * 1.12, s: rnd() < .14 ? 1.9 : 1.2, al: .35 + rnd() * .6, t0: i / N, ox: 0, oy: 0, lx: NaN, ly: NaN });
     }
     const mean = new Float32Array(N), sd = new Float32Array(N);
     let sum = 0, sq = 0;
-    for (let i = 0; i < N; i++) { const x = dots[i].x; sum += x; sq += x * x; const m = sum / (i + 1); mean[i] = m; sd[i] = Math.sqrt(Math.max(0, sq / (i + 1) - m * m)); }
+    for (let i = 0; i < N; i++) { const x = gauss(); sum += x; sq += x * x; const m = sum / (i + 1); mean[i] = m; sd[i] = Math.sqrt(Math.max(0, sq / (i + 1) - m * m)); }
 
     let w = 0, h = 0, raf = 0, visible = true, finished = false, ink = "#fff", frame = 0, lastTouch = 0;
     const END = T_BOOT + T_FORM;
@@ -90,10 +90,12 @@ export function Dots({ onReady }: { onReady: () => void }) {
       mouse.sx += (mouse.tx - mouse.sx) * .04; mouse.sy += (mouse.ty - mouse.sy) * .04;
       const ay = now * .00022 + mouse.sx * .7, ax = .42 + mouse.sy * .45;
       const cay = Math.cos(ay), say = Math.sin(ay), cax = Math.cos(ax), sax = Math.sin(ax);
-      const A = S[from], B = S[to], dim = 1 - .2 * e;
+      const A = S[from], B = S[to];
 
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = ink;
+      ctx.fillStyle = ink; ctx.strokeStyle = ink;
+      /* on the way in, the whole field turns a little about the centre, so every path curves */
+      const turn = (1 - e) * .85, ct = Math.cos(turn), st = Math.sin(turn), late = e * e * e, moving = p > 0 && p < 1 || m > 0 && m < 1;
       for (let i = 0; i < dots.length; i++) {
         const d = dots[i];
         /* each dot switches on at its own moment during the count, a little large, then settles */
@@ -107,9 +109,11 @@ export function Dots({ onReady }: { onReady: () => void }) {
           const ry = py * cax - rz * sax, rz2 = py * sax + rz * cax;
           const f = 3 / (3 + rz2);
           /* from its place in the cloud to its place on the object */
-          x = cx + d.x * w * .27; y = cy + d.y * h * .27;
+          const hx = d.x * w, hy = (d.y + .05) * h;
+          x = cx + hx * ct - hy * st; y = cy + hx * st + hy * ct;
           x += (cx + rx * R * f - x) * e; y += (cy + ry * R * f - y) * e;
-          s *= 1 + (f * 1.15 - 1.1) * e; al *= (1 + ((.25 + .75 * clamp(.5 - rz2 * .6)) - 1) * e) * dim;
+          /* it keeps its own size and brightness for the trip; depth only shows once it is nearly home */
+          s *= 1 + (f * 1.15 - 1.1) * late; al *= (1 + ((.25 + .75 * clamp(.5 - rz2 * .6)) - 1) * late) * (1 - .2 * late);
         } else {
           const a = now * .000012 * (i % 2 ? 1 : -1), ca = Math.cos(a), sa = Math.sin(a);
           x = cx + (d.x * ca - d.y * sa) * u * 1.4; y = cy + (d.x * sa + d.y * ca) * u * 1.4; al *= .8;
@@ -118,9 +122,16 @@ export function Dots({ onReady }: { onReady: () => void }) {
         let tx = 0, ty = 0;
         if (m2 < 16900) { const mm = Math.sqrt(m2) || 1, f = (1 - mm / 130) ** 2 * 34; tx = mx / mm * f; ty = my / mm * f; }
         d.ox += (tx - d.ox) * .1; d.oy += (ty - d.oy) * .1;
+        const fx = x + d.ox, fy = y + d.oy;
+        /* a short tail behind a travelling dot, as long as it is fast */
+        if (i < N && moving && d.lx === d.lx) {
+          const vx = d.lx - fx, vy = d.ly - fy, vl = Math.sqrt(vx * vx + vy * vy);
+          if (vl > 1.2) { const g = Math.min(26, vl * 2.2) / vl; ctx.globalAlpha = al * .5; ctx.lineWidth = s * .8; ctx.beginPath(); ctx.moveTo(fx + vx * g, fy + vy * g); ctx.lineTo(fx, fy); ctx.stroke(); }
+        }
+        d.lx = fx; d.ly = fy;
         ctx.globalAlpha = al;
-        if (i >= N || s > 2.2) { ctx.beginPath(); ctx.arc(x + d.ox, y + d.oy, i >= N ? s : s * .55, 0, 6.2832); ctx.fill(); }
-        else ctx.fillRect(x + d.ox, y + d.oy, s, s);
+        if (i >= N || s > 2.2) { ctx.beginPath(); ctx.arc(fx, fy, i >= N ? s : s * .55, 0, 6.2832); ctx.fill(); }
+        else ctx.fillRect(fx, fy, s, s);
       }
       if (!finished && stat.current) {
         const n = Math.min(N, Math.max(1, Math.floor(b * N)));
