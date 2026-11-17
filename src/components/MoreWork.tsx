@@ -8,7 +8,7 @@ type Item = {
 
 /* Newest first. Every figure here is the resume's, word for word in substance; the paper is
    scoped to what Adam did on it (second author, joined at the revision stage). */
-const MORE: Item[] = [
+export const MORE: Item[] = [
   { year: "2026", when: "Sep 2026 to now", name: "ScottyLabs AI", role: "Software engineer", org: "Carnegie Mellon",
     body: "Set up the dev stack for Bark: a Python LLM backend, MCP tools and Postgres. Traced a login bug where expired sessions still looked signed in but every request failed.",
     tags: "Python, MCP, Postgres", href: "https://scottylabs.org/", cta: "ScottyLabs" },
