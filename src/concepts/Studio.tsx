@@ -5,13 +5,16 @@ import { MORE } from "../components/MoreWork";
 import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
 import { Dots } from "./Dots";
-import { Diagram } from "./Diagrams";
+import { TrueLine } from "../components/TrueLine";
+import { Clarity } from "../components/Clarity";
+import { NistFigure } from "../components/ProjectStage";
 import { LINKS } from "./links";
 
 /**
  * Draft: a bootup of dots that counts to 100 and settles behind the name; a first screen
- * with the name in the middle and small things spaced far apart around it; projects as
- * large cards, each a live diagram; the rest of the work as numbered rows.
+ * with the name in the middle and small things spaced far apart around it; one project per
+ * screen, words on the left and the real thing on the right (the throw footage, the app's
+ * windows, the chart); the rest of the work as numbered rows.
  */
 
 const MAIL = LINKS[0].href.replace("mailto:", "");
@@ -20,24 +23,21 @@ const d = (i: number) => ({ "--d": `${i * 70}ms` }) as CSSProperties;
 export default function Studio() {
   const theme = useTheme();
   const [ready, setReady] = useState(false);
-  const [slide, setSlide] = useState(0);
+  const [seen, setSeen] = useState<Record<string, boolean>>({});
   const root = useRef<HTMLDivElement>(null);
-
-  /* the small card in the corner turns through the projects */
-  useEffect(() => {
-    const id = setInterval(() => setSlide(s => (s + 1) % WORK.length), 5200);
-    return () => clearInterval(id);
-  }, []);
 
   /* things below the first screen rise in as they are reached */
   useEffect(() => {
     const els = root.current?.querySelectorAll<HTMLElement>("[data-rv]") ?? [];
-    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("on"); io.unobserve(e.target); } }), { threshold: .15, rootMargin: "0px 0px -6% 0px" });
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("on"); io.unobserve(e.target);
+      const id = (e.target as HTMLElement).dataset.seen;
+      if (id) setSeen(s => ({ ...s, [id]: true }));
+    }), { threshold: .15, rootMargin: "0px 0px -6% 0px" });
     els.forEach(e => io.observe(e));
     return () => io.disconnect();
   }, []);
-
-  const cur = WORK[slide];
 
   return (
     <div className={`st${ready ? " ready" : ""}`} ref={root}>
@@ -78,32 +78,31 @@ export default function Studio() {
           </div>
         </div>
 
-        <a className="st-mini st-in" style={d(6)} href="#projects">
-          <div className="top"><span>{slide + 1}/{WORK.length}</span><i className="prog"><b key={slide} /></i><span>to projects ↗</span></div>
-          <div className="pane" key={cur.id}><Diagram k={cur.demo} /></div>
-          <div className="bot"><span>{cur.name}</span><span>{cur.kind}</span></div>
-        </a>
+        <a className="st-pill st-next st-in" style={d(6)} href="#projects">Projects <i>↓</i></a>
       </section>
 
       <section className="st-sec" id="projects">
         <div className="st-head">
           <h2 data-rv>Projects <i>↗</i></h2>
-          <p data-rv style={d(1)}>Three things I built or researched. Each card is a live diagram of how it works.</p>
-        </div>
-        <div className="st-grid">
-          {WORK.map((w, i) => (
-            <article key={w.id} className={`st-card${i === 0 ? " wide" : ""}`} data-rv style={d(i ? i : 0)}>
-              <div className="pane"><Diagram k={w.demo} /></div>
-              <div className="cap">
-                <span className="n"><i />{w.name}</span>
-                <span className="k">{w.kind}</span>
-              </div>
-              <p className="what">{w.what} <b>{w.big[0]}</b> {w.big[1]}.</p>
-              {w.links && <p className="lk">{w.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</p>}
-            </article>
-          ))}
+          <p data-rv style={d(1)}>Three things I built or researched, one screen each.</p>
         </div>
       </section>
+
+      {WORK.map((w, i) => (
+        <section key={w.id} id={w.id} className="st-proj" style={{ "--accent": w.accent } as CSSProperties}>
+          <div className="txt">
+            <p className="idx" data-rv><b>{String(i + 1).padStart(2, "0")}</b> / {String(WORK.length).padStart(2, "0")}<em>{w.kind}</em></p>
+            <h3 data-rv style={d(1)}>{w.name}</h3>
+            <p className="what" data-rv style={d(2)}>{w.what}</p>
+            <p className="stat" data-rv style={d(3)}><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
+            <p className="body" data-rv style={d(4)}>{w.body}</p>
+            {w.links && <div className="st-pills" data-rv style={d(5)}>{w.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
+          </div>
+          <div className="vis" data-rv data-seen={w.id} style={d(2)}>
+            {w.demo === "trueline" ? <TrueLine /> : w.demo === "clarity" ? <Clarity /> : <NistFigure on={!!seen[w.id]} />}
+          </div>
+        </section>
+      ))}
 
       <section className="st-sec" id="more">
         <div className="st-head">
@@ -192,29 +191,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-tiles span { font-size: 10.5px; color: var(--mut); white-space: nowrap; }
 .st-bl p { margin: 0 0 18px; font-size: 14.5px; line-height: 1.4; text-indent: 1.2em; max-width: 31em; }
 .st-pills { display: flex; flex-wrap: wrap; gap: 6px; }
-.st-mini { position: absolute; right: 22px; bottom: 22px; width: min(300px, 26vw); padding: 10px; border-radius: 14px; background: color-mix(in srgb, var(--ink) 8%, transparent); backdrop-filter: blur(10px); display: block; }
-.st-mini .top, .st-mini .bot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 10.5px; color: var(--mut); }
-.st-mini .bot { color: var(--ink); font-size: 12px; } .st-mini .bot span:last-child { color: var(--mut); font-size: 10.5px; }
-.st-mini .prog { flex: 1; height: 1px; background: var(--ln); position: relative; overflow: hidden; }
-.st-mini .prog b { position: absolute; inset: 0; background: var(--ink); transform-origin: left; animation: st-fill 5.2s linear both; }
-@keyframes st-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.st-mini .pane { margin: 9px 0; border-radius: 8px; background: var(--bg); border: 1px solid var(--ln); animation: st-swap .6s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes st-swap { from { opacity: 0; transform: scale(.97); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+.st-next { position: absolute; right: 22px; bottom: 22px; }
 
-/* diagrams */
-.dg { display: block; width: 100%; height: auto; color: var(--ink); font-family: var(--mono); }
-.dg text { fill: currentColor; font-size: 8.5px; letter-spacing: .05em; text-transform: uppercase; }
-.dg .hd, .dg .lb, .dg .sub { fill: var(--mut); } .dg .lb, .dg .sub { font-size: 7.5px; }
-.dg .rd text { font-family: "Helvetica Neue", var(--sans); font-size: 19px; letter-spacing: -.04em; text-transform: none; }
-.dg .rd .lb { font-family: var(--mono); font-size: 7.5px; letter-spacing: .05em; text-transform: uppercase; }
-.dg .ln { fill: none; stroke: currentColor; stroke-width: .8; opacity: .55; }
-.dg .faint { stroke: currentColor; stroke-width: .5; opacity: .14; } .dg .dash { stroke-dasharray: 2 3; opacity: .4; }
-.dg .fill { fill: currentColor; opacity: .5; }
-.dg .ghost { fill: none; stroke: currentColor; stroke-width: .6; stroke-dasharray: 1.5 3; opacity: .35; }
-.dg .live { fill: none; stroke: var(--acc); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.dg .run { fill: var(--acc); }
-.dg .bx rect { fill: var(--bg); stroke: currentColor; stroke-width: .8; }
-.dg .bx.solid rect { fill: currentColor; } .dg .bx.solid text { fill: var(--bg); }
 
 /* sections */
 .st-sec { padding: clamp(90px, 14vh, 170px) 22px 0; }
@@ -225,19 +203,19 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 [data-rv] { opacity: 0; transform: translateY(34px); transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1); }
 [data-rv].on { opacity: 1; transform: none; }
 
-.st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 14px; }
-.st-card.wide { grid-column: 1 / -1; }
-.st-card .pane { border-radius: 14px; background: var(--card); border: 1px solid var(--ln); padding: clamp(14px, 3vw, 44px); transition: border-color .3s, transform .5s cubic-bezier(.2,.7,.2,1); }
-.st-card.wide .pane { padding: clamp(14px, 2vw, 30px) 16%; }
-.st-card:hover .pane { border-color: color-mix(in srgb, var(--ink) 45%, transparent); transform: translateY(-4px); }
-.st-card .cap { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 14px 2px 8px; }
-.st-card .n { display: flex; align-items: center; gap: 10px; font-size: 19px; letter-spacing: -.03em; }
-.st-card .n i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--ink); transition: background .2s; }
-.st-card:hover .n i { background: var(--acc); border-color: var(--acc); }
-.st-card .k { font-size: 12px; color: var(--mut); padding: 4px 10px; border: 1px solid var(--ln); border-radius: 999px; white-space: nowrap; }
-.st-card .what { margin: 0 2px 12px; font-size: 14.5px; line-height: 1.45; color: var(--mut); max-width: 44em; }
-.st-card .what b { font-weight: 400; color: var(--ink); }
-.st-card .lk { margin: 0 2px; display: flex; gap: 6px; }
+/* one project per screen */
+.st-proj { min-height: 100svh; padding: 96px 22px 40px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 4vw, 72px); align-items: center; border-top: 1px solid var(--ln); margin-top: clamp(40px, 8vh, 90px); scroll-margin-top: 0; }
+.st-proj .idx { margin: 0 0 22px; font: 400 11.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); display: flex; gap: 6px; }
+.st-proj .idx b { font-weight: 400; color: var(--ink); } .st-proj .idx em { font-style: normal; margin-left: auto; }
+.st-proj h3 { margin: 0 0 20px; font-weight: 400; font-size: clamp(60px, 9.2vw, 150px); line-height: .9; letter-spacing: -.06em; }
+.st-proj .what { margin: 0 0 30px; font-size: clamp(18px, 1.55vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
+.st-proj .stat { margin: 0 0 22px; padding-top: 20px; border-top: 1px solid var(--ln); display: flex; align-items: baseline; gap: 14px; }
+.st-proj .stat b { font-weight: 400; font-size: clamp(38px, 4.2vw, 64px); letter-spacing: -.05em; line-height: 1; white-space: nowrap; }
+.st-proj .stat span { font-size: 13.5px; line-height: 1.35; color: var(--mut); }
+.st-proj .body { margin: 0 0 22px; font-size: 14px; line-height: 1.5; color: var(--mut); max-width: 36em; }
+.st-proj .vis { min-width: 0; }
+.st-proj .vis[data-rv] { transform: translateY(40px) scale(.97); filter: blur(8px); transition: opacity .9s var(--d, 0ms), transform 1.1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), filter .9s var(--d, 0ms); }
+.st-proj .vis[data-rv].on { transform: none; filter: none; }
 
 .st-rows { border-top: 1px solid var(--ln); }
 .st-rows li > * { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1.25fr) 40px; gap: 20px; align-items: start; padding: 24px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
@@ -262,18 +240,16 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st h1 { top: 30%; font-size: 19vw; }
   .st-col { top: 40%; } .st-col.a { left: 14px; } .st-col.b { display: none; } .st-col.c { right: 14px; }
   .st-bl { left: 14px; bottom: 14px; width: calc(100vw - 28px); }
-  .st-mini { display: none; }
+  .st-next { display: none; }
   .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; } .st-hud .bl { left: 14px; bottom: 18px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
   .st-head, .st-contact { grid-template-columns: 1fr; gap: 16px; align-items: start; }
-  .st-grid { grid-template-columns: 1fr; }
-  .st-card.wide .pane { padding: 14px; }
+  .st-proj { grid-template-columns: 1fr; padding: 72px 14px 24px; align-items: start; }
   .st-rows li > * { grid-template-columns: 30px minmax(0, 1fr) 34px; }
   .st-rows .b { grid-column: 2 / 3; grid-row: 2; }
   .st-foot { padding-left: 14px; padding-right: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
-  .st-mini .pane, .st-mini .prog b { animation: none; }
 }
 `;

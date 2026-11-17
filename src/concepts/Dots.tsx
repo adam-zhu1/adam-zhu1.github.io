@@ -1,51 +1,69 @@
 import { useEffect, useRef } from "react";
 
 /**
- * The bootup and the field behind the name, one canvas. Dots are drawn one at a time from a
- * normal distribution and thrown out from the centre while a counter runs to 100; the small
- * readout is the real running mean and spread of what has been drawn so far, so it settles
- * as the sample grows. When the count is done the page forms and the same dots stay behind
- * the name, turning slowly and moving out of the pointer's way.
+ * The bootup and the object behind the name, one canvas, in three stages. Sampling: dots
+ * are drawn from a normal distribution and thrown out from the centre while a counter runs
+ * to 100 (the readout is the real running mean and spread of the draws). Scatter: the cloud
+ * loosens. Form: the dots pull together into a turning 3D object, and the page lands on it.
+ * After that the object keeps turning, leans toward the pointer, and every few seconds
+ * re-forms into another shape. It belongs to no project: a knot, a sphere, a twisted band.
  */
 
-const N = 1700, BIG = 64, BOOT = 2300, FLY = 900;
+const N = 1900, BIG = 56;
+const T_BOOT = 1900, FLY = 800, T_SCAT = 600, T_FORM = 1300, HOLD = 9000, MORPH = 1900;
+const NAMES = ["knot", "sphere", "band"];
 
-type Dot = { x: number; y: number; s: number; al: number; t0: number; big: boolean; ox: number; oy: number; w: number };
+type Dot = { x: number; y: number; s: number; al: number; t0: number; fd: number; md: number; ox: number; oy: number };
 
-function make(): { dots: Dot[]; mean: Float32Array; sd: Float32Array } {
-  const g = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
-  const dots: Dot[] = [];
+const rnd = Math.random;
+const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
+const io3 = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+function shapes(): Float32Array[] {
+  const knot = new Float32Array(N * 3), sphere = new Float32Array(N * 3), band = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
-    const wide = Math.random() < .22 ? 3.2 : 1;
-    dots.push({ x: g() * wide, y: g() * wide, s: Math.random() < .12 ? 1.8 : 1.1, al: .25 + Math.random() * .6, t0: i / N, big: false, ox: 0, oy: 0, w: 0 });
+    /* a trefoil knot, given a little thickness */
+    const t = rnd() * Math.PI * 2, r = (2 + Math.cos(3 * t)) / 3, j = .038;
+    knot[i * 3] = r * Math.cos(2 * t) + gauss() * j; knot[i * 3 + 1] = r * Math.sin(2 * t) + gauss() * j; knot[i * 3 + 2] = Math.sin(3 * t) * .42 + gauss() * j;
+    /* a sphere, evenly covered */
+    const y = 1 - (i + .5) / N * 2, q = Math.sqrt(1 - y * y), a = i * 2.39996323;
+    sphere[i * 3] = Math.cos(a) * q * .9; sphere[i * 3 + 1] = y * .9; sphere[i * 3 + 2] = Math.sin(a) * q * .9;
+    /* a band with a half twist */
+    const u = rnd() * Math.PI * 2, v = (rnd() - .5) * .8, w = 1 + v * Math.cos(u / 2);
+    band[i * 3] = w * Math.cos(u) * .82; band[i * 3 + 1] = v * Math.sin(u / 2) * .82; band[i * 3 + 2] = w * Math.sin(u) * .82;
   }
-  /* running mean and spread of x, in the order the dots appear */
-  const mean = new Float32Array(N), sd = new Float32Array(N);
-  let sum = 0, sq = 0;
-  dots.forEach((d, i) => { sum += d.x; sq += d.x * d.x; const m = sum / (i + 1); mean[i] = m; sd[i] = Math.sqrt(Math.max(0, sq / (i + 1) - m * m)); });
-  for (let i = 0; i < BIG; i++) {
-    const a = Math.random() * Math.PI * 2, r = 1.6 + Math.random() * 6.5;
-    dots.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: 1.6 + Math.random() * 3.2, al: .35 + Math.random() * .65, t0: Math.random() * .9, big: true, ox: 0, oy: 0, w: 0 });
-  }
-  dots.forEach(d => { d.w = (Math.random() < .5 ? -1 : 1) * .000012 / (.4 + Math.hypot(d.x, d.y) * .25); });
-  return { dots, mean, sd };
+  return [knot, sphere, band];
 }
 
 export function Dots({ onDone }: { onDone: () => void }) {
   const cv = useRef<HTMLCanvasElement>(null);
   const hud = useRef<HTMLDivElement>(null);
-  const cnt = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLSpanElement>(null);
   const stat = useRef<HTMLSpanElement>(null);
   const done = useRef(onDone);
-  done.current = onDone;
+  useEffect(() => { done.current = onDone; }, [onDone]);
 
   useEffect(() => {
     const c = cv.current!, ctx = c.getContext("2d")!;
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const { dots, mean, sd } = make();
-    let w = 0, h = 0, raf = 0, visible = true, finished = false, ink = "#fff", frame = 0;
-    let start = performance.now() - (still ? BOOT + FLY : 0), doneAt = 0;
-    const mouse = { x: -9999, y: -9999 };
+    const S = shapes();
+    const dots: Dot[] = [];
+    for (let i = 0; i < N + BIG; i++) {
+      const big = i >= N, wide = !big && rnd() < .22 ? 3.2 : 1, a = rnd() * 6.2832, r = 1.8 + rnd() * 6.5;
+      dots.push(big
+        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: 1.5 + rnd() * 3, al: .3 + rnd() * .6, t0: rnd() * .9, fd: 0, md: 0, ox: 0, oy: 0 }
+        : { x: gauss() * wide, y: gauss() * wide, s: rnd() < .14 ? 1.9 : 1.2, al: .35 + rnd() * .6, t0: i / N, fd: rnd() * 500, md: rnd() * 700, ox: 0, oy: 0 });
+    }
+    const mean = new Float32Array(N), sd = new Float32Array(N);
+    let sum = 0, sq = 0;
+    for (let i = 0; i < N; i++) { const x = dots[i].x; sum += x; sq += x * x; const m = sum / (i + 1); mean[i] = m; sd[i] = Math.sqrt(Math.max(0, sq / (i + 1) - m * m)); }
+
+    const END = T_BOOT + T_SCAT + T_FORM + 500;
+    let w = 0, h = 0, raf = 0, visible = true, finished = false, ink = "#fff", frame = 0, label = "";
+    let start = performance.now() - (still ? END : 0);
+    let from = 0, to = 0, morphAt = 0;
+    const mouse = { x: -9999, y: -9999, tx: 0, ty: 0, sx: 0, sy: 0 };
 
     const size = () => {
       const r = c.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
@@ -53,42 +71,64 @@ export function Dots({ onDone }: { onDone: () => void }) {
     };
     const finish = () => {
       if (finished) return;
-      finished = true; doneAt = performance.now();
+      finished = true; morphAt = performance.now() + HOLD;
       document.documentElement.style.overflow = "";
       hud.current?.classList.add("off");
       done.current();
     };
-    const skip = () => { if (!finished) start = performance.now() - BOOT - FLY; };
+    const skip = () => { if (!finished) start = performance.now() - END; };
+    const say = (t: string) => { if (t !== label && stage.current) { label = t; stage.current.textContent = t; } };
 
     const draw = (now: number) => {
       raf = 0;
       if (frame++ % 20 === 0) ink = getComputedStyle(c).color;
-      const el = now - start, p = Math.min(1, el / BOOT);
-      const cx = w / 2, cy = h * (w < 820 ? .3 : .45), u = Math.min(w, h) * .105;
-      const rot = finished ? now - doneAt : 0;
-      const dim = finished ? Math.max(.62, 1 - (now - doneAt) / 1400 * .38) : 1;
+      const el = now - start, p = Math.min(1, el / T_BOOT), ft = el - T_BOOT - T_SCAT;
+      const small = w < 820, cx = w / 2, cy = h * (small ? .3 : .45), u = Math.min(w, h) * .105;
+      const R = small ? w * .36 : Math.min(w, h) * .34;
+      const loose = 1 + .4 * io3(clamp((el - T_BOOT) / T_SCAT));
+      /* the object: which shapes, how far between them, and how it is turned */
+      if (finished && now > morphAt + MORPH + 700) { from = to; morphAt = now + HOLD; }
+      if (finished && now > morphAt && to === from) to = (from + 1) % S.length;
+      mouse.sx += (mouse.tx - mouse.sx) * .04; mouse.sy += (mouse.ty - mouse.sy) * .04;
+      const ay = now * .00022 + mouse.sx * .7, ax = .42 + mouse.sy * .45;
+      const cay = Math.cos(ay), say_ = Math.sin(ay), cax = Math.cos(ax), sax = Math.sin(ax);
+      const A = S[from], B = S[to], dim = finished ? .8 : 1;
+
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = ink;
-      for (const d of dots) {
-        const born = d.t0 * BOOT;
+      for (let i = 0; i < dots.length; i++) {
+        const d = dots[i], born = d.t0 * T_BOOT;
         if (el < born) continue;
-        const q = Math.min(1, (el - born) / FLY), k = 1 - Math.pow(1 - q, 3);
-        const a = rot * d.w, ca = Math.cos(a), sa = Math.sin(a);
-        let x = cx + (d.x * ca - d.y * sa) * u * k, y = cy + (d.x * sa + d.y * ca) * u * k;
+        const q = clamp((el - born) / FLY), k = 1 - Math.pow(1 - q, 3);
+        let x = cx + d.x * u * k * loose, y = cy + d.y * u * k * loose, s = d.s, al = d.al * Math.min(1, q * 4);
+        if (i < N) {
+          const e = io3(clamp((ft - d.fd) / T_FORM));
+          if (e > 0) {
+            const m = to === from ? 0 : io3(clamp((now - morphAt - d.md) / MORPH)), j = i * 3;
+            const px = A[j] + (B[j] - A[j]) * m, py = A[j + 1] + (B[j + 1] - A[j + 1]) * m, pz = A[j + 2] + (B[j + 2] - A[j + 2]) * m;
+            const rx = px * cay + pz * say_, rz = pz * cay - px * say_;
+            const ry = py * cax - rz * sax, rz2 = py * sax + rz * cax;
+            const f = 3 / (3 + rz2);
+            x += (cx + rx * R * f - x) * e; y += (cy + ry * R * f - y) * e;
+            s *= 1 + (f * 1.15 - .1 - 1) * e; al *= 1 + ((.25 + .75 * clamp(.5 - rz2 * .6)) - 1) * e;
+          }
+        } else if (finished) {
+          const a = (now - start) * .000012 * (i % 2 ? 1 : -1), ca = Math.cos(a), sa = Math.sin(a);
+          x = cx + (d.x * ca - d.y * sa) * u * loose; y = cy + (d.x * sa + d.y * ca) * u * loose;
+        }
         const mx = x - mouse.x, my = y - mouse.y, m2 = mx * mx + my * my;
         let tx = 0, ty = 0;
-        if (m2 < 22500) { const m = Math.sqrt(m2) || 1, f = (1 - m / 150) ** 2 * 46; tx = mx / m * f; ty = my / m * f; }
+        if (m2 < 16900) { const mm = Math.sqrt(m2) || 1, f = (1 - mm / 130) ** 2 * 34; tx = mx / mm * f; ty = my / mm * f; }
         d.ox += (tx - d.ox) * .1; d.oy += (ty - d.oy) * .1;
-        x += d.ox; y += d.oy;
-        ctx.globalAlpha = d.al * Math.min(1, q * 4) * dim;
-        if (d.big) { ctx.beginPath(); ctx.arc(x, y, d.s, 0, 6.2832); ctx.fill(); }
-        else ctx.fillRect(x, y, d.s, d.s);
+        ctx.globalAlpha = al * dim;
+        if (i >= N || s > 2.2) { ctx.beginPath(); ctx.arc(x + d.ox, y + d.oy, i >= N ? s : s * .55, 0, 6.2832); ctx.fill(); }
+        else ctx.fillRect(x + d.ox, y + d.oy, s, s);
       }
       if (!finished) {
         const n = Math.min(N, Math.max(1, Math.floor(p * N)));
-        if (cnt.current) cnt.current.textContent = String(Math.floor(p * 100)).padStart(3, "0");
+        say(el < T_BOOT ? `00 — sampling   ${String(Math.floor(p * 100)).padStart(3, "0")} / 100` : ft < 0 ? "01 — scatter" : `02 — form · ${NAMES[0]}`);
         if (stat.current) stat.current.textContent = `n ${String(n).padStart(4, "0")}  mean ${(mean[n - 1] >= 0 ? "+" : "") + mean[n - 1].toFixed(3)}  sd ${sd[n - 1].toFixed(3)}`;
-        if (el > BOOT + 350) finish();
+        if (ft > T_FORM * .72) finish();
       }
       if (visible && !still) raf = requestAnimationFrame(draw);
     };
@@ -99,7 +139,11 @@ export function Dots({ onDone }: { onDone: () => void }) {
     kick();
     const io = new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible) kick(); });
     io.observe(c);
-    const move = (e: PointerEvent) => { const r = c.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; };
+    const move = (e: PointerEvent) => {
+      const r = c.getBoundingClientRect();
+      mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+      mouse.tx = mouse.x / r.width - .5; mouse.ty = mouse.y / r.height - .5;
+    };
     const resize = () => { size(); kick(); };
     addEventListener("pointermove", move, { passive: true });
     addEventListener("resize", resize);
@@ -118,7 +162,7 @@ export function Dots({ onDone }: { onDone: () => void }) {
       <canvas className="st-dots" ref={cv} aria-hidden="true" />
       <div className="st-hud" ref={hud} aria-hidden="true">
         <span className="tl">Adam Zhu / statistics and machine learning</span>
-        <span className="tr">00 &mdash; sampling &nbsp; <b ref={cnt}>000</b> / 100</span>
+        <span className="tr" ref={stage} />
         <span className="bl" ref={stat} />
       </div>
     </>
