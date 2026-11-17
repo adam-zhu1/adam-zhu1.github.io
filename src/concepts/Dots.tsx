@@ -55,7 +55,7 @@ export function Dots({ onDone }: { onDone: () => void }) {
     for (let i = 0; i < N + BIG; i++) {
       const big = i >= N, wide = !big && rnd() < .22 ? 3.2 : 1, a = rnd() * 6.2832, r = 1.8 + rnd() * 6.5;
       dots.push(big
-        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: 1.5 + rnd() * 3, al: .3 + rnd() * .6, t0: rnd() * .9, fd: 0, md: 0, ox: 0, oy: 0, lx: NaN, ly: NaN }
+        ? { x: Math.cos(a) * r, y: Math.sin(a) * r * .75, s: .45 + rnd() ** 2 * 1.75, al: .3 + rnd() * .6, t0: rnd() * .9, fd: 0, md: 0, ox: 0, oy: 0, lx: NaN, ly: NaN }
         : { x: gauss() * wide, y: gauss() * wide, s: rnd() < .14 ? 1.9 : 1.2, al: .35 + rnd() * .6, t0: rnd(), fd: i / N * SPREAD + rnd() * 140, md: i / N * 900 + rnd() * 200, ox: 0, oy: 0, lx: NaN, ly: NaN });
     }
     const mean = new Float32Array(N), sd = new Float32Array(N);
