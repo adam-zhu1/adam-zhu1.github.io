@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { seenRecently, touch } from "./seen";
-import { scene } from "./scene";
+import { flow, scene } from "./scene";
 
 /**
  * The bootup and the object behind the name. Sampling: for about a second the screen is only
@@ -11,8 +11,9 @@ import { scene } from "./scene";
  * a twisted band. It belongs to no project.
  *
  * The dots stay on screen for the whole page. Scrolling down from the first screen, the same
- * dots leave the object and spell "Projects"; scrolling on, the word lets go and they spread
- * into a loose field that drifts slowly behind everything below.
+ * dots open out of the object into a long ribbon that bends and twists across the screen, and it
+ * stays behind everything below: it flows on as the page scrolls and changes its bends from
+ * one project to the next.
  *
  * The bootup plays on a fresh visit, or on a load after the visitor has been idle a while.
  * Coming back from a project page, or reloading mid-visit, shows the object already formed.
@@ -42,23 +43,6 @@ function shapes(): Float32Array[] {
   return [knot, band];
 }
 
-/* Where each dot sits when the dots spell a word: random points inside the letters, as
-   fractions of the word's width, centred on its middle. */
-function word(text: string, family: string): Float32Array {
-  const W = 1400, H = 360, out = new Float32Array(N * 2);
-  const k = document.createElement("canvas"); k.width = W; k.height = H;
-  const x = k.getContext("2d", { willReadFrequently: true });
-  if (!x) return out;
-  x.font = `700 250px ${family}`; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(text, W / 2, H / 2);
-  const px = x.getImageData(0, 0, W, H).data, on: number[] = [];
-  let lo = W, hi = 0, top = H, bot = 0;
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (px[(j * W + i) * 4 + 3] > 128) { on.push(j * W + i); if (i < lo) lo = i; if (i > hi) hi = i; if (j < top) top = j; if (j > bot) bot = j; }
-  if (!on.length) return out;
-  const span = hi - lo || 1, mx = (lo + hi) / 2, my = (top + bot) / 2;
-  for (let i = 0; i < N; i++) { const q = on[Math.floor(rnd() * on.length)]; out[i * 2] = (q % W + rnd() - mx) / span; out[i * 2 + 1] = (Math.floor(q / W) + rnd() - my) / span; }
-  return out;
-}
-
 export function Dots({ onReady }: { onReady: () => void }) {
   const cv = useRef<HTMLCanvasElement>(null);
   const hud = useRef<HTMLDivElement>(null);
@@ -71,9 +55,10 @@ export function Dots({ onReady }: { onReady: () => void }) {
     const c = cv.current!, ctx = c.getContext("2d")!;
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const S = shapes();
-    const family = getComputedStyle(c).fontFamily || "sans-serif";
-    let WD = word("Projects", family), live = true;
-    document.fonts?.ready.then(() => { if (live) WD = word("Projects", family); });
+    /* each dot's own place on the ribbon: along it and across it */
+    const SU = new Float32Array(N), SV = new Float32Array(N);
+    for (let i = 0; i < N; i++) { SU[i] = rnd() * 2 - 1; SV[i] = rnd() * 2 - 1; }
+    let aS = -1, gS = 0, kS = 0;
     const dots: Dot[] = [];
     for (let i = 0; i < N + BIG; i++) {
       const a = rnd() * 6.2832, r = 1.8 + rnd() * 6.5;
@@ -113,13 +98,20 @@ export function Dots({ onReady }: { onReady: () => void }) {
       if (finished && now > morphAt && to === from) to = (from + 1) % S.length;
       const m = to === from ? 0 : ease(clamp((now - morphAt) / MORPH));
       mouse.sx += (mouse.tx - mouse.sx) * .04; mouse.sy += (mouse.ty - mouse.sy) * .04;
-      /* the scroll: object to word (ea), word to field (es). The object stops turning and
-         faces front as the word forms, so the letters read flat. */
-      const sc = still ? { a: 0, s: 0, end: 0 } : scene(scrollY, innerHeight), ea = ease(sc.a), es = ease(sc.s);
-      rot += Math.min(64, now - last) * .00022 * (1 - sc.a); last = now;
-      if (sc.a === 0 && rot > Math.PI) rot -= Math.PI * 2;
-      const ay = (rot + mouse.sx * .7) * (1 - ea), ax = (.42 + mouse.sy * .45) * (1 - ea);
-      const WW = Math.min(w * .8, 1500), drift = Math.max(0, scrollY - sc.end);
+      /* the scroll: object to ribbon. The values follow the scroll with a little lag, so a
+         fast flick of the wheel still gives the dots time to travel. */
+      const aT = still ? 0 : scene(scrollY, innerHeight), dt = Math.min(64, now - last); last = now;
+      const lag = 1 - Math.pow(.94, dt / 16.7);
+      if (aS < 0) { aS = aT; gS = flow.g; kS = flow.pr; }
+      aS += (aT - aS) * lag; gS += (flow.g - gS) * lag; kS += (Math.max(0, flow.pr) - kS) * lag * .6;
+      const ea = ease(aS);
+      rot += dt * .00022 * (1 - aS);
+      if (aT === 0 && aS < .001 && rot > Math.PI) rot -= Math.PI * 2;
+      const ay = rot * (1 - ea) + mouse.sx * .7 * (1 - ea * .6), ax = .42 + mouse.sy * .45;
+      /* the ribbon: its phase runs with time and with the scroll; from one project to the
+         next it changes how many bends it has and how it is twisted */
+      const T = now * .00026 + scrollY * .001, Rw = Math.max(w * .56, 420), wy = h * (.62 + .1 * gS);
+      const k1 = 2.3 + Math.sin(kS * 1.9) * .8, k2 = 1.7 + Math.cos(kS * 1.3) * .7, amp = .13 + .04 * Math.sin(kS * 2.4 + 1), dim = 1 - .45 * gS;
       const cay = Math.cos(ay), say = Math.sin(ay), cax = Math.cos(ax), sax = Math.sin(ax);
       const A = S[from], B = S[to];
 
@@ -127,7 +119,7 @@ export function Dots({ onReady }: { onReady: () => void }) {
       ctx.fillStyle = ink; ctx.strokeStyle = ink;
       /* on the way in, the whole field turns a little about the centre, so every path curves
          (no turn at rest, so the dots start spread over the whole screen, not a tilted block) */
-      const turn = Math.sin(Math.PI * p) * .35, ct = Math.cos(turn), st = Math.sin(turn), late = e * e * e, moving = p > 0 && p < 1 || m > 0 && m < 1 || sc.a > 0 && sc.a < 1 || sc.s > 0 && sc.s < 1;
+      const turn = Math.sin(Math.PI * p) * .35, ct = Math.cos(turn), st = Math.sin(turn), late = e * e * e, moving = p > 0 && p < 1 || m > 0 && m < 1 || Math.abs(aT - aS) > .002;
       for (let i = 0; i < dots.length; i++) {
         const d = dots[i];
         /* each dot switches on at its own moment during the count, a little large, then settles */
@@ -147,20 +139,16 @@ export function Dots({ onReady }: { onReady: () => void }) {
           /* it keeps its own size and brightness for the trip; depth only shows once it is nearly home */
           s *= 1 + (f * 1.15 - 1.1) * late; al *= (1 + ((.25 + .75 * clamp(.5 - rz2 * .6)) - 1) * late) * (1 - .2 * late);
           if (ea > 0) {
-            /* to its place in the word */
-            x += (cx + WD[i * 2] * WW - x) * ea; y += (h * .5 + WD[i * 2 + 1] * WW - y) * ea;
-            s += (d.s * 1.7 - s) * ea; al += (Math.min(1, d.al + .25) - al) * ea;
-          }
-          if (es > 0) {
-            /* and out to its place in the field, which then drifts with the scroll, nearer dots faster */
-            const span = h + 80; let gy = cy + hy - drift * (.03 + d.al * .1);
-            gy = ((gy + 40) % span + span) % span - 40;
-            x += (cx + hx - x) * es; y += (gy - y) * es;
-            s += (d.s - s) * es; al += (d.al * .42 - al) * es;
+            /* to its place on the ribbon: along it (su), across it (sv), the ribbon bending and twisting */
+            const su = SU[i], sv = SV[i], th = su * 2.3 + T * .9 + kS * .8, wd = .16 * sv;
+            const Y = amp * Math.sin(k1 * su + T) + .05 * Math.sin(3.7 * su - T * 1.6) + wd * Math.cos(th);
+            const Z = .22 * Math.cos(k2 * su + T * .7) + wd * Math.sin(th), g = 3 / (3 + Z);
+            x += (cx + su * 1.3 * Rw * g - x) * ea; y += (wy + Y * Rw * g - y) * ea;
+            s += (d.s * (g * 1.5 - .15) - s) * ea; al += (Math.min(1, d.al + .2) * clamp(.72 - Z * 1.7) * dim - al) * ea;
           }
         } else {
           const a = now * .000012 * (i % 2 ? 1 : -1), ca = Math.cos(a), sa = Math.sin(a);
-          x = cx + (d.x * ca - d.y * sa) * u * 1.4; y = cy + (d.x * sa + d.y * ca) * u * 1.4; al *= .8 * (1 - .55 * es);
+          x = cx + (d.x * ca - d.y * sa) * u * 1.4; y = cy + (d.x * sa + d.y * ca) * u * 1.4; al *= .8 * (1 - .5 * gS);
         }
         const mx = x - mouse.x, my = y - mouse.y, m2 = mx * mx + my * my;
         let tx = 0, ty = 0;
@@ -205,7 +193,7 @@ export function Dots({ onReady }: { onReady: () => void }) {
     addEventListener("keydown", press);
     addEventListener("scroll", scroll, { passive: true });
     return () => {
-      live = false; cancelAnimationFrame(raf); io.disconnect();
+      cancelAnimationFrame(raf); io.disconnect();
       removeEventListener("pointermove", move); removeEventListener("resize", resize);
       removeEventListener("pointerdown", press); removeEventListener("keydown", press);
       removeEventListener("scroll", scroll);

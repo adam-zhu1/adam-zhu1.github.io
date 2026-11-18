@@ -8,7 +8,7 @@ import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
 import { Dots } from "./Dots";
 import { seenRecently } from "./seen";
-import { scene, TITLE } from "./scene";
+import { flow, scene, TITLE } from "./scene";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
@@ -163,15 +163,14 @@ export default function Studio() {
       raf = 0;
       const vh = innerHeight, hs = clamp(scrollY / vh);
       el.style.setProperty("--hs", hs.toFixed(4));
-      /* the caption under the word the dots spell is there only while the word is */
-      const sc = scene(scrollY, vh);
-      el.style.setProperty("--tw", (sc.a * sc.a * (1 - sc.s) ** 2).toFixed(4));
+      /* the title's words come in as the dots finish opening out */
+      el.style.setProperty("--tw", clamp(scene(scrollY, vh) * 2.2 - 1.2).toFixed(4));
+      if (stack) flow.g = clamp(1 - (stack.getBoundingClientRect().top - BAR) / vh);
       if (stack && paged()) {
         const pr = (BAR - stack.getBoundingClientRect().top) / (vh * STEP), i = Math.max(0, Math.min(WORK.length - 1, Math.floor(pr)));
         setAct(i);
         tabs.forEach((t, j) => t.style.setProperty("--p", clamp(pr - j).toFixed(3)));
-        /* the dots take the colour of the project on screen */
-        if (pr > -.6 && pr < WORK.length + .3) el.style.setProperty("--dotc", `color-mix(in srgb, ${WORK[i].accent} 70%, var(--ink))`); else el.style.removeProperty("--dotc");
+        flow.pr = pr;
       }
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
@@ -292,10 +291,13 @@ export default function Studio() {
 
       <div className="st-body">
       <section className="st-title" style={{ "--tt": TITLE } as CSSProperties}>
-        <p className="st-cap" aria-hidden="true">Three projects. Each one opens on its own page.</p>
+        <div className="st-tin">
+          <h2>Projects</h2>
+          <p>Three projects. Each one opens on its own page.</p>
+          <span className="st-hint">Scroll to see them <i>↓</i></span>
+        </div>
       </section>
       <section className="st-sec" id="projects">
-        <h2 className="st-h2">Projects</h2>
         <div className="st-stack" style={{ "--n": WORK.length } as CSSProperties}>
           <ol className="st-stage">
             {WORK.map((w, i) => (
@@ -393,7 +395,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 
 /* first screen */
 .st-hero { position: relative; height: 100svh; min-height: 620px; overflow: hidden; }
-.st-dots { position: fixed; z-index: 0; inset: 0; width: 100%; height: 100%; color: var(--dotc, var(--ink)); transition: color 1s; pointer-events: none; }
+.st-dots { position: fixed; z-index: 0; inset: 0; width: 100%; height: 100%; color: var(--ink); pointer-events: none; }
 .st-hud span { position: absolute; font: 400 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); transition: opacity .5s; white-space: pre; }
 .st-hud b { font-weight: 400; color: var(--ink); }
 .st-hud .tl { left: 22px; top: 26px; } .st-hud .tr { right: 22px; top: 26px; } .st-hud .bl { left: 22px; bottom: 26px; }
@@ -443,10 +445,15 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 [data-rv].mask > span { display: block; transform: translateY(112%) rotate(4deg); transform-origin: 0 100%; transition: transform 1.15s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms); }
 [data-rv].mask.on > span { transform: none; }
 
-/* the title screen: the dots spell the word, a caption sits under it */
-.st-title { height: calc(var(--tt) * 100vh); text-align: center; pointer-events: none; }
-.st-cap { position: sticky; top: calc(50vh + min(80vw, 1500px) * .14 + 26px); margin: 0; padding: 0 22px; font-size: clamp(15px, 1.3vw, 19px); letter-spacing: -.015em; color: var(--mut); opacity: var(--tw, 0); }
-.st-h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* the title screen: it holds still while the dots flow under the words */
+.st-title { height: calc(var(--tt) * 100vh); }
+.st-tin { position: sticky; top: 0; height: 100svh; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 22vh 22px 0; text-align: center; pointer-events: none;
+  opacity: var(--tw, 0); transform: translateY(calc((1 - var(--tw, 0)) * 26px)); }
+.st-tin h2 { margin: 0; font-weight: 500; font-size: clamp(64px, 10.5vw, 190px); line-height: .95; letter-spacing: -.06em; }
+.st-tin p { margin: 0; font-size: clamp(16px, 1.4vw, 21px); letter-spacing: -.015em; color: var(--mut); }
+.st-hint { margin-top: 14px; display: inline-flex; align-items: center; gap: 10px; font: 400 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }
+.st-hint i { font-style: normal; animation: st-nudge 1.8s ease-in-out infinite; }
+@keyframes st-nudge { 0%, 100% { transform: none; } 50% { transform: translateY(5px); } }
 #projects { padding-top: 0; }
 
 /* projects: the names as a list, the one on screen opened up, its preview beside it */
@@ -459,16 +466,15 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .hd i { display: none; }
 .st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 24px); line-height: 1.3; letter-spacing: -.02em; max-width: 24em; }
 .st-item .num { margin: 22px 0 0; display: flex; align-items: baseline; gap: 16px; }
-.st-item .num b { font-weight: 500; font-size: clamp(40px, 4vw, 68px); line-height: 1; letter-spacing: -.05em; color: var(--accent); white-space: nowrap; }
-:root[data-theme="light"] .st-item .num b { color: color-mix(in srgb, var(--accent) 55%, var(--ink)); }
+.st-item .num b { font-weight: 500; font-size: clamp(40px, 4vw, 68px); line-height: 1; letter-spacing: -.05em; white-space: nowrap; }
 .st-item .num span { font-size: 15px; line-height: 1.35; color: var(--mut); max-width: 16em; }
 .st-item .meta { margin: 18px 0 0; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
 .st-item .acts { margin: 24px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
-.st-item .open:hover { background: var(--accent); color: #06110c; } .st-item .open:hover i { transform: translateX(6px); }
+.st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .open:hover i { transform: translateX(6px); }
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
-.st-item .pv { position: relative; margin-top: 26px; aspect-ratio: 4 / 3; border-radius: 30px; overflow: hidden; background: color-mix(in srgb, var(--accent) 10%, #08080a); border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--ln)); }
+.st-item .pv { position: relative; margin-top: 26px; aspect-ratio: 4 / 3; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
 .st-fit { position: absolute; inset: clamp(12px, 2.4vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 /* a preview shows the demo's picture, large; its readouts and controls are on the project's page */
 .st-item .pv .democtl, .st-item .pv .nums, .st-item .pv .nstats { display: none; }
@@ -484,7 +490,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-item .hd b { font-size: clamp(26px, min(2.5vw, 4.4vh), 46px); transition: font-size .6s cubic-bezier(.16, 1, .3, 1); }
   .st-item .hd:hover, .st-item.act .hd { color: var(--ink); }
   .st-item.act .hd b { font-size: clamp(40px, min(4.4vw, 8vh), 84px); }
-  .st-item .hd i { display: block; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--accent); transform: scaleX(var(--p, 0)); transform-origin: 0 50%; }
+  .st-item .hd i { display: block; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--ink); transform: scaleX(var(--p, 0)); transform-origin: 0 50%; }
   .st-item .more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .7s cubic-bezier(.16, 1, .3, 1); }
   .st-item .mi { overflow: hidden; min-height: 0; opacity: 0; transform: translateY(14px); transition: opacity .3s, transform .5s; }
   .st-item.act .more { grid-template-rows: 1fr; }
@@ -592,7 +598,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
   .st-hero h1 .ch, .st-id .st-links a { animation: none !important; opacity: 1; transform: none; }
   .st-hero h1, .st-id { opacity: 1; } .st-foot .big { transform: none; }
-  .st-title { height: auto; } .st-cap { display: none; } .st-h2 { position: static; width: auto; height: auto; clip-path: none; margin: 90px 0 30px; font-weight: 500; font-size: clamp(44px, 5.6vw, 88px); letter-spacing: -.05em; }
+  .st-title { height: auto; } .st-tin { position: static; height: auto; padding: 90px 22px 30px; opacity: 1; transform: none; } .st-hint { display: none; }
   .st-dots { position: absolute; }
   [data-rv].mask > span { transform: none; transition: none; }
   .pj .pj-top, .pj .pj-head .what, .pj .pj-head .kind, .pj .pj-head .st-pills, .pj .pj-stat, .st.pj h1 .ch, .pj .pj-demo { animation: none; }
