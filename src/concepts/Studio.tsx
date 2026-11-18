@@ -183,9 +183,32 @@ export default function Studio() {
       if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .75 });
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(update); clearTimeout(idle); idle = window.setTimeout(settle, 190); };
+    /* Scroll lock, from the title screen to the last project: one push of the wheel moves
+       exactly one step (title, then each project), and nothing more until that move is done
+       and the wheel has come to rest. Above the title and below the last project the page
+       scrolls freely. */
+    let busy = false, done = 0, lastWheel = 0;
+    const wheel = (e: WheelEvent) => {
+      if (!stack || !paged() || e.ctrlKey || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const now = performance.now(), gap = now - lastWheel; lastWheel = now;
+      /* a trackpad keeps sending its glide after the fingers lift: wait for it to stop */
+      if (busy || done && (gap < 90 && now - done < 900)) { e.preventDefault(); e.stopPropagation(); return; }
+      done = 0;
+      if (Math.abs(e.deltaY) < 4 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const vh = innerHeight, y = scrollY, stops = [vh * 1.2, ...WORK.map((_, i) => deckY(i))], end = stops[stops.length - 1];
+      let to: number | undefined;
+      if (e.deltaY > 0) { if (y > stops[0] - vh * .3) to = stops.find(v => v > y + 8); }
+      else if (y < end + vh * .25) to = [...stops].reverse().find(v => v < y - 8);
+      if (to === undefined || !lenis.current) return;
+      e.preventDefault(); e.stopPropagation();
+      busy = true;
+      lenis.current.scrollTo(to, { duration: 1.05, lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
+      window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 1500);
+    };
+    addEventListener("wheel", wheel, { passive: false, capture: true });
     update();
     addEventListener("scroll", on, { passive: true }); addEventListener("resize", on);
-    return () => { cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); };
+    return () => { cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); removeEventListener("wheel", wheel, { capture: true }); };
   }, [page]);
 
   /* things below the first screen rise in as they are reached */
