@@ -127,18 +127,16 @@ export default function Studio() {
 
   /* smoothed scrolling */
   useEffect(() => {
-    const l = new Lenis({ autoRaf: true, lerp: .095 });
+    const l = new Lenis({ autoRaf: true, lerp: .2 });
     lenis.current = l;
     return () => { l.destroy(); lenis.current = null; };
   }, []);
 
-  /* what follows the scroll: the first screen receding, each project card shrinking back as
-     the next one covers it, the name at the foot rising into place */
+  /* what follows the scroll: the first screen receding, the name at the foot rising into place */
   useEffect(() => {
     const el = root.current!;
     let raf = 0;
     const cv = el.querySelector<HTMLElement>(".st-dots");
-    const cards = [...el.querySelectorAll<HTMLElement>(".st-card")];
     const foot = el.querySelector<HTMLElement>(".st-foot");
     const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
     const update = () => {
@@ -146,8 +144,6 @@ export default function Studio() {
       const vh = innerHeight, hs = clamp(scrollY / vh);
       el.style.setProperty("--hs", hs.toFixed(4));
       if (cv) cv.style.display = hs >= 1 ? "none" : "";
-      const tops = cards.map(c => c.getBoundingClientRect());
-      cards.forEach((c, i) => c.style.setProperty("--c", (i < cards.length - 1 ? clamp(1 - (tops[i + 1].top - tops[i].top) / tops[i].height) : 0).toFixed(4)));
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(update); };
@@ -268,19 +264,21 @@ export default function Studio() {
       <section className="st-sec" id="projects">
         <div className="st-head">
           <h2 data-rv className="mask"><span>Projects</span></h2>
-          <p data-rv style={d(1)}>Three projects. Each one opens on its own page.</p>
+          <p data-rv style={d(1)}>Three projects. Open one for the full write-up.</p>
         </div>
         <div className="st-stack">
           {WORK.map((w, i) => (
             <Fragment key={w.id}>
               <div id={`at-${slug(w)}`} />
-              <article className="st-card" data-card={slug(w)} style={{ "--i": i, "--accent": w.accent } as CSSProperties}>
+              <article className="st-card" data-rv data-card={slug(w)} style={{ "--i": i, "--accent": w.accent } as CSSProperties}>
                 <div className="cd">
                   <div className="txt">
                     <div className="top"><span>{two(i + 1)} / {two(WORK.length)}</span><em>{w.kind}</em></div>
                     <h3>{w.name}</h3>
                     <p className="what">{w.what}</p>
-                    <p className="res"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
+                    <p className="body">{w.body}</p>
+                    <dl className="facts">{w.facts.slice(0, 3).map(([k, v]) => <div key={k}><dt>{v}</dt><dd>{k}</dd></div>)}</dl>
+                    {w.meta && <p className="meta">{w.meta}</p>}
                     <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>Open {w.name}</span><i>→</i></a>
                   </div>
                   <div className="pv"><Fit width={w.demo === "nist" ? 620 : 880}><Demo w={w} /></Fit></div>
@@ -429,29 +427,35 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 [data-rv].mask > span { display: block; transform: translateY(112%) rotate(4deg); transform-origin: 0 100%; transition: transform 1.15s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms); }
 [data-rv].mask.on > span { transform: none; }
 
-/* projects: full-size cards that pin and stack; the one underneath shrinks back and dims */
-.st-stack { padding-bottom: 10vh; }
-.st-card { position: sticky; margin-bottom: 26px; top: calc(76px + var(--i) * 16px); height: clamp(500px, calc(100svh - 150px), 780px); }
-.st-card .cd { position: relative; height: 100%; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(20px, 3vw, 48px); padding: clamp(18px, 2vw, 30px); border-radius: 28px; overflow: hidden;
-  background: color-mix(in srgb, var(--accent) 11%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--ln));
-  transform: scale(calc(1 - var(--c, 0) * .07)); transform-origin: 50% 0; filter: brightness(calc(1 - var(--c, 0) * .5)); transition: border-color .3s; will-change: transform; }
-.st-card .cd:hover { border-color: var(--accent); }
+/* projects: one contained card each, with room around it; words on the left, the real demo on the right */
+.st-stack { display: grid; gap: clamp(28px, 5vh, 56px); max-width: 1180px; margin: 0 auto; padding-bottom: 6vh; }
+.st-card .cd { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(22px, 3vw, 44px); padding: clamp(20px, 2.4vw, 34px); border-radius: 30px; overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 9%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); transition: border-color .3s, transform .5s cubic-bezier(.16, 1, .3, 1); }
+.st-card .cd:hover { border-color: var(--accent); transform: translateY(-4px); }
 .st-card .txt { display: flex; flex-direction: column; min-width: 0; }
-.st-card .top { display: flex; justify-content: space-between; gap: 12px; font: 400 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); margin-bottom: auto; }
+.st-card .top { display: flex; justify-content: space-between; gap: 12px; font: 400 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
 .st-card .top span { color: var(--ink); } .st-card .top em { font-style: normal; text-align: right; }
-.st-card h3 { margin: 28px 0 16px; font-weight: 500; font-size: clamp(56px, 7.4vw, 124px); line-height: .9; letter-spacing: -.06em; }
-.st-card .what { margin: 0 0 26px; font-size: clamp(19px, 1.7vw, 25px); line-height: 1.28; letter-spacing: -.02em; max-width: 20em; }
-.st-card .res { margin: 0 0 28px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--accent) 24%, var(--ln)); display: flex; align-items: baseline; gap: 14px; }
-.st-card .res b { font-weight: 400; font-size: clamp(36px, 3.8vw, 58px); letter-spacing: -.05em; line-height: 1; white-space: nowrap; }
-.st-card .res span { font-size: 15px; line-height: 1.35; color: var(--mut); }
-.st-card .open { display: flex; align-items: center; justify-content: space-between; height: 54px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
+.st-card h3 { margin: 26px 0 12px; font-weight: 500; font-size: clamp(40px, 4.6vw, 68px); line-height: .95; letter-spacing: -.05em; }
+.st-card .what { margin: 0 0 14px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.3; letter-spacing: -.02em; }
+.st-card .body { margin: 0 0 22px; font-size: 16px; line-height: 1.55; color: var(--mut); max-width: 34em; }
+.st-card .facts { margin: 0 0 20px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); display: flex; flex-wrap: wrap; gap: 16px 34px; }
+.st-card .facts > div { display: block; border: 0; padding: 0; max-width: 11.5em; }
+.st-card .facts dt { font-size: clamp(21px, 1.9vw, 27px); letter-spacing: -.04em; line-height: 1.05; color: var(--ink); white-space: nowrap; }
+.st-card .facts dd { margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: var(--mut); }
+.st-card .meta { margin: 0 0 24px; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
+.st-card .open { margin-top: auto; align-self: flex-start; display: flex; align-items: center; gap: 28px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-card .open::after { content: ""; position: absolute; inset: 0; }
 .st-card .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
 .st-card .cd:hover .open { background: var(--accent); color: #06110c; }
 .st-card .cd:hover .open i { transform: translateX(6px); }
-.st-card .pv { min-height: 0; border-radius: 16px; overflow: hidden; background: #08080a; display: grid; align-content: center; }
+.st-card .pv { min-height: 340px; border-radius: 22px; overflow: hidden; background: #08080a; display: grid; align-content: center; }
 .st-card .pv .st-fit { transition: transform .9s cubic-bezier(.16, 1, .3, 1); }
 .st-card .cd:hover .pv .st-fit { transform: scale(1.03); }
+/* squircle corners where the browser has them (rounder radius, since the curve eats into it) */
+@supports (corner-shape: squircle) {
+  .st-card .cd { corner-shape: squircle; border-radius: 56px; } .st-card .pv { corner-shape: squircle; border-radius: 40px; }
+  .st-body { corner-shape: squircle; border-radius: 60px 60px 0 0; }
+}
 .st-fit { overflow: hidden; } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 .st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
 
@@ -538,8 +542,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-feat { left: 14px; right: 14px; grid-template-columns: 1fr; }
   .st-feat a { padding: 13px 0; } .st-feat a + a { padding-left: 0; border-left: 0; border-top: 1px solid var(--ln); }
   .st-hero { position: relative; transform: none; opacity: 1; } .st-body { border-radius: 0; }
-  .st-card { position: static; height: auto; } .st-card .cd { grid-template-columns: 1fr; transform: none; filter: none; }
-  .st-card .top { margin-bottom: 0; } .st-card .pv { aspect-ratio: 4 / 3; order: -1; }
+  .st-card .cd { grid-template-columns: 1fr; }
+  .st-card .pv { aspect-ratio: 4 / 3; min-height: 0; order: -1; }
   .pj-main { padding: 80px 14px 14px; }
   .pj-head, .pj-cols { grid-template-columns: 1fr; gap: 28px; }
   .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
@@ -553,7 +557,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @media (prefers-reduced-motion: reduce) {
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
   .st-hero h1 .ch, .st-id .st-links a, .st-feat a, .st-feat::before { animation: none !important; opacity: 1; transform: none; }
-  .st-hero { transform: none; opacity: 1; } .st-card .cd { transform: none; filter: none; } .st-foot .big { transform: none; }
+  .st-hero { transform: none; opacity: 1; } .st-card .cd:hover { transform: none; } .st-foot .big { transform: none; }
   [data-rv].mask > span { transform: none; transition: none; }
   .pj .pj-top, .pj .pj-head .what, .pj .pj-head .kind, .pj .pj-head .st-pills, .pj .pj-stat, .st.pj h1 .ch, .pj .pj-demo { animation: none; }
 }
