@@ -195,28 +195,65 @@ export default function Studio() {
         if (v > out[out.length - 1] + (v === max ? 240 : 60)) out.push(Math.min(v, max));
       return out;
     };
-    let busy = false, done = 0, lastWheel = 0;
-    const wheel = (e: WheelEvent) => {
-      if (!paged() || e.ctrlKey || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      const now = performance.now(), gap = now - lastWheel; lastWheel = now;
-      /* a trackpad keeps sending its glide after the fingers lift: wait for it to stop */
-      if (busy || done && (gap < 90 && now - done < 900)) { e.preventDefault(); e.stopPropagation(); return; }
-      done = 0;
-      if (Math.abs(e.deltaY) < 4 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      const vh = innerHeight, y = scrollY, stops = stack ? [0, vh * 1.2, ...WORK.map((_, i) => deckY(i))] : pageStops(vh), end = stops[stops.length - 1];
-      let to: number | undefined;
-      if (e.deltaY > 0) to = stops.find(v => v > y + 8);
-      else if (!stack || y < end + vh * .25) to = [...stops].reverse().find(v => v < y - 8);
-      if (to === undefined || !lenis.current) return;
-      e.preventDefault(); e.stopPropagation();
-      busy = true;
-      lenis.current.scrollTo(to, { duration: Math.abs(to - y) > vh ? 2.4 : 1.25, easing: (t: number) => t * t * t * (t * (t * 6 - 15) + 10), lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
+    /* A mouse wheel sends a few large clicks; a trackpad sends a stream of small moves and
+       then keeps sending its glide for a second or two after the fingers lift. To make both
+       feel the same, a step needs the same small amount of travel from either (one wheel
+       click is already enough, a trackpad gets there within a few events), and after a step
+       the leftover glide is swallowed until the wheel rests or is clearly pushed again. */
+    const NEED = 24, REST = 140;
+    let busy = false, done = 0, lastWheel = 0, acc = 0, dir = 0;
+    const mags: number[] = [];
+    const stopsNow = (vh: number) => stack ? [0, vh * 1.2, ...WORK.map((_, i) => deckY(i))] : pageStops(vh);
+    const target = (d: number) => {
+      const vh = innerHeight, y = scrollY, stops = stopsNow(vh), end = stops[stops.length - 1];
+      if (d > 0) return stops.find(v => v > y + 8);
+      return !stack || y < end + vh * .25 ? [...stops].reverse().find(v => v < y - 8) : undefined;
+    };
+    const step = (to: number) => {
+      if (!lenis.current) return;
+      busy = true; acc = 0;
+      const far = Math.abs(to - scrollY) > innerHeight;
+      lenis.current.scrollTo(to, { duration: far ? 2.4 : 1.25, easing: (t: number) => t * t * t * (t * (t * 6 - 15) + 10), lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
       window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 2900);
     };
+    const locking = () => paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const wheel = (e: WheelEvent) => {
+      if (!locking() || e.ctrlKey) return;
+      /* some browsers report a mouse wheel in lines or pages, not pixels */
+      const dy = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? innerHeight : 1), mag = Math.abs(dy);
+      if (Math.abs(e.deltaX) > mag) return;
+      const now = performance.now(), gap = now - lastWheel, d = dy > 0 ? 1 : -1; lastWheel = now;
+      const avg = mags.length ? mags.reduce((a, b) => a + b, 0) / mags.length : 0;
+      mags.push(mag); if (mags.length > 4) mags.shift();
+      if (busy) { e.preventDefault(); e.stopPropagation(); return; }
+      if (done) {
+        /* still the glide from the last push? It is, unless the wheel rested, turned round,
+           or is suddenly moving harder than it just was */
+        const fresh = gap > REST || d !== dir || mag > 12 && mag > avg * 1.6 || now - done > 1600 && mag > 6 && mag >= avg;   /* the last: a wheel held steadily, not dying away */
+        if (!fresh) { e.preventDefault(); e.stopPropagation(); return; }
+        done = 0; acc = 0;
+      }
+      if (gap > REST || d !== dir) acc = 0;
+      dir = d; acc += dy;
+      const to = target(d);
+      if (to === undefined) { acc = 0; return; }
+      e.preventDefault(); e.stopPropagation();
+      if (Math.abs(acc) >= NEED) step(to);
+    };
+    /* the keyboard steps the same way */
+    const key = (e: KeyboardEvent) => {
+      if (!locking() || busy || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable]")) return;
+      const d = e.key === "ArrowDown" || e.key === "PageDown" || e.key === " " && !e.shiftKey ? 1 : e.key === "ArrowUp" || e.key === "PageUp" || e.key === " " && e.shiftKey ? -1 : 0;
+      if (e.key === " " && (e.target as HTMLElement | null)?.closest?.("button, a")) return;
+      const to = d ? target(d) : undefined;
+      if (to === undefined) return;
+      e.preventDefault(); step(to);
+    };
+    addEventListener("keydown", key);
     addEventListener("wheel", wheel, { passive: false, capture: true });
     update();
     addEventListener("scroll", on, { passive: true }); addEventListener("resize", on);
-    return () => { cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); removeEventListener("wheel", wheel, { capture: true }); };
+    return () => { cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); removeEventListener("wheel", wheel, { capture: true }); removeEventListener("keydown", key); };
   }, [page]);
 
   /* things below the first screen rise in as they are reached */
