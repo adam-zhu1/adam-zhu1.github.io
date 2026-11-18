@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { seenRecently, touch } from "./seen";
-import { flow, scene } from "./scene";
+import { flow, glide, scene } from "./scene";
 
 /**
  * The bootup and the object behind the name. Sampling: for about a second the screen is only
@@ -20,15 +20,13 @@ import { flow, scene } from "./scene";
  */
 
 const N = 1900, BIG = 56;
-const T_BOOT = 900, T_FORM = 2400, HOLD = 9000, MORPH = 2800, T_FLOW = 2500;
+const T_BOOT = 900, T_FORM = 2400, HOLD = 9000, MORPH = 2800, T_FLOW = 2200;
 
 type Dot = { x: number; y: number; s: number; al: number; t0: number; ox: number; oy: number; lx: number; ly: number };
 
 const rnd = Math.random;
 const gauss = () => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
 const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
-/* a longer, softer version of the same, for the move between the object and the ribbon */
-const soft = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 /* slow out of rest, slow into place */
 const ease = (t: number) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -104,15 +102,15 @@ export function Dots({ onReady }: { onReady: () => void }) {
          the move itself runs on its own clock (T_FLOW), so however fast the page is scrolled
          the dots take their time, leaving slowly and arriving slowly. */
       const dt = Math.min(64, now - last); last = now;
-      const want = !still && scene(scrollY, innerHeight) > .2 ? 1 : 0;
+      const want = still ? 0 : flow.aim ?? (scene(scrollY, innerHeight) > .2 ? 1 : 0);
       if (goal < 0) { goal = want; aS = want; gS = flow.g; kS = Math.max(0, flow.pr); ph = scrollY; }
       if (want !== goal) { goal = want; a0 = aS; t0 = now; }
       const going = aS !== goal;
       if (going) { const u = clamp((now - t0) / (T_FLOW * Math.max(.35, Math.abs(goal - a0)))); aS = u >= 1 ? goal : a0 + (goal - a0) * u; }
       /* everything else about the ribbon drifts toward where the scroll has got to, slowly */
-      const slow = 1 - Math.pow(.985, dt / 16.7);
+      const slow = 1 - Math.pow(.95, dt / 16.7);
       gS += (flow.g - gS) * slow * 1.6; kS += (Math.max(0, flow.pr) - kS) * slow; ph += (scrollY - ph) * slow * 1.3;
-      const ea = soft(aS);
+      const ea = glide(aS);
       rot += dt * .00022 * (1 - ea);
       if (goal === 0 && aS === 0 && rot > Math.PI) rot -= Math.PI * 2;
       const ay = rot * (1 - ea) + mouse.sx * .7 * (1 - ea * .6), ax = .42 + mouse.sy * .45;
@@ -149,7 +147,7 @@ export function Dots({ onReady }: { onReady: () => void }) {
           if (aS > 0) {
             /* to its place on the ribbon: along it (su), across it (sv), the ribbon bending and twisting.
                They all travel together; each is a touch ahead of or behind the rest, so it reads as a flow. */
-            const ea = soft(clamp(aS * 1.22 - d.t0 * .22));
+            const ea = glide(clamp(aS * 1.16 - d.t0 * .16));
             const su = SU[i], sv = SV[i], th = su * 2.3 + T * .9 + kS * .8, wd = .16 * sv;
             const Y = amp * Math.sin(k1 * su + T) + .05 * Math.sin(3.7 * su - T * 1.6) + wd * Math.cos(th);
             const Z = .22 * Math.cos(k2 * su + T * .7) + wd * Math.sin(th), g = 3 / (3 + Z);

@@ -8,7 +8,7 @@ import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
 import { Dots } from "./Dots";
 import { seenRecently } from "./seen";
-import { flow, scene, TITLE } from "./scene";
+import { flow, glide, scene, TITLE } from "./scene";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
@@ -213,8 +213,9 @@ export default function Studio() {
       if (!lenis.current) return;
       busy = true; acc = 0;
       const far = Math.abs(to - scrollY) > innerHeight;
-      lenis.current.scrollTo(to, { duration: far ? 2.4 : 1.25, easing: (t: number) => t * t * t * (t * (t * 6 - 15) + 10), lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
-      window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 2900);
+      if (stack) flow.aim = to > innerHeight * .5 ? 1 : 0;   /* the dots set off with the page, not once it has got somewhere */
+      lenis.current.scrollTo(to, { duration: far ? 1.6 : 1.2, easing: glide, lock: true, force: true, onComplete: () => { busy = false; flow.aim = null; done = performance.now(); } });
+      window.setTimeout(() => { if (busy) { busy = false; flow.aim = null; done = performance.now(); } }, 1900);
     };
     const locking = () => paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wheel = (e: WheelEvent) => {
@@ -253,7 +254,7 @@ export default function Studio() {
     addEventListener("wheel", wheel, { passive: false, capture: true });
     update();
     addEventListener("scroll", on, { passive: true }); addEventListener("resize", on);
-    return () => { cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); removeEventListener("wheel", wheel, { capture: true }); removeEventListener("keydown", key); };
+    return () => { flow.aim = null; cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); removeEventListener("wheel", wheel, { capture: true }); removeEventListener("keydown", key); };
   }, [page]);
 
   /* things below the first screen rise in as they are reached */
@@ -517,7 +518,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-title { height: calc(var(--tt) * 100vh); }
 .st-tin { position: sticky; top: 0; height: 100svh; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 22vh 22px 0; text-align: center; pointer-events: none;
   opacity: 0; transform: translateY(26px); transition: opacity .35s, transform .5s; }
-.st.flowed .st-tin { opacity: 1; transform: none; transition: opacity 1.2s 1.1s, transform 1.5s cubic-bezier(.16, 1, .3, 1) 1.1s; }
+.st.flowed .st-tin { opacity: 1; transform: none; transition: opacity .9s .3s, transform 1.1s cubic-bezier(.16, 1, .3, 1) .3s; }
 .st-tin h2 { margin: 0; font-weight: 500; font-size: clamp(64px, 10.5vw, 190px); line-height: .95; letter-spacing: -.06em; }
 .st-tin p { margin: 0; font-size: clamp(16px, 1.4vw, 21px); letter-spacing: -.015em; color: var(--mut); }
 .st-hint { margin-top: 14px; display: inline-flex; align-items: center; gap: 10px; font: 400 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }
