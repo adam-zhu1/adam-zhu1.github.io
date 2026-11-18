@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 import { WORK, type Entry } from "../data/work";
 import { MORE } from "../components/MoreWork";
 import { out } from "../lib/router";
@@ -14,8 +16,10 @@ import { LINKS } from "./links";
 /**
  * Draft. Home is two things: a first screen that says who this is (the name over the dot
  * object, the school, the major, four links, and the three projects along the bottom), and
- * an index of the projects as preview cards. Each project then has a page of its own, in
- * its own colour, reached from its card: ?concept=studio&p=trueline.
+ * the projects as full-size cards that stack over one another as the page scrolls. Each
+ * project then has a page of its own, in its own colour: its card grows into the page
+ * (?concept=studio&p=trueline). Scrolling is smoothed; the first screen recedes under the
+ * rest of the page.
  */
 
 const MAIL = LINKS[0].href.replace("mailto:", "");
@@ -84,21 +88,34 @@ export default function Studio() {
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
 
-  /* move between home and a project's page without a reload */
+  const lenis = useRef<Lenis | null>(null);
+
+  /* Move between home and a project's page without a reload. Opening a project, its card
+     grows into the page's coloured sheet; going back, the sheet shrinks into the card. */
   const go = (to: string | null, anchor?: string) => (e: MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
+    const from = page, card = (id: string | null) => id ? document.querySelector<HTMLElement>(`[data-card="${id}"]`) : null;
     const u = new URL(location.href);
     if (to) u.searchParams.set("p", to); else u.searchParams.delete("p");
     u.hash = "";
     history.pushState({}, "", u);
+    const named: HTMLElement[] = [];
+    const name = (el: HTMLElement | null) => { if (el) { el.style.viewTransitionName = "pj-bg"; named.push(el); } };
+    name(card(to));
     const apply = () => {
       flushSync(() => setPage(to));
-      const el = anchor ? document.getElementById(anchor) : null;
-      if (el) el.scrollIntoView(); else scrollTo(0, 0);
+      const back = anchor === "projects" ? card(from) : null;
+      const at = back ? document.getElementById(`at-${from}`) : anchor ? document.getElementById(anchor) : null;
+      const y = at ? Math.max(0, at.getBoundingClientRect().top + scrollY - (back ? 76 : 0)) : 0;
+      lenis.current?.scrollTo(y, { immediate: true, force: true });
+      scrollTo(0, y);
+      name(back);
     };
-    const vt = (document as Document & { startViewTransition?: (f: () => void) => unknown }).startViewTransition;
-    if (vt && !matchMedia("(prefers-reduced-motion: reduce)").matches) vt.call(document, apply); else apply();
+    const start = (document as Document & { startViewTransition?: (f: () => void) => { finished: Promise<void> } }).startViewTransition;
+    if (start && !matchMedia("(prefers-reduced-motion: reduce)").matches)
+      start.call(document, apply).finished.finally(() => named.forEach(el => { el.style.viewTransitionName = ""; }));
+    else { apply(); named.forEach(el => { el.style.viewTransitionName = ""; }); }
   };
   const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
 
@@ -107,6 +124,37 @@ export default function Studio() {
     addEventListener("popstate", sync);
     return () => removeEventListener("popstate", sync);
   }, []);
+
+  /* smoothed scrolling */
+  useEffect(() => {
+    const l = new Lenis({ autoRaf: true, lerp: .095 });
+    lenis.current = l;
+    return () => { l.destroy(); lenis.current = null; };
+  }, []);
+
+  /* what follows the scroll: the first screen receding, each project card shrinking back as
+     the next one covers it, the name at the foot rising into place */
+  useEffect(() => {
+    const el = root.current!;
+    let raf = 0;
+    const cv = el.querySelector<HTMLElement>(".st-dots");
+    const cards = [...el.querySelectorAll<HTMLElement>(".st-card")];
+    const foot = el.querySelector<HTMLElement>(".st-foot");
+    const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
+    const update = () => {
+      raf = 0;
+      const vh = innerHeight, hs = clamp(scrollY / vh);
+      el.style.setProperty("--hs", hs.toFixed(4));
+      if (cv) cv.style.display = hs >= 1 ? "none" : "";
+      const tops = cards.map(c => c.getBoundingClientRect());
+      cards.forEach((c, i) => c.style.setProperty("--c", (i < cards.length - 1 ? clamp(1 - (tops[i + 1].top - tops[i].top) / tops[i].height) : 0).toFixed(4)));
+      if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    addEventListener("scroll", on, { passive: true }); addEventListener("resize", on);
+    return () => { cancelAnimationFrame(raf); removeEventListener("scroll", on); removeEventListener("resize", on); };
+  }, [page]);
 
   /* things below the first screen rise in as they are reached */
   useEffect(() => {
@@ -139,6 +187,7 @@ export default function Studio() {
       <div className="st pj ready" ref={root} key={proj.id} style={{ "--accent": proj.accent } as CSSProperties}>
         <style>{CSS}</style>
         {bar}
+        <div className="pj-bg" aria-hidden="true" />
         <main className="pj-main">
           <div className="pj-top">
             <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>
@@ -147,7 +196,7 @@ export default function Studio() {
 
           <div className="pj-head">
             <div>
-              <h1 style={{ viewTransitionName: `pj-${slug(proj)}` } as CSSProperties}>{proj.name}</h1>
+              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className="ch" style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
               <p className="kind">{proj.kind} · {proj.when}</p>
               {proj.links && <div className="st-pills">{proj.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
@@ -155,7 +204,7 @@ export default function Studio() {
             <div className="pj-stat"><b>{proj.big[0]}</b><span>{proj.big[1]}</span></div>
           </div>
 
-          <div className="pj-demo" data-rv><Demo w={proj} /></div>
+          <div className="pj-demo"><Demo w={proj} /></div>
 
           <div className="pj-cols">
             <section data-rv>
@@ -170,9 +219,9 @@ export default function Studio() {
             </section>
           </div>
 
-          <section className="pj-steps" data-rv>
+          <section className="pj-steps">
             <h2>How it works</h2>
-            <ol>{proj.steps.map(([k, v], i) => <li key={k}><span>{two(i + 1)}</span><b>{k}</b><p>{v}</p></li>)}</ol>
+            <ol>{proj.steps.map(([k, v], i) => <li key={k} data-rv style={d(i)}><span>{two(i + 1)}</span><b>{k}</b><p>{v}</p></li>)}</ol>
           </section>
 
           <a className="pj-next" href={href(slug(next))} onClick={go(slug(next))} style={{ "--accent": next.accent } as CSSProperties} data-rv>
@@ -215,28 +264,36 @@ export default function Studio() {
         </nav>
       </section>
 
+      <div className="st-body">
       <section className="st-sec" id="projects">
         <div className="st-head">
-          <h2 data-rv>Projects</h2>
+          <h2 data-rv className="mask"><span>Projects</span></h2>
           <p data-rv style={d(1)}>Three projects. Each one opens on its own page.</p>
         </div>
-        <div className="st-cards">
+        <div className="st-stack">
           {WORK.map((w, i) => (
-            <article key={w.id} className="st-card" data-rv style={{ ...d(i), "--accent": w.accent } as CSSProperties}>
-              <div className="top"><span>{two(i + 1)}</span><em>{w.kind}</em></div>
-              <div className="pv"><Fit width={w.demo === "nist" ? 620 : 880}><Demo w={w} /></Fit></div>
-              <h3 style={{ viewTransitionName: `pj-${slug(w)}` } as CSSProperties}>{w.name}</h3>
-              <p className="what">{w.what}</p>
-              <p className="res"><b>{w.big[0]}</b> {w.big[1]}</p>
-              <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>Open {w.name}</span><i>→</i></a>
-            </article>
+            <Fragment key={w.id}>
+              <div id={`at-${slug(w)}`} />
+              <article className="st-card" data-card={slug(w)} style={{ "--i": i, "--accent": w.accent } as CSSProperties}>
+                <div className="cd">
+                  <div className="txt">
+                    <div className="top"><span>{two(i + 1)} / {two(WORK.length)}</span><em>{w.kind}</em></div>
+                    <h3>{w.name}</h3>
+                    <p className="what">{w.what}</p>
+                    <p className="res"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
+                    <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>Open {w.name}</span><i>→</i></a>
+                  </div>
+                  <div className="pv"><Fit width={w.demo === "nist" ? 620 : 880}><Demo w={w} /></Fit></div>
+                </div>
+              </article>
+            </Fragment>
           ))}
         </div>
       </section>
 
       <section className="st-sec" id="more">
         <div className="st-head">
-          <h2 data-rv>More work</h2>
+          <h2 data-rv className="mask"><span>More work</span></h2>
           <p data-rv style={d(1)}>Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
         </div>
         <ol className="st-rows">
@@ -255,7 +312,7 @@ export default function Studio() {
       </section>
 
       <section className="st-sec st-contact" id="contact">
-        <h2 data-rv>Get in touch</h2>
+        <h2 data-rv className="mask"><span>Get in touch</span></h2>
         <div data-rv style={d(1)}>
           <a className="mail" href={LINKS[0].href}>{MAIL}</a>
           <div className="st-links">{ORDER.slice(0, 3).map(l => <a key={l.label} href={l.href} {...out}>{ICON[l.label]}<span>{l.label}</span></a>)}</div>
@@ -265,6 +322,7 @@ export default function Studio() {
       <div className="st-foot">
         <div className="big" aria-hidden="true">Adam Zhu</div>
         <div className="meta"><span>Adam Zhu, Pittsburgh</span><span>2026</span></div>
+      </div>
       </div>
     </div>
   );
@@ -362,28 +420,60 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 [data-rv] { opacity: 0; transform: translateY(34px); transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1); }
 [data-rv].on { opacity: 1; transform: none; }
 
-/* project previews */
-.st-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.st-card { position: relative; display: flex; flex-direction: column; padding: 18px 18px 20px; border-radius: 22px; min-width: 0;
-  background: color-mix(in srgb, var(--accent) 11%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); }
-.st-card[data-rv] { transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1), border-color .25s, background .25s; }
-.st-card:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 17%, var(--card)); }
-.st-card .top { display: flex; justify-content: space-between; gap: 12px; font: 400 11.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); margin-bottom: 16px; }
+/* the first screen stays put and recedes while the rest of the page slides up over it */
+.st-hero { position: sticky; top: 0; transform: scale(calc(1 - var(--hs, 0) * .08)); opacity: calc(1 - var(--hs, 0) * .75); transform-origin: 50% 60%; will-change: transform, opacity; }
+.st-body { position: relative; z-index: 2; background: var(--bg); border-radius: 30px 30px 0 0; box-shadow: 0 -1px 0 var(--ln); }
+
+/* headings come up from behind their own baseline */
+[data-rv].mask { opacity: 1; transform: none; overflow: hidden; padding-bottom: .1em; margin-bottom: -.1em; }
+[data-rv].mask > span { display: block; transform: translateY(112%) rotate(4deg); transform-origin: 0 100%; transition: transform 1.15s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms); }
+[data-rv].mask.on > span { transform: none; }
+
+/* projects: full-size cards that pin and stack; the one underneath shrinks back and dims */
+.st-stack { padding-bottom: 10vh; }
+.st-card { position: sticky; margin-bottom: 26px; top: calc(76px + var(--i) * 16px); height: clamp(500px, calc(100svh - 150px), 780px); }
+.st-card .cd { position: relative; height: 100%; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(20px, 3vw, 48px); padding: clamp(18px, 2vw, 30px); border-radius: 28px; overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 11%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--ln));
+  transform: scale(calc(1 - var(--c, 0) * .07)); transform-origin: 50% 0; filter: brightness(calc(1 - var(--c, 0) * .5)); transition: border-color .3s; will-change: transform; }
+.st-card .cd:hover { border-color: var(--accent); }
+.st-card .txt { display: flex; flex-direction: column; min-width: 0; }
+.st-card .top { display: flex; justify-content: space-between; gap: 12px; font: 400 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); margin-bottom: auto; }
 .st-card .top span { color: var(--ink); } .st-card .top em { font-style: normal; text-align: right; }
-.st-card .pv { aspect-ratio: 16 / 11; overflow: hidden; border-radius: 12px; background: #08080a; margin-bottom: 22px; }
-.st-card .pv .st-fit { transition: transform .7s cubic-bezier(.2,.7,.2,1); transform-origin: 50% 0; }
-.st-card:hover .pv .st-fit { transform: scale(1.035); }
+.st-card h3 { margin: 28px 0 16px; font-weight: 500; font-size: clamp(56px, 7.4vw, 124px); line-height: .9; letter-spacing: -.06em; }
+.st-card .what { margin: 0 0 26px; font-size: clamp(19px, 1.7vw, 25px); line-height: 1.28; letter-spacing: -.02em; max-width: 20em; }
+.st-card .res { margin: 0 0 28px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--accent) 24%, var(--ln)); display: flex; align-items: baseline; gap: 14px; }
+.st-card .res b { font-weight: 400; font-size: clamp(36px, 3.8vw, 58px); letter-spacing: -.05em; line-height: 1; white-space: nowrap; }
+.st-card .res span { font-size: 15px; line-height: 1.35; color: var(--mut); }
+.st-card .open { display: flex; align-items: center; justify-content: space-between; height: 54px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
+.st-card .open::after { content: ""; position: absolute; inset: 0; }
+.st-card .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
+.st-card .cd:hover .open { background: var(--accent); color: #06110c; }
+.st-card .cd:hover .open i { transform: translateX(6px); }
+.st-card .pv { min-height: 0; border-radius: 16px; overflow: hidden; background: #08080a; display: grid; align-content: center; }
+.st-card .pv .st-fit { transition: transform .9s cubic-bezier(.16, 1, .3, 1); }
+.st-card .cd:hover .pv .st-fit { transform: scale(1.03); }
 .st-fit { overflow: hidden; } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
-.st-card h3 { margin: 0 0 10px; font-weight: 500; font-size: clamp(38px, 4.4vw, 68px); line-height: .95; letter-spacing: -.055em; width: fit-content; }
-.st-card .what { margin: 0 0 16px; font-size: 17px; line-height: 1.35; letter-spacing: -.015em; }
-.st-card .res { margin: 0 0 22px; font-size: 14.5px; line-height: 1.4; color: var(--mut); }
-.st-card .res b { font-weight: 500; color: var(--ink); }
-.st-card .open { margin-top: auto; display: flex; align-items: center; justify-content: space-between; height: 46px; padding: 0 18px; border-radius: 999px; font-size: 15px;
-  background: var(--ink); color: var(--bg); transition: background .2s, color .2s; }
-.st-card .open::after { content: ""; position: absolute; inset: 0; border-radius: 22px; }
-.st-card .open i { transition: transform .25s cubic-bezier(.2,.7,.2,1); }
-.st-card:hover .open { background: var(--accent); color: #06110c; }
-.st-card:hover .open i { transform: translateX(5px); }
+.st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
+
+/* card to page: the card grows into the page's sheet, then the page's parts come in */
+.st-bar { view-transition-name: st-bar; }
+.pj-bg { position: fixed; inset: 0; z-index: -1; background: var(--bg); view-transition-name: pj-bg; }
+.pj-main { view-transition-name: pj-main; }
+::view-transition-group(pj-bg) { animation-duration: .8s; animation-timing-function: cubic-bezier(.7, 0, .15, 1); }
+::view-transition-old(pj-bg), ::view-transition-new(pj-bg) { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; animation-duration: .5s; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; }
+::view-transition-new(pj-main):only-child { animation: pj-in .01s linear .45s both; }
+::view-transition-old(pj-main):only-child { animation: pj-out .28s ease both; }
+::view-transition-old(pj-main):not(:only-child) { animation: pj-out .28s ease both; }
+::view-transition-new(pj-main):not(:only-child) { animation: pj-in .01s linear .3s both; }
+@keyframes pj-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pj-out { to { opacity: 0; transform: translateY(-24px); } }
+.pj .pj-top, .pj .pj-head .what, .pj .pj-head .kind, .pj .pj-head .st-pills, .pj .pj-stat { animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) both; }
+.pj .pj-top { animation-delay: .5s; } .pj .pj-head .what { animation-delay: .95s; } .pj .pj-head .kind { animation-delay: 1.05s; } .pj .pj-head .st-pills { animation-delay: 1.15s; } .pj .pj-stat { animation-delay: 1.1s; }
+.st.pj h1 { overflow: hidden; padding: .1em .04em .04em; }
+.st.pj h1 .ch { display: inline-block; animation: st-letter 1.15s cubic-bezier(.16, 1, .3, 1) calc(.55s + var(--i) * 50ms) both; transform-origin: 0 100%; }
+.pj .pj-demo { animation: pj-demo 1.3s cubic-bezier(.16, 1, .3, 1) 1.15s both; }
+@keyframes pj-demo { from { opacity: 0; transform: translateY(70px) scale(.93); clip-path: inset(14% 8% 14% 8% round 28px); } to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 0px); } }
 
 /* a project's own page */
 .st.pj { --bg: color-mix(in srgb, var(--accent) 8%, #000); --card: color-mix(in srgb, var(--accent) 10%, #0b0b0d); --ln: color-mix(in srgb, var(--accent) 20%, #26262a); --hl: var(--accent); min-height: 100svh; }
@@ -392,7 +482,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: clamp(28px, 5vh, 56px); }
 .pj-idx { font: 400 12px/1 var(--mono); letter-spacing: .04em; color: var(--mut); } .pj-idx b { font-weight: 400; color: var(--ink); }
 .pj-head { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 40px; align-items: end; margin-bottom: clamp(32px, 6vh, 64px); }
-.st.pj h1 { margin: 0 0 22px; font-weight: 500; font-size: clamp(76px, 15vw, 250px); line-height: .84; letter-spacing: -.065em; color: var(--hl); width: fit-content; margin-left: -.04em; }
+.st.pj h1 { margin: -.1em 0 22px; font-weight: 500; font-size: clamp(76px, 15vw, 250px); line-height: .84; letter-spacing: -.065em; color: var(--hl); width: fit-content; margin-left: -.04em; }
 .pj-head .what { margin: 0 0 12px; font-size: clamp(22px, 2.3vw, 34px); line-height: 1.2; letter-spacing: -.03em; max-width: 22em; }
 .pj-head .kind { margin: 0 0 22px; font-size: 16px; color: var(--mut); }
 .pj-stat { padding: 22px 0 6px; border-top: 1px solid var(--ln); }
@@ -447,7 +537,9 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-id { top: calc(30% + 9.5vw + 14px); padding: 0 14px; gap: 18px; }
   .st-feat { left: 14px; right: 14px; grid-template-columns: 1fr; }
   .st-feat a { padding: 13px 0; } .st-feat a + a { padding-left: 0; border-left: 0; border-top: 1px solid var(--ln); }
-  .st-cards { grid-template-columns: 1fr; }
+  .st-hero { position: relative; transform: none; opacity: 1; } .st-body { border-radius: 0; }
+  .st-card { position: static; height: auto; } .st-card .cd { grid-template-columns: 1fr; transform: none; filter: none; }
+  .st-card .top { margin-bottom: 0; } .st-card .pv { aspect-ratio: 4 / 3; order: -1; }
   .pj-main { padding: 80px 14px 14px; }
   .pj-head, .pj-cols { grid-template-columns: 1fr; gap: 28px; }
   .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
@@ -461,5 +553,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @media (prefers-reduced-motion: reduce) {
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
   .st-hero h1 .ch, .st-id .st-links a, .st-feat a, .st-feat::before { animation: none !important; opacity: 1; transform: none; }
+  .st-hero { transform: none; opacity: 1; } .st-card .cd { transform: none; filter: none; } .st-foot .big { transform: none; }
+  [data-rv].mask > span { transform: none; transition: none; }
+  .pj .pj-top, .pj .pj-head .what, .pj .pj-head .kind, .pj .pj-head .st-pills, .pj .pj-stat, .st.pj h1 .ch, .pj .pj-demo { animation: none; }
 }
 `;
