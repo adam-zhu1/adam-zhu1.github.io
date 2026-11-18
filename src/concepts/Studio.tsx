@@ -480,7 +480,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-title { height: calc(var(--tt) * 100vh); }
 .st-tin { position: sticky; top: 0; height: 100svh; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 22vh 22px 0; text-align: center; pointer-events: none;
   opacity: 0; transform: translateY(26px); transition: opacity .35s, transform .5s; }
-.st.flowed .st-tin { opacity: 1; transform: none; transition: opacity 1.5s 1.7s, transform 1.8s cubic-bezier(.16, 1, .3, 1) 1.7s; }
+.st.flowed .st-tin { opacity: 1; transform: none; transition: opacity 1.2s 1.1s, transform 1.5s cubic-bezier(.16, 1, .3, 1) 1.1s; }
 .st-tin h2 { margin: 0; font-weight: 500; font-size: clamp(64px, 10.5vw, 190px); line-height: .95; letter-spacing: -.06em; }
 .st-tin p { margin: 0; font-size: clamp(16px, 1.4vw, 21px); letter-spacing: -.015em; color: var(--mut); }
 .st-hint { margin-top: 14px; display: inline-flex; align-items: center; gap: 10px; font: 400 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }

@@ -20,7 +20,7 @@ import { flow, scene } from "./scene";
  */
 
 const N = 1900, BIG = 56;
-const T_BOOT = 900, T_FORM = 2400, HOLD = 9000, MORPH = 2800, T_FLOW = 3600;
+const T_BOOT = 900, T_FORM = 2400, HOLD = 9000, MORPH = 2800, T_FLOW = 2500;
 
 type Dot = { x: number; y: number; s: number; al: number; t0: number; ox: number; oy: number; lx: number; ly: number };
 
