@@ -163,8 +163,8 @@ export default function Studio() {
       raf = 0;
       const vh = innerHeight, hs = clamp(scrollY / vh);
       el.style.setProperty("--hs", hs.toFixed(4));
-      /* the title's words come in as the dots finish opening out */
-      el.style.setProperty("--tw", clamp(scene(scrollY, vh) * 2.2 - 1.2).toFixed(4));
+      /* the title's words wait for the dots: they come in once the ribbon is nearly formed */
+      el.classList.toggle("flowed", scene(scrollY, vh) > .2);
       if (stack) flow.g = clamp(1 - (stack.getBoundingClientRect().top - BAR) / vh);
       if (stack && paged()) {
         const pr = (BAR - stack.getBoundingClientRect().top) / (vh * STEP), i = Math.max(0, Math.min(WORK.length - 1, Math.floor(pr)));
@@ -210,8 +210,8 @@ export default function Studio() {
       if (to === undefined || !lenis.current) return;
       e.preventDefault(); e.stopPropagation();
       busy = true;
-      lenis.current.scrollTo(to, { duration: Math.abs(to - y) > vh ? 1.5 : 1.05, lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
-      window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 1900);
+      lenis.current.scrollTo(to, { duration: Math.abs(to - y) > vh ? 2.4 : 1.25, easing: (t: number) => t * t * t * (t * (t * 6 - 15) + 10), lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
+      window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 2900);
     };
     addEventListener("wheel", wheel, { passive: false, capture: true });
     update();
@@ -479,7 +479,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* the title screen: it holds still while the dots flow under the words */
 .st-title { height: calc(var(--tt) * 100vh); }
 .st-tin { position: sticky; top: 0; height: 100svh; display: grid; align-content: start; justify-items: center; gap: 18px; padding: 22vh 22px 0; text-align: center; pointer-events: none;
-  opacity: var(--tw, 0); transform: translateY(calc((1 - var(--tw, 0)) * 26px)); }
+  opacity: 0; transform: translateY(26px); transition: opacity .35s, transform .5s; }
+.st.flowed .st-tin { opacity: 1; transform: none; transition: opacity 1.5s 1.7s, transform 1.8s cubic-bezier(.16, 1, .3, 1) 1.7s; }
 .st-tin h2 { margin: 0; font-weight: 500; font-size: clamp(64px, 10.5vw, 190px); line-height: .95; letter-spacing: -.06em; }
 .st-tin p { margin: 0; font-size: clamp(16px, 1.4vw, 21px); letter-spacing: -.015em; color: var(--mut); }
 .st-hint { margin-top: 14px; display: inline-flex; align-items: center; gap: 10px; font: 400 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }
