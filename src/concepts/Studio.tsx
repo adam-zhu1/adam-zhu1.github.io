@@ -8,6 +8,7 @@ import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
 import { Dots } from "./Dots";
 import { seenRecently } from "./seen";
+import { scene, TITLE } from "./scene";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
@@ -65,7 +66,14 @@ function Decode({ text, on, delay }: { text: string; on: boolean; delay: number 
 /* Projects show one at a time on screens with room for it: the section pins and each stretch of
    scrolling brings up the next project. Smaller screens get them as a plain list. */
 const PAGED = "(min-width: 1000px) and (min-height: 700px)", STEP = .7, BAR = 64;
+/* the width each demo is laid out at before it is scaled into its preview */
+const PV = { trueline: 600, clarity: 800, nist: 600 };
 const paged = () => matchMedia(PAGED).matches;
+/* where to scroll so that project i is the one showing */
+const deckY = (i: number) => {
+  const st = document.querySelector(".st-stack");
+  return (st ? st.getBoundingClientRect().top + scrollY : 0) - BAR + (i + .12) * innerHeight * STEP;
+};
 
 function Demo({ w }: { w: Entry }) {
   return w.demo === "trueline" ? <TrueLine /> : w.demo === "clarity" ? <Clarity /> : <NistFigure on />;
@@ -127,12 +135,7 @@ export default function Studio() {
       start.call(document, apply).finished.finally(() => named.forEach(el => { el.style.viewTransitionName = ""; }));
     else { apply(); named.forEach(el => { el.style.viewTransitionName = ""; }); }
   };
-  /* where to scroll so that project i is the one showing */
-  const deckY = (i: number) => {
-    const st = document.querySelector(".st-stack");
-    return (st ? st.getBoundingClientRect().top + scrollY : 0) - BAR + (i + .12) * innerHeight * STEP;
-  };
-  const jump = (i: number) => () => { const y = deckY(i); if (lenis.current) lenis.current.scrollTo(y, { duration: .9 }); else scrollTo(0, y); };
+  const jump = (i: number) => () => { if (!paged()) return; const y = deckY(i); if (lenis.current) lenis.current.scrollTo(y, { duration: .9 }); else scrollTo(0, y); };
   const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
 
   useEffect(() => {
@@ -148,30 +151,42 @@ export default function Studio() {
     return () => { l.destroy(); lenis.current = null; };
   }, []);
 
-  /* what follows the scroll: the first screen receding, which project is showing, the name at the foot rising into place */
+  /* what follows the scroll: the first screen fading, which project is showing, the name at the foot rising into place */
   useEffect(() => {
     const el = root.current!;
     let raf = 0;
-    const cv = el.querySelector<HTMLElement>(".st-dots");
     const foot = el.querySelector<HTMLElement>(".st-foot");
-    const stack = el.querySelector<HTMLElement>(".st-stack"), tabs = [...el.querySelectorAll<HTMLElement>(".st-tabs button")];
+    const stack = el.querySelector<HTMLElement>(".st-stack"), tabs = [...el.querySelectorAll<HTMLElement>(".st-item .hd")];
+    let idle = 0;
     const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
     const update = () => {
       raf = 0;
       const vh = innerHeight, hs = clamp(scrollY / vh);
       el.style.setProperty("--hs", hs.toFixed(4));
-      if (cv) cv.style.display = hs >= 1 ? "none" : "";
+      /* the caption under the word the dots spell is there only while the word is */
+      const sc = scene(scrollY, vh);
+      el.style.setProperty("--tw", (sc.a * sc.a * (1 - sc.s) ** 2).toFixed(4));
       if (stack && paged()) {
-        const pr = (BAR - stack.getBoundingClientRect().top) / (vh * STEP);
-        setAct(Math.max(0, Math.min(WORK.length - 1, Math.floor(pr))));
+        const pr = (BAR - stack.getBoundingClientRect().top) / (vh * STEP), i = Math.max(0, Math.min(WORK.length - 1, Math.floor(pr)));
+        setAct(i);
         tabs.forEach((t, j) => t.style.setProperty("--p", clamp(pr - j).toFixed(3)));
+        /* the dots take the colour of the project on screen */
+        if (pr > -.6 && pr < WORK.length + .3) el.style.setProperty("--dotc", `color-mix(in srgb, ${WORK[i].accent} 70%, var(--ink))`); else el.style.removeProperty("--dotc");
       }
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
-    const on = () => { if (!raf) raf = requestAnimationFrame(update); };
+    /* once the scrolling stops inside the projects, settle on the nearest one */
+    const settle = () => {
+      if (!stack || !paged() || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const pr = (BAR - stack.getBoundingClientRect().top) / (innerHeight * STEP);
+      if (pr < -.35 || pr > WORK.length - .45) return;
+      const y = deckY(Math.max(0, Math.min(WORK.length - 1, Math.round(pr - .12))));
+      if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .75 });
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(update); clearTimeout(idle); idle = window.setTimeout(settle, 190); };
     update();
     addEventListener("scroll", on, { passive: true }); addEventListener("resize", on);
-    return () => { cancelAnimationFrame(raf); removeEventListener("scroll", on); removeEventListener("resize", on); };
+    return () => { cancelAnimationFrame(raf); clearTimeout(idle); removeEventListener("scroll", on); removeEventListener("resize", on); };
   }, [page]);
 
   /* things below the first screen rise in as they are reached */
@@ -276,39 +291,32 @@ export default function Studio() {
       </section>
 
       <div className="st-body">
+      <section className="st-title" style={{ "--tt": TITLE } as CSSProperties}>
+        <p className="st-cap" aria-hidden="true">Three projects. Each one opens on its own page.</p>
+      </section>
       <section className="st-sec" id="projects">
-        <div className="st-head">
-          <h2 data-rv className="mask"><span>Projects</span></h2>
-          <p data-rv style={d(1)}>Three projects, one at a time. Open one for the full write-up.</p>
-        </div>
+        <h2 className="st-h2">Projects</h2>
         <div className="st-stack" style={{ "--n": WORK.length } as CSSProperties}>
-          <div className="st-stage">
-          <nav className="st-tabs" aria-label="Projects">
+          <ol className="st-stage">
             {WORK.map((w, i) => (
-              <button key={w.id} type="button" className={i === act ? "on" : ""} onClick={jump(i)} style={{ "--accent": w.accent } as CSSProperties}>
-                <span>{two(i + 1)}</span><b>{w.name}</b><em>{w.kind}</em><i />
-              </button>
-            ))}
-          </nav>
-          <div className="st-deck">
-          {WORK.map((w, i) => (
-              <article key={w.id} className={`st-card${i === act ? " act" : ""}`} data-card={slug(w)} style={{ "--i": i, "--accent": w.accent } as CSSProperties}>
-                <div className="cd">
-                  <div className="txt">
-                    <div className="top"><span>{two(i + 1)} / {two(WORK.length)}</span><em>{w.kind}</em></div>
-                    <h3>{w.name}</h3>
-                    <p className="what">{w.what}</p>
-                    <p className="body">{w.body}</p>
-                    <dl className="facts">{w.facts.slice(0, 3).map(([k, v]) => <div key={k}><dt>{v}</dt><dd>{k}</dd></div>)}</dl>
-                    {w.meta && <p className="meta">{w.meta}</p>}
-                    <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>Open {w.name}</span><i>→</i></a>
+              <li key={w.id} className={`st-item${i === act ? " act" : ""}`} style={{ "--accent": w.accent } as CSSProperties}>
+                <button type="button" className="hd" onClick={jump(i)} aria-current={i === act}>
+                  <span>{two(i + 1)}</span><b>{w.name}</b><i />
+                </button>
+                <div className="more"><div className="mi">
+                  <p className="kind">{w.kind}</p>
+                  <p className="what">{w.what}</p>
+                  <p className="num"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
+                  {w.meta && <p className="meta">{w.meta}</p>}
+                  <div className="acts">
+                    <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
+                    {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
                   </div>
-                  <div className="pv"><Fit width={w.demo === "nist" ? 620 : 880}><Demo w={w} /></Fit></div>
-                </div>
-              </article>
-          ))}
-          </div>
-          </div>
+                </div></div>
+                <div className={`pv ${w.demo}`} data-card={slug(w)}><Fit width={PV[w.demo]}><Demo w={w} /></Fit></div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -385,7 +393,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 
 /* first screen */
 .st-hero { position: relative; height: 100svh; min-height: 620px; overflow: hidden; }
-.st-dots { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink); }
+.st-dots { position: fixed; z-index: 0; inset: 0; width: 100%; height: 100%; color: var(--dotc, var(--ink)); transition: color 1s; pointer-events: none; }
 .st-hud span { position: absolute; font: 400 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); transition: opacity .5s; white-space: pre; }
 .st-hud b { font-weight: 400; color: var(--ink); }
 .st-hud .tl { left: 22px; top: 26px; } .st-hud .tr { right: 22px; top: 26px; } .st-hud .bl { left: 22px; bottom: 26px; }
@@ -419,9 +427,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 
 /* sections */
 .st-sec { padding: clamp(90px, 14vh, 170px) 22px 0; }
-#projects { padding-top: 84px; scroll-margin-top: 0; }
-#projects .st-head { margin-bottom: 22px; }
-#projects h2 { font-size: clamp(44px, 5.6vw, 88px); }
 .st-head { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: end; gap: 32px; margin-bottom: 34px; }
 .st h2 { margin: 0; font-weight: 400; font-size: clamp(54px, 8.4vw, 136px); line-height: .95; letter-spacing: -.055em; }
 .st h2 i { display: inline-block; font-size: .8em; }
@@ -429,70 +434,68 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 [data-rv] { opacity: 0; transform: translateY(34px); transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1); }
 [data-rv].on { opacity: 1; transform: none; }
 
-/* the first screen stays put and recedes while the rest of the page slides up over it */
-.st-hero { position: sticky; top: 0; transform: scale(calc(1 - var(--hs, 0) * .08)); opacity: calc(1 - var(--hs, 0) * .75); transform-origin: 50% 60%; will-change: transform, opacity; }
-.st-body { position: relative; z-index: 2; background: var(--bg); border-radius: 30px 30px 0 0; box-shadow: 0 -1px 0 var(--ln); }
+/* the dots stay behind the whole page; the first screen's words fade as it scrolls away */
+.st-hero h1, .st-id { opacity: calc(1 - var(--hs, 0) * 2.4); }
+.st-body { position: relative; z-index: 2; }
 
 /* headings come up from behind their own baseline */
 [data-rv].mask { opacity: 1; transform: none; overflow: hidden; padding-bottom: .1em; margin-bottom: -.1em; }
 [data-rv].mask > span { display: block; transform: translateY(112%) rotate(4deg); transform-origin: 0 100%; transition: transform 1.15s cubic-bezier(.16, 1, .3, 1) var(--d, 0ms); }
 [data-rv].mask.on > span { transform: none; }
 
-/* projects: one contained card each, with room around it; words on the left, the real demo on the right */
-.st-stack { max-width: 1180px; margin: 0 auto; padding-bottom: 6vh; } .st-deck { display: grid; gap: clamp(28px, 5vh, 56px); } .st-tabs { display: none; }
-.st-card .cd { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(22px, 3vw, 44px); padding: clamp(20px, 2.4vw, 34px); border-radius: 30px; overflow: hidden;
-  background: color-mix(in srgb, var(--accent) 9%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); transition: border-color .3s, transform .5s cubic-bezier(.16, 1, .3, 1); }
-.st-card .cd:hover { border-color: var(--accent); transform: translateY(-4px); }
-.st-card .txt { display: flex; flex-direction: column; min-width: 0; }
-.st-card .top { display: flex; justify-content: space-between; gap: 12px; font: 400 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
-.st-card .top span { color: var(--ink); } .st-card .top em { font-style: normal; text-align: right; }
-.st-card h3 { margin: 26px 0 12px; font-weight: 500; font-size: clamp(40px, 4.6vw, 68px); line-height: .95; letter-spacing: -.05em; }
-.st-card .what { margin: 0 0 14px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.3; letter-spacing: -.02em; }
-.st-card .body { margin: 0 0 22px; font-size: 16px; line-height: 1.55; color: var(--mut); max-width: 34em; }
-.st-card .facts { margin: 0 0 20px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); display: flex; flex-wrap: wrap; gap: 16px 34px; }
-.st-card .facts > div { display: block; border: 0; padding: 0; }
-.st-card .facts dt { font-size: clamp(21px, 1.9vw, 27px); letter-spacing: -.04em; line-height: 1.05; color: var(--ink); white-space: nowrap; }
-.st-card .facts dd { max-width: 12.5em; margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: var(--mut); }
-.st-card .meta { margin: 0 0 24px; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
-.st-card .open { margin-top: auto; align-self: flex-start; display: flex; align-items: center; gap: 28px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
-.st-card .open::after { content: ""; position: absolute; inset: 0; }
-.st-card .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
-.st-card .cd:hover .open { background: var(--accent); color: #06110c; }
-.st-card .cd:hover .open i { transform: translateX(6px); }
-.st-card .pv { position: relative; min-height: 340px; border-radius: 22px; overflow: hidden; background: #08080a; }
-.st-card .pv .st-fit { transition: transform .9s cubic-bezier(.16, 1, .3, 1); }
-.st-card .cd:hover .pv .st-fit { transform: scale(1.03); }
-/* squircle corners where the browser has them (rounder radius, since the curve eats into it) */
-@supports (corner-shape: squircle) {
-  .st-card .cd { corner-shape: squircle; border-radius: 56px; } .st-card .pv { corner-shape: squircle; border-radius: 40px; }
-  .st-body { corner-shape: squircle; border-radius: 60px 60px 0 0; }
-}
-.st-fit { position: absolute; inset: 14px; } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
+/* the title screen: the dots spell the word, a caption sits under it */
+.st-title { height: calc(var(--tt) * 100vh); text-align: center; pointer-events: none; }
+.st-cap { position: sticky; top: calc(50vh + min(80vw, 1500px) * .14 + 26px); margin: 0; padding: 0 22px; font-size: clamp(15px, 1.3vw, 19px); letter-spacing: -.015em; color: var(--mut); opacity: var(--tw, 0); }
+.st-h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#projects { padding-top: 0; }
+
+/* projects: the names as a list, the one on screen opened up, its preview beside it */
+.st-stack { padding-bottom: 6vh; }
+.st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 54px; }
+.st-item .hd { position: relative; display: flex; align-items: baseline; gap: 14px; width: 100%; min-width: 0; padding: 18px 0 10px; background: none; border: 0; border-top: 1px solid var(--ln); color: var(--ink); font: inherit; text-align: left; cursor: default; }
+.st-item .hd span { font: 400 12px/1 var(--mono); color: var(--mut); }
+.st-item .hd b { font-weight: 500; font-size: clamp(34px, 3.4vw, 60px); line-height: 1; letter-spacing: -.05em; }
+.st-item .kind { margin: 0 0 12px; font: 400 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
+.st-item .hd i { display: none; }
+.st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 24px); line-height: 1.3; letter-spacing: -.02em; max-width: 24em; }
+.st-item .num { margin: 22px 0 0; display: flex; align-items: baseline; gap: 16px; }
+.st-item .num b { font-weight: 500; font-size: clamp(40px, 4vw, 68px); line-height: 1; letter-spacing: -.05em; color: var(--accent); white-space: nowrap; }
+:root[data-theme="light"] .st-item .num b { color: color-mix(in srgb, var(--accent) 55%, var(--ink)); }
+.st-item .num span { font-size: 15px; line-height: 1.35; color: var(--mut); max-width: 16em; }
+.st-item .meta { margin: 18px 0 0; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
+.st-item .acts { margin: 24px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
+.st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
+.st-item .open:hover { background: var(--accent); color: #06110c; } .st-item .open:hover i { transform: translateX(6px); }
+.st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
+.st-item .pv { position: relative; margin-top: 26px; aspect-ratio: 4 / 3; border-radius: 30px; overflow: hidden; background: color-mix(in srgb, var(--accent) 10%, #08080a); border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--ln)); }
+.st-fit { position: absolute; inset: clamp(12px, 2.4vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
+/* a preview shows the demo's picture, large; its readouts and controls are on the project's page */
+.st-item .pv .democtl, .st-item .pv .nums, .st-item .pv .nstats { display: none; }
+@supports (corner-shape: squircle) { .st-item .pv { corner-shape: squircle; border-radius: 64px; } }
+
 /* on screens with room, the section pins and shows one project at a time; scrolling moves to the next */
 @media (min-width: 1000px) and (min-height: 700px) {
-  .st-stack { max-width: none; margin: 0 clamp(0px, 2.6vw, 64px); height: calc(100svh - 64px + var(--n) * 70vh); padding-bottom: 0; }
-  .st-stage { position: sticky; top: 64px; height: calc(100svh - 64px); display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; padding: 8px 0 28px; }
-  .st-tabs { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; }
-  .st-tabs button { position: relative; display: flex; align-items: baseline; gap: 10px; min-width: 0; padding: 14px 0 6px; background: none; border: 0; border-top: 1px solid var(--ln); color: var(--mut); font: inherit; text-align: left; cursor: pointer; transition: color .3s; }
-  .st-tabs button.on, .st-tabs button:hover { color: var(--ink); }
-  .st-tabs span { font: 400 11px/1 var(--mono); } .st-tabs b { font-weight: 500; font-size: 17px; letter-spacing: -.03em; }
-  .st-tabs em { font-style: normal; font-size: 13px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .st-tabs i { position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--accent); transform: scaleX(var(--p, 0)); transform-origin: 0 50%; }
-  .st-deck { display: block; position: relative; min-height: 0; }
-  .st-card { position: absolute; inset: 0; opacity: 0; visibility: hidden; transform: translateY(34px) scale(.975); transition: opacity .3s, transform .5s cubic-bezier(.4, 0, .2, 1), visibility 0s .3s; }
-  .st-card.act { opacity: 1; visibility: visible; transform: none; transition: opacity .55s .14s, transform .85s cubic-bezier(.16, 1, .3, 1) .14s, visibility 0s; }
-  .st-card .cd { height: 100%; } .st-card .cd:hover { transform: none; }
-  .st-card .cd { padding: clamp(20px, 2.2vw, 44px); }
-  .st-card h3 { margin-top: clamp(12px, 2.6vh, 26px); font-size: clamp(36px, min(5vw, 9.5vh), 104px); }
-  .st-card .what { font-size: clamp(18px, min(1.5vw, 2.9vh), 28px); }
-  .st-card .facts dt { font-size: clamp(21px, min(1.9vw, 3.6vh), 36px); } .st-card .facts dd { font-size: clamp(13px, min(.85vw, 1.7vh), 16px); }
-  .st-card .body { font-size: clamp(14px, min(1.05vw, 2vh), 19px); margin-bottom: clamp(12px, 2.2vh, 22px); }
-  .st-card .facts { padding-top: clamp(10px, 1.8vh, 18px); margin-bottom: clamp(10px, 1.8vh, 20px); }
-  .st-card .meta { margin-bottom: clamp(10px, 2vh, 24px); }
+  .st-stack { margin: 0 clamp(0px, 2.6vw, 64px); height: calc(100svh - 64px + var(--n) * 70vh); padding-bottom: 0; }
+  .st-stage { position: sticky; top: 64px; height: calc(100svh - 64px); display: flex; flex-direction: column; justify-content: center; gap: 0; padding: 20px 0 30px; }
+  .st-item { width: 36%; border-bottom: 1px solid transparent; }
+  .st-item:last-child { border-bottom-color: var(--ln); }
+  .st-item .hd { cursor: pointer; padding: clamp(14px, 2.2vh, 22px) 0; color: var(--mut); transition: color .4s; }
+  .st-item .hd b { font-size: clamp(26px, min(2.5vw, 4.4vh), 46px); transition: font-size .6s cubic-bezier(.16, 1, .3, 1); }
+  .st-item .hd:hover, .st-item.act .hd { color: var(--ink); }
+  .st-item.act .hd b { font-size: clamp(40px, min(4.4vw, 8vh), 84px); }
+  .st-item .hd i { display: block; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--accent); transform: scaleX(var(--p, 0)); transform-origin: 0 50%; }
+  .st-item .more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .7s cubic-bezier(.16, 1, .3, 1); }
+  .st-item .mi { overflow: hidden; min-height: 0; opacity: 0; transform: translateY(14px); transition: opacity .3s, transform .5s; }
+  .st-item.act .more { grid-template-rows: 1fr; }
+  .st-item.act .mi { opacity: 1; transform: none; transition: opacity .6s .2s, transform .8s cubic-bezier(.16, 1, .3, 1) .2s; padding-bottom: clamp(16px, 3vh, 30px); }
+  .st-item .what { margin-top: 0; font-size: clamp(17px, min(1.45vw, 2.7vh), 25px); }
+  .st-item .num { margin-top: clamp(12px, 2.4vh, 24px); } .st-item .num b { font-size: clamp(36px, min(4vw, 7vh), 76px); }
+  .st-item .meta { margin-top: clamp(10px, 1.8vh, 18px); } .st-item .acts { margin-top: clamp(14px, 2.6vh, 26px); }
+  .st-item .pv { position: absolute; left: 40%; right: 0; top: 20px; bottom: 30px; margin: 0; aspect-ratio: auto; opacity: 0; visibility: hidden; transform: translateY(40px) scale(.97); transition: opacity .3s, transform .5s cubic-bezier(.4, 0, .2, 1), visibility 0s .3s; }
+  .st-item.act .pv { opacity: 1; visibility: visible; transform: none; transition: opacity .55s .12s, transform .9s cubic-bezier(.16, 1, .3, 1) .12s, visibility 0s; }
 }
-@media (min-width: 1500px) and (min-height: 700px) { .st-card .cd { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); } }
-@media (min-width: 1000px) and (min-height: 700px) and (max-height: 820px) { .st-card .meta { display: none; } }
-@media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: reduce) { .st-card, .st-card.act { transform: none; transition: none; } }
+@media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: reduce) { .st-item .pv, .st-item.act .pv, .st-item .mi, .st-item .more, .st-item .hd b { transform: none; transition: none; } }
 .st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
 
 /* card to page: the card grows into the page's sheet, then the page's parts come in */
@@ -575,9 +578,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-bar { grid-template-columns: auto 1fr; padding: 0 14px; } .st-bar nav { display: none; } .st-theme { justify-self: end; }
   .st-hero h1 { top: 30%; font-size: 19vw; }
   .st-id { top: calc(30% + 9.5vw + 14px); padding: 0 14px; gap: 18px; }
-  .st-hero { position: relative; transform: none; opacity: 1; } .st-body { border-radius: 0; }
-  .st-card .cd { grid-template-columns: 1fr; }
-  .st-card .pv { aspect-ratio: 4 / 3; min-height: 0; order: -1; } .st-fit { inset: 8px; }
   .pj-main { padding: 80px 14px 14px; }
   .pj-head, .pj-cols { grid-template-columns: 1fr; gap: 28px; }
   .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
@@ -591,7 +591,9 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @media (prefers-reduced-motion: reduce) {
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
   .st-hero h1 .ch, .st-id .st-links a { animation: none !important; opacity: 1; transform: none; }
-  .st-hero { transform: none; opacity: 1; } .st-card .cd:hover { transform: none; } .st-foot .big { transform: none; }
+  .st-hero h1, .st-id { opacity: 1; } .st-foot .big { transform: none; }
+  .st-title { height: auto; } .st-cap { display: none; } .st-h2 { position: static; width: auto; height: auto; clip-path: none; margin: 90px 0 30px; font-weight: 500; font-size: clamp(44px, 5.6vw, 88px); letter-spacing: -.05em; }
+  .st-dots { position: absolute; }
   [data-rv].mask > span { transform: none; transition: none; }
   .pj .pj-top, .pj .pj-head .what, .pj .pj-head .kind, .pj .pj-head .st-pills, .pj .pj-stat, .st.pj h1 .ch, .pj .pj-demo { animation: none; }
 }
