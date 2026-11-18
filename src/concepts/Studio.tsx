@@ -183,27 +183,35 @@ export default function Studio() {
       if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .75 });
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(update); clearTimeout(idle); idle = window.setTimeout(settle, 190); };
-    /* Scroll lock, from the title screen to the last project: one push of the wheel moves
-       exactly one step (title, then each project), and nothing more until that move is done
-       and the wheel has come to rest. Above the title and below the last project the page
-       scrolls freely. */
+    /* Scroll lock: one push of the wheel moves exactly one step, and nothing more until that
+       move is done and the wheel has come to rest. On the home page the steps are the first
+       screen, the Projects title and each project, and below the last project the page
+       scrolls freely. On a project's page they are its title screen, its demo, its results,
+       how it works, and the foot of the page. */
+    const pageStops = (vh: number) => {
+      const top = (q: string, pad: (n: HTMLElement) => number) => { const n = el.querySelector<HTMLElement>(q); if (!n) return -1; let y = 0; for (let o: HTMLElement | null = n; o; o = o.offsetParent as HTMLElement | null) y += o.offsetTop; return y - pad(n); };   /* offsets, so an entrance animation in progress does not move the stop */
+      const max = document.documentElement.scrollHeight - vh, out = [0];
+      for (const v of [top(".pj-demo", n => Math.max(BAR + 16, (vh + BAR - n.offsetHeight) / 2)), top(".pj-cols", () => BAR + 28), top(".pj-steps", () => BAR + 28), max])
+        if (v > out[out.length - 1] + (v === max ? 240 : 60)) out.push(Math.min(v, max));
+      return out;
+    };
     let busy = false, done = 0, lastWheel = 0;
     const wheel = (e: WheelEvent) => {
-      if (!stack || !paged() || e.ctrlKey || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (!paged() || e.ctrlKey || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const now = performance.now(), gap = now - lastWheel; lastWheel = now;
       /* a trackpad keeps sending its glide after the fingers lift: wait for it to stop */
       if (busy || done && (gap < 90 && now - done < 900)) { e.preventDefault(); e.stopPropagation(); return; }
       done = 0;
       if (Math.abs(e.deltaY) < 4 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      const vh = innerHeight, y = scrollY, stops = [vh * 1.2, ...WORK.map((_, i) => deckY(i))], end = stops[stops.length - 1];
+      const vh = innerHeight, y = scrollY, stops = stack ? [0, vh * 1.2, ...WORK.map((_, i) => deckY(i))] : pageStops(vh), end = stops[stops.length - 1];
       let to: number | undefined;
-      if (e.deltaY > 0) { if (y > stops[0] - vh * .3) to = stops.find(v => v > y + 8); }
-      else if (y < end + vh * .25) to = [...stops].reverse().find(v => v < y - 8);
+      if (e.deltaY > 0) to = stops.find(v => v > y + 8);
+      else if (!stack || y < end + vh * .25) to = [...stops].reverse().find(v => v < y - 8);
       if (to === undefined || !lenis.current) return;
       e.preventDefault(); e.stopPropagation();
       busy = true;
-      lenis.current.scrollTo(to, { duration: 1.05, lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
-      window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 1500);
+      lenis.current.scrollTo(to, { duration: Math.abs(to - y) > vh ? 1.5 : 1.05, lock: true, force: true, onComplete: () => { busy = false; done = performance.now(); } });
+      window.setTimeout(() => { if (busy) { busy = false; done = performance.now(); } }, 1900);
     };
     addEventListener("wheel", wheel, { passive: false, capture: true });
     update();
@@ -524,6 +532,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-item .pv { position: absolute; left: 40%; right: 0; top: 20px; bottom: 30px; margin: 0; aspect-ratio: auto; opacity: 0; visibility: hidden; transform: translateY(40px) scale(.97); transition: opacity .3s, transform .5s cubic-bezier(.4, 0, .2, 1), visibility 0s .3s; }
   .st-item.act .pv { opacity: 1; visibility: visible; transform: none; transition: opacity .55s .12s, transform .9s cubic-bezier(.16, 1, .3, 1) .12s, visibility 0s; }
 }
+@media (min-width: 1000px) and (min-height: 700px) { .st.pj .pj-head { min-height: calc(100svh - 175px - 44px); margin-bottom: 150px; } }
 @media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: reduce) { .st-item .pv, .st-item.act .pv, .st-item .mi, .st-item .more, .st-item .hd b { transform: none; transition: none; } }
 .st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
 
