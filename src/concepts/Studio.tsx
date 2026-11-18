@@ -450,9 +450,9 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-card .what { margin: 0 0 14px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.3; letter-spacing: -.02em; }
 .st-card .body { margin: 0 0 22px; font-size: 16px; line-height: 1.55; color: var(--mut); max-width: 34em; }
 .st-card .facts { margin: 0 0 20px; padding-top: 18px; border-top: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ln)); display: flex; flex-wrap: wrap; gap: 16px 34px; }
-.st-card .facts > div { display: block; border: 0; padding: 0; max-width: 11.5em; }
+.st-card .facts > div { display: block; border: 0; padding: 0; }
 .st-card .facts dt { font-size: clamp(21px, 1.9vw, 27px); letter-spacing: -.04em; line-height: 1.05; color: var(--ink); white-space: nowrap; }
-.st-card .facts dd { margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: var(--mut); }
+.st-card .facts dd { max-width: 12.5em; margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: var(--mut); }
 .st-card .meta { margin: 0 0 24px; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
 .st-card .open { margin-top: auto; align-self: flex-start; display: flex; align-items: center; gap: 28px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-card .open::after { content: ""; position: absolute; inset: 0; }
@@ -470,7 +470,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-fit { position: absolute; inset: 14px; } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 /* on screens with room, the section pins and shows one project at a time; scrolling moves to the next */
 @media (min-width: 1000px) and (min-height: 700px) {
-  .st-stack { max-width: 1240px; height: calc(100svh - 64px + var(--n) * 70vh); padding-bottom: 0; }
+  .st-stack { max-width: none; margin: 0 clamp(0px, 2.6vw, 64px); height: calc(100svh - 64px + var(--n) * 70vh); padding-bottom: 0; }
   .st-stage { position: sticky; top: 64px; height: calc(100svh - 64px); display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; padding: 8px 0 28px; }
   .st-tabs { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; }
   .st-tabs button { position: relative; display: flex; align-items: baseline; gap: 10px; min-width: 0; padding: 14px 0 6px; background: none; border: 0; border-top: 1px solid var(--ln); color: var(--mut); font: inherit; text-align: left; cursor: pointer; transition: color .3s; }
@@ -482,11 +482,15 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-card { position: absolute; inset: 0; opacity: 0; visibility: hidden; transform: translateY(34px) scale(.975); transition: opacity .3s, transform .5s cubic-bezier(.4, 0, .2, 1), visibility 0s .3s; }
   .st-card.act { opacity: 1; visibility: visible; transform: none; transition: opacity .55s .14s, transform .85s cubic-bezier(.16, 1, .3, 1) .14s, visibility 0s; }
   .st-card .cd { height: 100%; } .st-card .cd:hover { transform: none; }
-  .st-card h3 { margin-top: clamp(12px, 2.6vh, 26px); font-size: clamp(36px, min(4.6vw, 7.4vh), 68px); }
-  .st-card .body { font-size: clamp(14px, 1.9vh, 16px); margin-bottom: clamp(12px, 2.2vh, 22px); }
+  .st-card .cd { padding: clamp(20px, 2.2vw, 44px); }
+  .st-card h3 { margin-top: clamp(12px, 2.6vh, 26px); font-size: clamp(36px, min(5vw, 9.5vh), 104px); }
+  .st-card .what { font-size: clamp(18px, min(1.5vw, 2.9vh), 28px); }
+  .st-card .facts dt { font-size: clamp(21px, min(1.9vw, 3.6vh), 36px); } .st-card .facts dd { font-size: clamp(13px, min(.85vw, 1.7vh), 16px); }
+  .st-card .body { font-size: clamp(14px, min(1.05vw, 2vh), 19px); margin-bottom: clamp(12px, 2.2vh, 22px); }
   .st-card .facts { padding-top: clamp(10px, 1.8vh, 18px); margin-bottom: clamp(10px, 1.8vh, 20px); }
   .st-card .meta { margin-bottom: clamp(10px, 2vh, 24px); }
 }
+@media (min-width: 1500px) and (min-height: 700px) { .st-card .cd { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); } }
 @media (min-width: 1000px) and (min-height: 700px) and (max-height: 820px) { .st-card .meta { display: none; } }
 @media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: reduce) { .st-card, .st-card.act { transform: none; transition: none; } }
 .st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
