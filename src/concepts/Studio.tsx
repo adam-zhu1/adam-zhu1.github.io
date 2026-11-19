@@ -68,6 +68,8 @@ function Decode({ text, on, delay }: { text: string; on: boolean; delay: number 
 const PAGED = "(min-width: 1000px) and (min-height: 700px)", BAR = 64;
 /* the width each demo is laid out at before it is scaled into its preview */
 const PV = { trueline: 600, clarity: 800, nist: 600 };
+/* the projects with something to watch get a card; NIST, an internship, leads the list under them */
+const FEAT = WORK.filter(w => w.demo !== "nist");
 const paged = () => matchMedia(PAGED).matches;
 /* where to scroll so that project i sits in the middle of the screen */
 const deckY = (i: number) => {
@@ -120,7 +122,7 @@ export default function Studio() {
     const name = (el: HTMLElement | null) => { if (el) { el.style.viewTransitionName = "pj-bg"; named.push(el); } };
     name(card(to));
     const apply = () => {
-      const fi = WORK.findIndex(w => slug(w) === from);
+      const fi = FEAT.findIndex(w => slug(w) === from);
       flushSync(() => setPage(to));
       const back = anchor === "projects" ? card(from) : null;
       const top = (el: Element | null) => el ? el.getBoundingClientRect().top + scrollY : 0;
@@ -168,8 +170,9 @@ export default function Studio() {
       /* a card is at full strength in the middle of the screen and falls back as it leaves */
       const lit = paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
       for (const c of cards) {
-        if (!lit) { c.style.opacity = c.style.transform = ""; continue; }
+        if (!lit) { c.style.opacity = c.style.transform = ""; c.classList.add("near"); continue; }
         const r = c.parentElement!.getBoundingClientRect(), l = (r.top + r.height / 2 - vh / 2) / vh, u = Math.abs(l);
+        c.classList.toggle("near", u < .3);
         c.style.opacity = Math.min(1, Math.max(.05, 1 - (u - .1) * 2.2)).toFixed(3);
         c.style.transform = `translate3d(0, ${(l * 56).toFixed(1)}px, 0) scale(${(1 - Math.min(u, .7) * .09).toFixed(4)})`;
       }
@@ -179,8 +182,8 @@ export default function Studio() {
     const settle = () => {
       if (!stack || !paged() || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const pr = (scrollY - deckY(0)) / innerHeight;
-      if (pr < -.4 || pr > WORK.length - .55) return;
-      const y = deckY(Math.max(0, Math.min(WORK.length - 1, Math.round(pr))));
+      if (pr < -.4 || pr > FEAT.length - .55) return;
+      const y = deckY(Math.max(0, Math.min(FEAT.length - 1, Math.round(pr))));
       if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .75 });
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(update); clearTimeout(idle); idle = window.setTimeout(settle, 190); };
@@ -205,7 +208,7 @@ export default function Studio() {
     let busy = false, done = 0, lastWheel = 0, acc = 0, dir = 0, bound: number | null = null, run = 0;
     const mags: number[] = [];
     const after = el.querySelector<HTMLElement>("#more");
-    const stopsNow = (vh: number) => stack ? [0, vh * 1.2, ...WORK.map((_, i) => deckY(i)), ...(after ? [Math.round(after.getBoundingClientRect().top + scrollY - BAR)] : [])] : pageStops(vh);
+    const stopsNow = (vh: number) => stack ? [0, vh * 1.2, ...FEAT.map((_, i) => deckY(i)), ...(after ? [Math.round(after.getBoundingClientRect().top + scrollY - BAR)] : [])] : pageStops(vh);
     const target = (d: number) => {
       const vh = innerHeight, y = bound ?? scrollY, stops = stopsNow(vh), end = stops[stops.length - 1];
       if (d > 0) return stops.find(v => v > y + 8);
@@ -366,25 +369,28 @@ export default function Studio() {
       <section className="st-title" style={{ "--tt": TITLE } as CSSProperties}>
         <div className="st-tin">
           <h2>Projects</h2>
-          <p>Three projects. Each one opens on its own page.</p>
+          <p>Two projects. Each one opens on its own page.</p>
           <span className="st-hint">Scroll to see them <i>↓</i></span>
         </div>
       </section>
       <section className="st-sec" id="projects">
-        <div className="st-stack" style={{ "--n": WORK.length } as CSSProperties}>
+        <div className="st-stack">
           <ol className="st-stage">
-            {WORK.map((w, i) => (
+            {FEAT.map(w => (
               <li key={w.id} className="st-item">
                 <article className="card" data-card={slug(w)}>
                   <div className="tx">
-                    <p className="kind"><span>{two(i + 1)} / {two(WORK.length)}</span>{w.kind}</p>
-                    <h3>{w.name}</h3>
-                    <p className="what">{w.what}</p>
-                    <p className="fig"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
-                    {w.meta && <p className="meta">{w.meta}</p>}
-                    <div className="acts">
-                      <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
-                      {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
+                    <div>
+                      <p className="kind">{w.kind}</p>
+                      <h3>{w.name}</h3>
+                    </div>
+                    <div>
+                      <p className="what">{w.what}</p>
+                      <p className="res">{w.result}</p>
+                      <div className="acts">
+                        <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
+                        {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
+                      </div>
                     </div>
                   </div>
                   <div className={`pv ${w.demo}`}><Fit width={PV[w.demo]}><Demo w={w} /></Fit></div>
@@ -398,13 +404,23 @@ export default function Studio() {
       <section className="st-sec" id="more">
         <div className="st-head">
           <h2 data-rv className="mask"><span>More work</span></h2>
-          <p data-rv style={d(1)}>Research at Iowa State, a paper, a campus AI team, and two side projects.</p>
+          <p data-rv style={d(1)}>A research internship at NIST, a campus AI team, two side projects, a paper, and research at Iowa State.</p>
         </div>
         <ol className="st-rows">
+          {WORK.filter(w => !FEAT.includes(w)).map(w => (
+            <li key={w.id} data-rv>
+              <a href={href(slug(w))} onClick={go(slug(w))}>
+                <span className="i">01</span>
+                <span className="n">{w.name}<em>{w.kind} · {w.when}</em></span>
+                <span className="b">{w.result}</span>
+                <span className="go">→</span>
+              </a>
+            </li>
+          ))}
           {MORE.map((m, i) => {
             const row = (
               <>
-                <span className="i">{two(i + 1)}</span>
+                <span className="i">{two(i + 2)}</span>
                 <span className="n">{m.name}<em>{m.role}{m.org && <> · {m.org}</>} · {m.when}</em></span>
                 <span className="b">{m.body}</span>
                 <span className="go">{m.href ? "↗" : ""}</span>
@@ -530,42 +546,49 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @keyframes st-nudge { 0%, 100% { transform: none; } 50% { transform: translateY(5px); } }
 #projects { padding-top: 0; }
 
-/* projects: one card each, the words on the left and the demo's picture on the right */
+/* projects: one card each. The demo is the card; the words are a short label beside it. */
 .st-stack { padding-bottom: 6vh; }
 .st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 28px; }
-.st-item .card { display: grid; gap: 22px; padding: 22px; border-radius: 30px; background: var(--card); border: 1px solid var(--ln); }
-.st-item .tx { display: flex; flex-direction: column; min-width: 0; }
-.st-item .kind { margin: 0 0 18px; display: flex; gap: 16px; font: 400 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
-.st-item h3 { margin: 0 0 16px; font-weight: 500; font-size: clamp(40px, 5vw, 60px); line-height: .95; letter-spacing: -.055em; }
-.st-item .what { margin: 0; font-size: clamp(17px, 1.5vw, 23px); line-height: 1.32; letter-spacing: -.02em; max-width: 26em; }
-.st-item .fig { margin: 24px 0 0; display: flex; align-items: baseline; gap: 16px; }
-.st-item .fig b { font-weight: 500; font-size: clamp(40px, 4vw, 68px); line-height: 1; letter-spacing: -.05em; white-space: nowrap; }
-.st-item .fig span { font-size: 15px; line-height: 1.35; color: var(--mut); max-width: 16em; }
-.st-item .meta { margin: 16px 0 0; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
+.st-item .card { display: grid; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
+.st-item .tx { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 26px 24px 28px; }
+.st-item .kind { margin: 0 0 14px; font-size: 14px; line-height: 1.3; color: var(--mut); }
+.st-item h3 { margin: 0; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
+.st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
+.st-item .res { margin: 14px 0 0; font-size: 15px; line-height: 1.45; color: var(--mut); max-width: 30em; }
 .st-item .acts { margin: 26px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
 .st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .open:hover i { transform: translateX(6px); }
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
-.st-item .pv { position: relative; aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden; background: var(--bg); border: 1px solid var(--ln); }
-.st-fit { position: absolute; inset: clamp(12px, 2.4vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
+/* the demo sits straight on the card's dark side: no panel, no frame round it */
+.st-item .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #0a0a0c; }
+.st-item .pv .win { background: none; box-shadow: none; padding: 0; }
+.st-item .pv .win > .edge, .st-item .pv .win > .corner { display: none; }
+.st-fit { position: absolute; inset: clamp(16px, 2.2vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 /* a preview shows the demo's picture, large; its readouts and controls are on the project's page */
 .st-item .pv .democtl, .st-item .pv .nums, .st-item .pv .nstats { display: none; }
-@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } .st-item .pv { corner-shape: squircle; border-radius: 44px; } }
+@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } }
 
 /* on screens with room, each project is a screen of its own and the wheel moves one at a time */
 @media (min-width: 1000px) and (min-height: 700px) {
   .st-stack { margin: 0 clamp(0px, 2.6vw, 64px); padding-bottom: 0; }
   .st-stage { display: block; }
   .st-item { height: 100vh; display: grid; align-items: center; padding: 64px 0 0; }
-  .st-item .card { height: calc(100vh - 64px - clamp(40px, 9vh, 96px)); grid-template-columns: minmax(0, 37fr) minmax(0, 63fr); gap: 0; padding: 14px; will-change: transform, opacity; }
-  .st-item .tx { justify-content: center; padding: clamp(18px, 3vh, 40px) clamp(22px, 2.8vw, 56px); }
-  .st-item h3 { font-size: clamp(44px, min(5vw, 9.5vh), 104px); margin-bottom: clamp(14px, 2.6vh, 28px); }
-  .st-item .kind { margin-bottom: clamp(16px, 3.4vh, 36px); }
-  .st-item .what { font-size: clamp(17px, min(1.45vw, 2.7vh), 25px); }
-  .st-item .fig { margin-top: clamp(16px, 3.4vh, 40px); } .st-item .fig b { font-size: clamp(36px, min(4vw, 7vh), 76px); }
-  .st-item .meta { margin-top: clamp(10px, 1.8vh, 18px); } .st-item .acts { margin-top: clamp(18px, 3.6vh, 40px); }
+  .st-item .card { height: calc(100vh - 64px - clamp(40px, 9vh, 96px)); grid-template-columns: minmax(0, 31fr) minmax(0, 69fr); will-change: transform, opacity; }
+  .st-item .tx { justify-content: space-between; padding: clamp(28px, 5vh, 56px) clamp(24px, 2.6vw, 52px); }
+  .st-item h3 { font-size: clamp(44px, min(4.6vw, 9.5vh), 100px); }
+  .st-item .kind { margin-bottom: clamp(12px, 2.2vh, 22px); }
+  .st-item .what { font-size: clamp(18px, min(1.5vw, 2.8vh), 26px); }
+  .st-item .acts { margin-top: clamp(20px, 3.6vh, 40px); }
   .st-item .pv { aspect-ratio: auto; height: 100%; min-height: 0; }
+}
+/* a card's words and its demo come in as it reaches the middle */
+@media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
+  .st-item .kind, .st-item h3, .st-item .what, .st-item .res, .st-item .acts { opacity: 0; transform: translateY(22px); transition: opacity .3s, transform .4s; }
+  .st-item .pv .st-fit { opacity: 0; transform: scale(.96); transition: opacity .3s, transform .4s; }
+  .st-item .near :is(.kind, h3, .what, .res, .acts) { opacity: 1; transform: none; transition: opacity .7s var(--dl, 0s), transform .9s cubic-bezier(.16, 1, .3, 1) var(--dl, 0s); }
+  .st-item .near h3 { --dl: .06s; } .st-item .near .what { --dl: .14s; } .st-item .near .res { --dl: .2s; } .st-item .near .acts { --dl: .26s; }
+  .st-item .near .pv .st-fit { opacity: 1; transform: none; transition: opacity .8s .1s, transform 1.1s cubic-bezier(.16, 1, .3, 1) .1s; }
 }
 @media (min-width: 1000px) and (min-height: 700px) { .st.pj .pj-head { min-height: calc(100svh - 175px - 44px); margin-bottom: 150px; } }
 .st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
