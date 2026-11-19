@@ -550,7 +550,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-stack { padding-bottom: 6vh; }
 .st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 28px; }
 .st-item .card { display: grid; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
-.st-item .tx { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 26px 24px 28px; }
+.st-item .tx { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 26px 24px 28px; background: color-mix(in srgb, var(--ink) 4.5%, var(--card)); }
 .st-item .kind { margin: 0 0 14px; font-size: 14px; line-height: 1.3; color: var(--mut); }
 .st-item h3 { margin: 0; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
 .st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
@@ -561,7 +561,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .open:hover i { transform: translateX(6px); }
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
 /* the demo sits straight on the card's dark side: no panel, no frame round it */
-.st-item .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #0a0a0c; }
+.st-item .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
 .st-item .pv .win { background: none; box-shadow: none; padding: 0; }
 .st-item .pv .win > .edge, .st-item .pv .win > .corner { display: none; }
 .st-fit { position: absolute; inset: clamp(16px, 2.2vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
