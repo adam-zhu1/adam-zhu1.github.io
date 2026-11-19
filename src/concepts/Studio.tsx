@@ -571,6 +571,9 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .pv .tlgrid { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 40px; align-items: center; }
 .st-item .pv .app { max-width: 100%; }
 .st-item .pv .nums { grid-template-columns: 1fr; gap: 2px; margin: 0 0 30px; }
+/* nothing is shown until the throw has been tracked; then each one arrives as it is read off */
+.st-item .pv .nums .num { opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s, border-color .5s; }
+.st-item .pv .nums .num.on { opacity: 1; transform: none; transition: opacity .5s, transform .7s cubic-bezier(.16, 1, .3, 1), border-color .5s; }
 .st-item .pv .nums .num { padding: 11px 0 9px; } .st-item .pv .nums .num b { font-size: 27px; } .st-item .pv .nums .num small { font-size: 12px; }
 @supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } }
 

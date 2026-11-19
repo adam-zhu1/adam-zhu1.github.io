@@ -52,9 +52,7 @@ export function createTrueLine(els: Els) {
   const outline = GEO.video.outline.map(o => ({ v: o.v, l: o.l }));
 
   /* the fit as a matrix, lane (board, ft) to the frame, solved from the four outline corners.
-     It reproduces every seam, arrow and landmark to within a tenth of a pixel. The first
-     guess lays the lane flat and square across the frame; calibrating is shown as one
-     becoming the other, so the moment the lane snaps onto the footage is the fit. */
+     It reproduces every seam, arrow and landmark to within a tenth of a pixel. */
   function solveH(src: number[][], dst: number[][]) {
     const A: number[][] = [];
     src.forEach(([x, y], i) => { const [u, v] = dst[i]; A.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u], [0, 0, 0, x, y, 1, -v * x, -v * y, v]); });
@@ -67,7 +65,6 @@ export function createTrueLine(els: Els) {
     return [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1];
   }
   const H1 = solveH(outline.map(o => o.l), outline.map(o => o.v));
-  const H0 = [-.7 / 39, 0, .85, 0, -.5 / 60, .84, 0, 0, 1];
   const proj = (H: number[], [b, f]: number[]) => { const w = H[6] * b + H[7] * f + H[8]; return [(H[0] * b + H[1] * f + H[2]) / w, (H[3] * b + H[4] * f + H[5]) / w]; };
   const MARKS = GEO.video.marks;
 
@@ -89,17 +86,17 @@ export function createTrueLine(els: Els) {
   function ptAt(t: number): any { if (t <= P[0].t) return P[0]; for (let i = 1; i < P.length; i++) if (P[i].t >= t) { const a = P[i - 1], b = P[i], k = (t - a.t) / (b.t - a.t || 1); return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, r: a.r + (b.r - a.r) * k, b: a.b + (b.b - a.b) * k, f: a.f + (b.f - a.f) * k, m: b.m, c: b.c }; } return P[P.length - 1]; }
   function text(g: any, x: number, y: number, s: string, o: any = {}) { const n = el("text", { x, y, fill: o.fill || WHITE, "font-size": o.size || 12, "font-family": SANS, "font-weight": o.weight || 400, "text-anchor": o.anchor || "start", opacity: o.op ?? 1 }); n.textContent = s; g.appendChild(n); return n; }
   let uid = 0;
-  const found = (t: number) => clamp(Math.floor((t - T.hold) / .15) + 1, 1, 6);
+  const PICK = .13;                                                  // seconds between one reference point and the next
+  const found = (t: number) => clamp(Math.floor((t - T.hold) / PICK) + 1, 1, 6);
 
   function draw(t) {
     const g = document.createDocumentFragment();
     const defs = el("defs"); g.appendChild(defs);
     const clipT = t < T.hold ? clamp(t - T.play, 0, CLIP_END) : CLIP_END;
-    const fitK = eInOut(seg(t, C.found, C.fit));                     // first guess to the fit
+    const calK = seg(t, C.found, C.fit);                             // the lane drawing itself out from the picked points
     const geoOn = seg(t, C.found - .1, C.found + .3);
     const sweepF = -2 + seg(t, C.fit, C.swept) * 74;                   // ft down the lane, past the pins
-    const Hk = H1.map((v, i) => H0[i] + (v - H0[i]) * fitK);
-    const at = (l: number[], v: number[]) => fitK < 1 ? V(proj(Hk, l)) : V(v);
+    const at = (_l: number[], v: number[]) => V(v);
     const move = eInOut(seg(t, T.mv, T.plan));
     const metrics = seg(t, T.met, T.met + 1.6);
     const fade = seg(t, T.mv, T.mv + .9);
@@ -129,39 +126,50 @@ export function createTrueLine(els: Els) {
     /* ---- lane geometry: video model on the footage, plan model in the card ---- */
     if (t >= T.hold) {
       const vo = 1 - move;                                             // video-only strokes fade as the plan takes over
-      /* the landmarks, found one by one, each with a ping; they flash once the fit lands on them */
-      const lo = seg(t, T.hold, T.hold + .3) * (1 - seg(t, T.cal + .4, T.mv));
+      /* the reference points, picked one after another in quick taps: a ring closes onto
+         each, the point pops, and a ripple leaves it. They flash once the fit lands. */
+      const lo = seg(t, T.hold, T.hold + .2) * (1 - seg(t, T.cal + .4, T.mv));
       if (lo > .01) MARKS.forEach((it, i) => {
-        const p = V(it.v), u = t - T.hold - i * .15, oi = clamp(u / .25, 0, 1) * lo;
-        if (oi <= 0) return;
-        const ping = seg(u, 0, .6);
-        if (ping < 1) cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 7 + ping * 16, fill: "none", stroke: ACCENT, "stroke-width": 1.4, opacity: (1 - ping) * .8 }));
+        const p = V(it.v), u = t - T.hold - i * PICK;
+        if (u <= 0) return;
+        const land = eOut(seg(u, 0, .2)), rip = seg(u, .2, .65), pop = seg(u, .16, .42);
         const lock = seg(t, C.fit - .05 + i * .03, C.fit + .45 + i * .03);
+        const col = lock > 0 ? MINT : ACCENT;
+        if (land < 1) {
+          const r = 26 - land * 19;
+          cg.appendChild(el("circle", { cx: p[0], cy: p[1], r, fill: "none", stroke: WHITE, "stroke-width": 1.2, opacity: land * .9 * lo }));
+          [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => cg.appendChild(el("line", { x1: p[0] + dx * (r + 2), y1: p[1] + dy * (r + 2), x2: p[0] + dx * (r + 8), y2: p[1] + dy * (r + 8), stroke: WHITE, "stroke-width": 1.2, opacity: land * .9 * lo })));
+          return;
+        }
+        if (rip < 1) cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 7 + eOut(rip) * 15, fill: "none", stroke: ACCENT, "stroke-width": 1.4, opacity: (1 - rip) * .8 * lo }));
         if (lock > 0 && lock < 1) cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 7 + eOut(lock) * 7, fill: MINT, opacity: (1 - lock) * .45 }));
-        cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 7, fill: "none", stroke: lock > 0 ? MINT : ACCENT, "stroke-width": 1.4, opacity: oi * .9 }));
-        cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 1.8, fill: lock > 0 ? MINT : ACCENT, opacity: oi }));
+        cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 7, fill: "none", stroke: col, "stroke-width": 1.4, opacity: .9 * lo }));
+        cg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 1.8 + Math.sin(Math.PI * pop) * 2.4, fill: col, opacity: lo }));
       });
-      /* while it fits: rules across the lane every 15 ft, and the model's own landmarks, each
-         tied to the one found in the footage, so you watch the gaps close */
-      const fo = geoOn * (1 - seg(t, C.fit, C.fit + .4));
-      if (fo > .01) {
-        [15, 30, 45].forEach(f => { const a = V(proj(Hk, [0, f])), b = V(proj(Hk, [39, f])); cg.appendChild(el("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: WHITE, "stroke-width": 1, "stroke-dasharray": "3 4", opacity: fo * .35 })); });
-        MARKS.forEach(it => {
-          const m = V(proj(Hk, it.l)), p = V(it.v);
-          cg.appendChild(el("line", { x1: m[0], y1: m[1], x2: p[0], y2: p[1], stroke: WHITE, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: fo * .5 }));
-          cg.appendChild(el("rect", { x: m[0] - 3, y: m[1] - 3, width: 6, height: 6, fill: "none", stroke: WHITE, "stroke-width": 1.3, opacity: fo * .9, transform: `rotate(45 ${m[0]} ${m[1]})` }));
-        });
-      }
       /* the sweep: once the fit holds, a line runs from the foul line to the pins */
       if (sweepF > -2 && sweepF < 72) {
         const f = clamp(sweepF, 0, 63), a = V(proj(H1, [-1, f])), b = V(proj(H1, [40, f]));
         cg.appendChild(el("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: MINT, "stroke-width": 2, "stroke-linecap": "round", opacity: Math.sin(Math.PI * (sweepF + 2) / 74) }));
       }
-      /* outline: both gutters, foul line, pin line, in the app's system accent */
+      /* outline: both gutters, foul line, pin line, in the app's system accent. Calibrating,
+         it draws itself out of the picked points: the foul line runs out to its corners, the
+         gutters climb the lane, the boards follow from the middle outwards, and the pin
+         line closes over the headpin. */
       const out = outline.map(it => lerp(at(it.l, it.v), Lc(it.l[0], it.l[1]), move));
-      cg.appendChild(el("path", { d: `M${out[0]} L${out[1]} L${out[2]} L${out[3]}Z`, fill: "none", stroke: ACCENT, "stroke-width": 2, opacity: geoOn * vo }));
+      const part = (a: number[], b: number[], k: number, o: any) => { if (k <= 0) return; const e = lerp(a, b, k); cg.appendChild(el("line", { x1: a[0], y1: a[1], x2: e[0], y2: e[1], "stroke-linecap": "round", ...o })); };
+      if (calK < 1) {
+        const foulMid = lerp(out[0], out[1], .5), pinMid = lerp(out[3], out[2], .5), acc = { stroke: ACCENT, "stroke-width": 2 };
+        const kf = eOut(seg(calK, 0, .3)), kg = eInOut(seg(calK, .15, .8)), kp = eOut(seg(calK, .75, 1));
+        part(foulMid, out[0], kf, acc); part(foulMid, out[1], kf, acc);
+        part(out[0], out[3], kg, acc); part(out[1], out[2], kg, acc);
+        part(out[3], pinMid, kp, acc); part(out[2], pinMid, kp, acc);
+      } else {
+        const flash = seg(t, C.fit, C.fit + .55);
+        if (flash < 1) cg.appendChild(el("path", { d: `M${out[0]} L${out[1]} L${out[2]} L${out[3]}Z`, fill: MINT, opacity: (1 - eOut(flash)) * .16 }));
+        cg.appendChild(el("path", { d: `M${out[0]} L${out[1]} L${out[2]} L${out[3]}Z`, fill: "none", stroke: ACCENT, "stroke-width": 2, opacity: vo }));
+      }
       /* seams: white 22% on video, 5% in the plan */
-      seams.forEach((s, i) => { const a = lerp(at([s.b, 0], s.v0), Lc(s.b, 0), move), b = lerp(at([s.b, 60], s.v1), Lc(s.b, 60), move); const oi = clamp((geoOn - i * .04) / .7, 0, 1); cg.appendChild(el("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: WHITE, "stroke-width": 1, opacity: oi * (.22 * (1 - move) + .05 * move) })); });
+      seams.forEach((s, i) => { const a = lerp(at([s.b, 0], s.v0), Lc(s.b, 0), move), b = lerp(at([s.b, 60], s.v1), Lc(s.b, 60), move), dl = Math.abs(i - 3) * .06; part(a, b, eInOut(seg(calK, .25 + dl, .8 + dl)), { stroke: WHITE, "stroke-width": 1, opacity: .22 * (1 - move) + .05 * move }); });
       /* arrows: stroked triangles on video, filled in the plan, positions from each model */
       arrows.forEach((a, i) => {
         const p = lerp(V(a.v), Lc(a.plan[0], a.plan[1]), move), oi = clamp((sweepF - GEO.video.arrows[i].l[1]) / 6, 0, 1);
@@ -217,9 +225,9 @@ export function createTrueLine(els: Els) {
       if (!tracking) { capL.textContent = "Run-up"; capR.innerHTML = `<b>Frame ${fr}</b> of 131`; }
       else { const p = ptAt(clipT); capL.textContent = `Board ${p.b.toFixed(1)} at ${p.f.toFixed(1)} ft`; capR.innerHTML = p.m ? `<b>${(p.c ?? 0).toFixed(2)}</b> confidence \u00b7 frame ${fr}` : `<b>coasted</b> \u00b7 frame ${fr}`; }
     }
-    else if (t < C.found) { capL.textContent = `Finding landmarks \u00b7 ${found(t)} of 6`; capR.innerHTML = "<b>Reference points</b> on the lane"; }
+    else if (t < C.found) { capL.textContent = `Picking reference points \u00b7 ${found(t)} of 6`; capR.innerHTML = "<b>Reference points</b> on the lane"; }
     else if (t < C.fit) { capL.textContent = "Fitting the lane to them"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
-    else if (t < T.mv) { capL.textContent = "Reference fit, six landmarks \u00b7 1.8 px rms"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
+    else if (t < T.mv) { capL.textContent = "Reference fit, six points \u00b7 1.8 px rms"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
     else if (t < T.met) { capL.textContent = "Lane and path leaving the footage"; capR.innerHTML = "<b>Lane view</b>, width shown 3.5 times"; }
     else { capL.textContent = "Six of the nine metrics"; capR.innerHTML = "<b>16.3</b> entry, right of the pocket"; }
     /* the same moment in a few words, for whoever is listening (the bar's chip) */
