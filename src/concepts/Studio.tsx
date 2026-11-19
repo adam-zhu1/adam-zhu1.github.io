@@ -68,7 +68,7 @@ function Decode({ text, on, delay }: { text: string; on: boolean; delay: number 
    one push of the wheel brings the next one to the middle. Smaller screens get a plain list. */
 const PAGED = "(min-width: 1000px) and (min-height: 700px)", BAR = 64;
 /* on a project's page, how far the scroll travels between one stage of "How it works" and the next, in screens */
-const HSTEP = .6;
+const HSTEP = .75;
 /* the width each demo is laid out at before it is scaled into its preview */
 const PV = { trueline: 820, clarity: 800, nist: 600 };
 /* the projects with something to watch get a card; NIST, an internship, leads the list under them */
@@ -188,6 +188,12 @@ export default function Studio() {
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
     const settle = () => {
+      /* on a project's page the scroll is free; inside the pinned pipeline it only comes to rest on the nearest stage */
+      if (how && paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        const k = (scrollY - offTop(how) + BAR) / (innerHeight * HSTEP);
+        if (k > -.3 && k < nHow - .7) { const y = Math.round(offTop(how) - BAR + Math.max(0, Math.min(nHow - 1, Math.round(k))) * innerHeight * HSTEP); if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .8, easing: reach }); }
+        return;
+      }
       if (!stack || !paged() || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const pr = (scrollY - deckY(0)) / innerHeight;
       if (pr < -.4 || pr > FEAT.length - .55) return;
@@ -234,7 +240,7 @@ export default function Studio() {
       window.setTimeout(() => { if (id === run) { busy = false; done = performance.now(); } }, dur * 620);
       window.setTimeout(() => { if (id === run) { bound = null; flow.aim = null; } }, dur * 1000 + 300);
     };
-    const locking = () => paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const locking = () => !how && paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wheel = (e: WheelEvent) => {
       if (!locking() || e.ctrlKey) return;
       /* some browsers report a mouse wheel in lines or pages, not pixels */
@@ -322,7 +328,10 @@ export default function Studio() {
 
           <section className="pj-why">
             <h2 data-rv>Why I built it</h2>
-            <div>{S.why.map((t, i) => <p key={i} data-rv style={d(i + 1)}>{t}</p>)}</div>
+            <div>
+              <p data-rv style={d(1)}>{S.whyShort}</p>
+              <details data-rv style={d(2)}><summary>The longer version</summary>{S.why.map((t, i) => <p key={i}>{t}</p>)}</details>
+            </div>
           </section>
 
           <section className="pj-how" style={{ "--n": S.how.length } as CSSProperties}>
@@ -334,7 +343,7 @@ export default function Studio() {
                     <article key={h.name} className={`stp${i === hw ? " on" : ""}`} aria-hidden={hw >= 0 && i !== hw}>
                       <span>{two(i + 1)} / {two(S.how.length)}</span>
                       <h3>{h.name}</h3>
-                      <p>{h.body}</p>
+                      <p>{h.short}</p>
                       <p className="fact"><b>{h.fact[0]}</b><span>{h.fact[1]}</span></p>
                     </article>
                   ))}
@@ -352,7 +361,8 @@ export default function Studio() {
                 <div>
                   <span>{two(i + 1)}</span>
                   <h3>{x.name}</h3>
-                  <p>{x.body}</p>
+                  <p>{x.sum}</p>
+                  <details><summary>The full story</summary><p>{x.body}</p></details>
                 </div>
                 <ul>{x.changes.map(c => <li key={c.label}><small>{c.label}</small><b>{c.from && <><em>{c.from}</em><i>→</i></>}{c.to}</b></li>)}</ul>
               </article>
@@ -773,6 +783,16 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-why { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.1fr); gap: clamp(24px, 5vw, 80px); align-content: center; padding: clamp(56px, 10vh, 120px) 0; }
 .pj-why p { margin: 0 0 1em; font-size: clamp(19px, 1.75vw, 27px); line-height: 1.38; letter-spacing: -.02em; max-width: 31em; }
 .pj-why p:last-child { margin-bottom: 0; }
+/* the short version is what shows; the rest opens for whoever wants it */
+.story details { margin-top: 22px; }
+.story summary { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ln); font-size: 14.5px; cursor: pointer; list-style: none; user-select: none; transition: border-color .2s, background .2s; }
+.story summary::-webkit-details-marker { display: none; }
+.story summary::after { content: "↓"; font-size: 13px; transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
+.story details[open] summary::after { transform: rotate(180deg); }
+.story summary:hover { border-color: var(--ink); }
+.story details > p { margin-top: 18px; animation: st-rise .6s cubic-bezier(.16, 1, .3, 1) both; }
+.pj-why details > p { font-size: clamp(17px, 1.3vw, 20px); line-height: 1.48; letter-spacing: 0; color: var(--mut); max-width: 36em; }
+.pj-hard details > p { color: var(--mut); }
 
 .pj-how { margin-bottom: clamp(56px, 10vh, 120px); }
 .pj-howin { display: grid; gap: 28px; }
@@ -809,7 +829,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* with room, the pipeline pins: the demo holds on one stage while its words sit beside it, and each scroll moves one stage on */
 @media (min-width: 1000px) and (min-height: 700px) {
   .pj-why { min-height: calc(100vh - 64px); padding: 0; }
-  .pj-how { height: calc(100vh - 64px + (var(--n) - 1) * 60vh); }
+  .pj-how { height: calc(100vh - 64px + (var(--n) - 1) * 75vh); }
   .pj-howin { position: sticky; top: 64px; height: calc(100vh - 64px); grid-template-columns: minmax(0, 33fr) minmax(0, 67fr); gap: clamp(24px, 3vw, 56px); padding: 12px 0 26px; }
   .pj-stps { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
   .st.story .pj-stps h2 { margin: 6px 0 0; font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--mut); }
