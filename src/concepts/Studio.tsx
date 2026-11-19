@@ -67,7 +67,7 @@ function Decode({ text, on, delay }: { text: string; on: boolean; delay: number 
    one push of the wheel brings the next one to the middle. Smaller screens get a plain list. */
 const PAGED = "(min-width: 1000px) and (min-height: 700px)", BAR = 64;
 /* the width each demo is laid out at before it is scaled into its preview */
-const PV = { trueline: 600, clarity: 800, nist: 600 };
+const PV = { trueline: 820, clarity: 800, nist: 600 };
 /* the projects with something to watch get a card; NIST, an internship, leads the list under them */
 const FEAT = WORK.filter(w => w.demo !== "nist");
 const paged = () => matchMedia(PAGED).matches;
@@ -566,7 +566,12 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .pv .win > .edge, .st-item .pv .win > .corner { display: none; }
 .st-fit { position: absolute; inset: clamp(16px, 2.2vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 /* a preview shows the demo's picture, large; its readouts and controls are on the project's page */
-.st-item .pv .democtl, .st-item .pv .nums, .st-item .pv .nstats { display: none; }
+.st-item .pv .democtl, .st-item .pv .nstats { display: none; }
+/* TrueLine's measurements count up in a column beside the throw */
+.st-item .pv .tlgrid { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 40px; align-items: center; }
+.st-item .pv .app { max-width: 100%; }
+.st-item .pv .nums { grid-template-columns: 1fr; gap: 2px; margin: 0 0 30px; }
+.st-item .pv .nums .num { padding: 11px 0 9px; } .st-item .pv .nums .num b { font-size: 27px; } .st-item .pv .nums .num small { font-size: 12px; }
 @supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } }
 
 /* on screens with room, each project is a screen of its own and the wheel moves one at a time */
