@@ -193,7 +193,7 @@ export default function Studio() {
       const top = (q: string, pad: (n: HTMLElement) => number) => { const n = el.querySelector<HTMLElement>(q); if (!n) return -1; let y = 0; for (let o: HTMLElement | null = n; o; o = o.offsetParent as HTMLElement | null) y += o.offsetTop; return y - pad(n); };   /* offsets, so an entrance animation in progress does not move the stop */
       const max = document.documentElement.scrollHeight - vh, out = [0];
       for (const v of [top(".pj-demo", n => Math.max(BAR + 16, (vh + BAR - n.offsetHeight) / 2)), top(".pj-cols", () => BAR + 28), top(".pj-steps", () => BAR + 28), max])
-        if (v > out[out.length - 1] + (v === max ? 240 : 60)) out.push(Math.min(v, max));
+        if (v > out[out.length - 1] + (v >= max ? 240 : 60)) out.push(Math.min(v, max));
       return out;
     };
     /* A mouse wheel sends a few large clicks; a trackpad sends a stream of small moves and
