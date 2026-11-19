@@ -8,7 +8,7 @@ import { out } from "../lib/router";
 import { setTheme, useTheme } from "../lib/theme";
 import { Dots } from "./Dots";
 import { seenRecently } from "./seen";
-import { flow, glide, scene, TITLE } from "./scene";
+import { flow, reach, scene, TITLE } from "./scene";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
@@ -63,16 +63,16 @@ function Decode({ text, on, delay }: { text: string; on: boolean; delay: number 
   return <span className="st-dec" aria-hidden="true">{shown || "\u00a0"}</span>;
 }
 
-/* Projects show one at a time on screens with room for it: the section pins and each stretch of
-   scrolling brings up the next project. Smaller screens get them as a plain list. */
-const PAGED = "(min-width: 1000px) and (min-height: 700px)", STEP = .7, BAR = 64;
+/* Projects show one at a time on screens with room for it: each is a card a screen tall, and
+   one push of the wheel brings the next one to the middle. Smaller screens get a plain list. */
+const PAGED = "(min-width: 1000px) and (min-height: 700px)", BAR = 64;
 /* the width each demo is laid out at before it is scaled into its preview */
 const PV = { trueline: 600, clarity: 800, nist: 600 };
 const paged = () => matchMedia(PAGED).matches;
-/* where to scroll so that project i is the one showing */
+/* where to scroll so that project i sits in the middle of the screen */
 const deckY = (i: number) => {
   const st = document.querySelector(".st-stack");
-  return (st ? st.getBoundingClientRect().top + scrollY : 0) - BAR + (i + .12) * innerHeight * STEP;
+  return Math.round((st ? st.getBoundingClientRect().top + scrollY : 0) + i * innerHeight);
 };
 
 function Demo({ w }: { w: Entry }) {
@@ -100,7 +100,6 @@ export default function Studio() {
   const [page, setPage] = useState(readPage);
   const [instant] = useState(() => seenRecently() || !!readPage());
   const [ready, setReady] = useState(instant);
-  const [act, setAct] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
@@ -122,7 +121,7 @@ export default function Studio() {
     name(card(to));
     const apply = () => {
       const fi = WORK.findIndex(w => slug(w) === from);
-      flushSync(() => { setPage(to); if (!to && fi >= 0) setAct(fi); });
+      flushSync(() => setPage(to));
       const back = anchor === "projects" ? card(from) : null;
       const top = (el: Element | null) => el ? el.getBoundingClientRect().top + scrollY : 0;
       const y = Math.max(0, back ? (paged() ? deckY(fi) : top(back) - 76) : anchor ? top(document.getElementById(anchor)) : 0);
@@ -135,7 +134,6 @@ export default function Studio() {
       start.call(document, apply).finished.finally(() => named.forEach(el => { el.style.viewTransitionName = ""; }));
     else { apply(); named.forEach(el => { el.style.viewTransitionName = ""; }); }
   };
-  const jump = (i: number) => () => { if (!paged()) return; const y = deckY(i); if (lenis.current) lenis.current.scrollTo(y, { duration: .9 }); else scrollTo(0, y); };
   const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
 
   useEffect(() => {
@@ -156,7 +154,7 @@ export default function Studio() {
     const el = root.current!;
     let raf = 0;
     const foot = el.querySelector<HTMLElement>(".st-foot");
-    const stack = el.querySelector<HTMLElement>(".st-stack"), tabs = [...el.querySelectorAll<HTMLElement>(".st-item .hd")];
+    const stack = el.querySelector<HTMLElement>(".st-stack"), cards = [...el.querySelectorAll<HTMLElement>(".st-item .card")];
     let idle = 0;
     const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
     const update = () => {
@@ -166,20 +164,23 @@ export default function Studio() {
       /* the title's words wait for the dots: they come in once the ribbon is nearly formed */
       el.classList.toggle("flowed", scene(scrollY, vh) > .2);
       if (stack) flow.g = clamp(1 - (stack.getBoundingClientRect().top - BAR) / vh);
-      if (stack && paged()) {
-        const pr = (BAR - stack.getBoundingClientRect().top) / (vh * STEP), i = Math.max(0, Math.min(WORK.length - 1, Math.floor(pr)));
-        setAct(i);
-        tabs.forEach((t, j) => t.style.setProperty("--p", clamp(pr - j).toFixed(3)));
-        flow.pr = pr;
+      if (stack) flow.pr = (scrollY - deckY(0)) / vh;
+      /* a card is at full strength in the middle of the screen and falls back as it leaves */
+      const lit = paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      for (const c of cards) {
+        if (!lit) { c.style.opacity = c.style.transform = ""; continue; }
+        const r = c.parentElement!.getBoundingClientRect(), l = (r.top + r.height / 2 - vh / 2) / vh, u = Math.abs(l);
+        c.style.opacity = Math.min(1, Math.max(.05, 1 - (u - .1) * 2.2)).toFixed(3);
+        c.style.transform = `translate3d(0, ${(l * 56).toFixed(1)}px, 0) scale(${(1 - Math.min(u, .7) * .09).toFixed(4)})`;
       }
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
     const settle = () => {
       if (!stack || !paged() || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      const pr = (BAR - stack.getBoundingClientRect().top) / (innerHeight * STEP);
-      if (pr < -.35 || pr > WORK.length - .45) return;
-      const y = deckY(Math.max(0, Math.min(WORK.length - 1, Math.round(pr - .12))));
+      const pr = (scrollY - deckY(0)) / innerHeight;
+      if (pr < -.4 || pr > WORK.length - .55) return;
+      const y = deckY(Math.max(0, Math.min(WORK.length - 1, Math.round(pr))));
       if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .75 });
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(update); clearTimeout(idle); idle = window.setTimeout(settle, 190); };
@@ -201,21 +202,24 @@ export default function Studio() {
        click is already enough, a trackpad gets there within a few events), and after a step
        the leftover glide is swallowed until the wheel rests or is clearly pushed again. */
     const NEED = 24, REST = 140;
-    let busy = false, done = 0, lastWheel = 0, acc = 0, dir = 0;
+    let busy = false, done = 0, lastWheel = 0, acc = 0, dir = 0, bound: number | null = null, run = 0;
     const mags: number[] = [];
-    const stopsNow = (vh: number) => stack ? [0, vh * 1.2, ...WORK.map((_, i) => deckY(i))] : pageStops(vh);
+    const after = el.querySelector<HTMLElement>("#more");
+    const stopsNow = (vh: number) => stack ? [0, vh * 1.2, ...WORK.map((_, i) => deckY(i)), ...(after ? [Math.round(after.getBoundingClientRect().top + scrollY - BAR)] : [])] : pageStops(vh);
     const target = (d: number) => {
-      const vh = innerHeight, y = scrollY, stops = stopsNow(vh), end = stops[stops.length - 1];
+      const vh = innerHeight, y = bound ?? scrollY, stops = stopsNow(vh), end = stops[stops.length - 1];
       if (d > 0) return stops.find(v => v > y + 8);
       return !stack || y < end + vh * .25 ? [...stops].reverse().find(v => v < y - 8) : undefined;
     };
     const step = (to: number) => {
       if (!lenis.current) return;
-      busy = true; acc = 0;
-      const far = Math.abs(to - scrollY) > innerHeight;
+      const id = ++run, far = Math.abs(to - scrollY) > innerHeight * 1.2, dur = far ? 1.35 : 1.15;
+      busy = true; acc = 0; bound = to;
       if (stack) flow.aim = to > innerHeight * .5 ? 1 : 0;   /* the dots set off with the page, not once it has got somewhere */
-      lenis.current.scrollTo(to, { duration: far ? 1.6 : 1.2, easing: glide, lock: true, force: true, onComplete: () => { busy = false; flow.aim = null; done = performance.now(); } });
-      window.setTimeout(() => { if (busy) { busy = false; flow.aim = null; done = performance.now(); } }, 1900);
+      lenis.current.scrollTo(to, { duration: dur, easing: reach, lock: true, force: true, onComplete: () => { if (id === run) { bound = null; flow.aim = null; } } });
+      /* the page has all but arrived well before the move formally ends, so the next push is taken from then */
+      window.setTimeout(() => { if (id === run) { busy = false; done = performance.now(); } }, dur * 620);
+      window.setTimeout(() => { if (id === run) { bound = null; flow.aim = null; } }, dur * 1000 + 300);
     };
     const locking = () => paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wheel = (e: WheelEvent) => {
@@ -370,21 +374,21 @@ export default function Studio() {
         <div className="st-stack" style={{ "--n": WORK.length } as CSSProperties}>
           <ol className="st-stage">
             {WORK.map((w, i) => (
-              <li key={w.id} className={`st-item${i === act ? " act" : ""}`} style={{ "--accent": w.accent } as CSSProperties}>
-                <button type="button" className="hd" onClick={jump(i)} aria-current={i === act}>
-                  <span>{two(i + 1)}</span><b>{w.name}</b><i />
-                </button>
-                <div className="more"><div className="mi">
-                  <p className="kind">{w.kind}</p>
-                  <p className="what">{w.what}</p>
-                  <p className="num"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
-                  {w.meta && <p className="meta">{w.meta}</p>}
-                  <div className="acts">
-                    <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
-                    {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
+              <li key={w.id} className="st-item">
+                <article className="card" data-card={slug(w)}>
+                  <div className="tx">
+                    <p className="kind"><span>{two(i + 1)} / {two(WORK.length)}</span>{w.kind}</p>
+                    <h3>{w.name}</h3>
+                    <p className="what">{w.what}</p>
+                    <p className="fig"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
+                    {w.meta && <p className="meta">{w.meta}</p>}
+                    <div className="acts">
+                      <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
+                      {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
+                    </div>
                   </div>
-                </div></div>
-                <div className={`pv ${w.demo}`} data-card={slug(w)}><Fit width={PV[w.demo]}><Demo w={w} /></Fit></div>
+                  <div className={`pv ${w.demo}`}><Fit width={PV[w.demo]}><Demo w={w} /></Fit></div>
+                </article>
               </li>
             ))}
           </ol>
@@ -526,53 +530,44 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @keyframes st-nudge { 0%, 100% { transform: none; } 50% { transform: translateY(5px); } }
 #projects { padding-top: 0; }
 
-/* projects: the names as a list, the one on screen opened up, its preview beside it */
+/* projects: one card each, the words on the left and the demo's picture on the right */
 .st-stack { padding-bottom: 6vh; }
-.st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 54px; }
-.st-item .hd { position: relative; display: flex; align-items: baseline; gap: 14px; width: 100%; min-width: 0; padding: 18px 0 10px; background: none; border: 0; border-top: 1px solid var(--ln); color: var(--ink); font: inherit; text-align: left; cursor: default; }
-.st-item .hd span { font: 400 12px/1 var(--mono); color: var(--mut); }
-.st-item .hd b { font-weight: 500; font-size: clamp(34px, 3.4vw, 60px); line-height: 1; letter-spacing: -.05em; }
-.st-item .kind { margin: 0 0 12px; font: 400 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
-.st-item .hd i { display: none; }
-.st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 24px); line-height: 1.3; letter-spacing: -.02em; max-width: 24em; }
-.st-item .num { margin: 22px 0 0; display: flex; align-items: baseline; gap: 16px; }
-.st-item .num b { font-weight: 500; font-size: clamp(40px, 4vw, 68px); line-height: 1; letter-spacing: -.05em; white-space: nowrap; }
-.st-item .num span { font-size: 15px; line-height: 1.35; color: var(--mut); max-width: 16em; }
-.st-item .meta { margin: 18px 0 0; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
-.st-item .acts { margin: 24px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 28px; }
+.st-item .card { display: grid; gap: 22px; padding: 22px; border-radius: 30px; background: var(--card); border: 1px solid var(--ln); }
+.st-item .tx { display: flex; flex-direction: column; min-width: 0; }
+.st-item .kind { margin: 0 0 18px; display: flex; gap: 16px; font: 400 12px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
+.st-item h3 { margin: 0 0 16px; font-weight: 500; font-size: clamp(40px, 5vw, 60px); line-height: .95; letter-spacing: -.055em; }
+.st-item .what { margin: 0; font-size: clamp(17px, 1.5vw, 23px); line-height: 1.32; letter-spacing: -.02em; max-width: 26em; }
+.st-item .fig { margin: 24px 0 0; display: flex; align-items: baseline; gap: 16px; }
+.st-item .fig b { font-weight: 500; font-size: clamp(40px, 4vw, 68px); line-height: 1; letter-spacing: -.05em; white-space: nowrap; }
+.st-item .fig span { font-size: 15px; line-height: 1.35; color: var(--mut); max-width: 16em; }
+.st-item .meta { margin: 16px 0 0; font: 400 12px/1.5 var(--mono); letter-spacing: .02em; color: var(--mut); }
+.st-item .acts { margin: 26px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
 .st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .open:hover i { transform: translateX(6px); }
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
-.st-item .pv { position: relative; margin-top: 26px; aspect-ratio: 4 / 3; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
+.st-item .pv { position: relative; aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden; background: var(--bg); border: 1px solid var(--ln); }
 .st-fit { position: absolute; inset: clamp(12px, 2.4vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 /* a preview shows the demo's picture, large; its readouts and controls are on the project's page */
 .st-item .pv .democtl, .st-item .pv .nums, .st-item .pv .nstats { display: none; }
-@supports (corner-shape: squircle) { .st-item .pv { corner-shape: squircle; border-radius: 64px; } }
+@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } .st-item .pv { corner-shape: squircle; border-radius: 44px; } }
 
-/* on screens with room, the section pins and shows one project at a time; scrolling moves to the next */
+/* on screens with room, each project is a screen of its own and the wheel moves one at a time */
 @media (min-width: 1000px) and (min-height: 700px) {
-  .st-stack { margin: 0 clamp(0px, 2.6vw, 64px); height: calc(100svh - 64px + var(--n) * 70vh); padding-bottom: 0; }
-  .st-stage { position: sticky; top: 64px; height: calc(100svh - 64px); display: flex; flex-direction: column; justify-content: center; gap: 0; padding: 20px 0 30px; }
-  .st-item { width: 36%; border-bottom: 1px solid transparent; }
-  .st-item:last-child { border-bottom-color: var(--ln); }
-  .st-item .hd { cursor: pointer; padding: clamp(14px, 2.2vh, 22px) 0; color: var(--mut); transition: color .4s; }
-  .st-item .hd b { font-size: clamp(26px, min(2.5vw, 4.4vh), 46px); transition: font-size .6s cubic-bezier(.16, 1, .3, 1); }
-  .st-item .hd:hover, .st-item.act .hd { color: var(--ink); }
-  .st-item.act .hd b { font-size: clamp(40px, min(4.4vw, 8vh), 84px); }
-  .st-item .hd i { display: block; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--ink); transform: scaleX(var(--p, 0)); transform-origin: 0 50%; }
-  .st-item .more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .7s cubic-bezier(.16, 1, .3, 1); }
-  .st-item .mi { overflow: hidden; min-height: 0; opacity: 0; transform: translateY(14px); transition: opacity .3s, transform .5s; }
-  .st-item.act .more { grid-template-rows: 1fr; }
-  .st-item.act .mi { opacity: 1; transform: none; transition: opacity .6s .2s, transform .8s cubic-bezier(.16, 1, .3, 1) .2s; padding-bottom: clamp(16px, 3vh, 30px); }
-  .st-item .what { margin-top: 0; font-size: clamp(17px, min(1.45vw, 2.7vh), 25px); }
-  .st-item .num { margin-top: clamp(12px, 2.4vh, 24px); } .st-item .num b { font-size: clamp(36px, min(4vw, 7vh), 76px); }
-  .st-item .meta { margin-top: clamp(10px, 1.8vh, 18px); } .st-item .acts { margin-top: clamp(14px, 2.6vh, 26px); }
-  .st-item .pv { position: absolute; left: 40%; right: 0; top: 20px; bottom: 30px; margin: 0; aspect-ratio: auto; opacity: 0; visibility: hidden; transform: translateY(40px) scale(.97); transition: opacity .3s, transform .5s cubic-bezier(.4, 0, .2, 1), visibility 0s .3s; }
-  .st-item.act .pv { opacity: 1; visibility: visible; transform: none; transition: opacity .55s .12s, transform .9s cubic-bezier(.16, 1, .3, 1) .12s, visibility 0s; }
+  .st-stack { margin: 0 clamp(0px, 2.6vw, 64px); padding-bottom: 0; }
+  .st-stage { display: block; }
+  .st-item { height: 100vh; display: grid; align-items: center; padding: 64px 0 0; }
+  .st-item .card { height: calc(100vh - 64px - clamp(40px, 9vh, 96px)); grid-template-columns: minmax(0, 37fr) minmax(0, 63fr); gap: 0; padding: 14px; will-change: transform, opacity; }
+  .st-item .tx { justify-content: center; padding: clamp(18px, 3vh, 40px) clamp(22px, 2.8vw, 56px); }
+  .st-item h3 { font-size: clamp(44px, min(5vw, 9.5vh), 104px); margin-bottom: clamp(14px, 2.6vh, 28px); }
+  .st-item .kind { margin-bottom: clamp(16px, 3.4vh, 36px); }
+  .st-item .what { font-size: clamp(17px, min(1.45vw, 2.7vh), 25px); }
+  .st-item .fig { margin-top: clamp(16px, 3.4vh, 40px); } .st-item .fig b { font-size: clamp(36px, min(4vw, 7vh), 76px); }
+  .st-item .meta { margin-top: clamp(10px, 1.8vh, 18px); } .st-item .acts { margin-top: clamp(18px, 3.6vh, 40px); }
+  .st-item .pv { aspect-ratio: auto; height: 100%; min-height: 0; }
 }
 @media (min-width: 1000px) and (min-height: 700px) { .st.pj .pj-head { min-height: calc(100svh - 175px - 44px); margin-bottom: 150px; } }
-@media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: reduce) { .st-item .pv, .st-item.act .pv, .st-item .mi, .st-item .more, .st-item .hd b { transform: none; transition: none; } }
 .st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
 
 /* card to page: the card grows into the page's sheet, then the page's parts come in */

@@ -12,3 +12,5 @@ export const scene = (y: number, vh: number) => clamp((y / (vh || 1) - .08) / .9
 /* The shape of every move on the page: it answers at once, covers most of the distance early,
    then takes a long time to settle. (A symmetric ease starts so slowly it reads as lag.) */
 export const glide = (t: number) => 1 - Math.pow(1 - Math.pow(t < 0 ? 0 : t > 1 ? 1 : t, 1.15), 4);
+/* A page step: most of the way there in the first third of a second, then a slow arrival. */
+export const reach = (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
