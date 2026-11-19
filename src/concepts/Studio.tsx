@@ -13,6 +13,7 @@ import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
 import { LINKS } from "./links";
+import { TRUELINE } from "../data/trueline-story";
 
 /**
  * Draft. Home is two things: a first screen that says who this is (the name over the dot
@@ -66,6 +67,8 @@ function Decode({ text, on, delay }: { text: string; on: boolean; delay: number 
 /* Projects show one at a time on screens with room for it: each is a card a screen tall, and
    one push of the wheel brings the next one to the middle. Smaller screens get a plain list. */
 const PAGED = "(min-width: 1000px) and (min-height: 700px)", BAR = 64;
+/* on a project's page, how far the scroll travels between one stage of "How it works" and the next, in screens */
+const HSTEP = .6;
 /* the width each demo is laid out at before it is scaled into its preview */
 const PV = { trueline: 820, clarity: 800, nist: 600 };
 /* the projects with something to watch get a card; NIST, an internship, leads the list under them */
@@ -102,6 +105,7 @@ export default function Studio() {
   const [page, setPage] = useState(readPage);
   const [instant] = useState(() => seenRecently() || !!readPage());
   const [ready, setReady] = useState(instant);
+  const [hw, setHw] = useState(-1);   /* the stage of "How it works" on screen; -1 where it is a plain list */
   const root = useRef<HTMLDivElement>(null);
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
@@ -159,6 +163,9 @@ export default function Studio() {
     const stack = el.querySelector<HTMLElement>(".st-stack"), cards = [...el.querySelectorAll<HTMLElement>(".st-item .card")];
     let idle = 0;
     const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
+    /* offsets, so an entrance animation in progress does not move anything */
+    const offTop = (n: HTMLElement | null) => { let y = 0; for (let o = n; o; o = o.offsetParent as HTMLElement | null) y += o.offsetTop; return y; };
+    const how = el.querySelector<HTMLElement>(".pj-how"), nHow = el.querySelectorAll(".pj-how .stp").length;
     const update = () => {
       raf = 0;
       const vh = innerHeight, hs = clamp(scrollY / vh);
@@ -176,6 +183,7 @@ export default function Studio() {
         c.style.opacity = Math.min(1, Math.max(.05, 1 - (u - .1) * 2.2)).toFixed(3);
         c.style.transform = `translate3d(0, ${(l * 56).toFixed(1)}px, 0) scale(${(1 - Math.min(u, .7) * .09).toFixed(4)})`;
       }
+      if (how) setHw(paged() ? Math.max(0, Math.min(nHow - 1, Math.round((scrollY - offTop(how) + BAR) / (innerHeight * HSTEP)))) : -1);
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
@@ -193,6 +201,8 @@ export default function Studio() {
        scrolls freely. On a project's page they are its title screen, its demo, its results,
        how it works, and the foot of the page. */
     const pageStops = (vh: number) => {
+      /* a page with the pipeline pinned: its title, why it exists, each stage, then what was hard; below that it reads freely */
+      if (how) return [0, offTop(el.querySelector<HTMLElement>(".pj-why")) - BAR, ...Array.from({ length: nHow }, (_, i) => Math.round(offTop(how) - BAR + i * vh * HSTEP)), offTop(el.querySelector<HTMLElement>(".pj-hard")) - BAR - 8];
       const top = (q: string, pad: (n: HTMLElement) => number) => { const n = el.querySelector<HTMLElement>(q); if (!n) return -1; let y = 0; for (let o: HTMLElement | null = n; o; o = o.offsetParent as HTMLElement | null) y += o.offsetTop; return y - pad(n); };   /* offsets, so an entrance animation in progress does not move the stop */
       const max = document.documentElement.scrollHeight - vh, out = [0];
       for (const v of [top(".pj-demo", n => Math.max(BAR + 16, (vh + BAR - n.offsetHeight) / 2)), top(".pj-cols", () => BAR + 28), top(".pj-steps", () => BAR + 28), max])
@@ -212,7 +222,7 @@ export default function Studio() {
     const target = (d: number) => {
       const vh = innerHeight, y = bound ?? scrollY, stops = stopsNow(vh), end = stops[stops.length - 1];
       if (d > 0) return stops.find(v => v > y + 8);
-      return !stack || y < end + vh * .25 ? [...stops].reverse().find(v => v < y - 8) : undefined;
+      return y < end + vh * .25 ? [...stops].reverse().find(v => v < y - 8) : undefined;
     };
     const step = (to: number) => {
       if (!lenis.current) return;
@@ -288,6 +298,84 @@ export default function Studio() {
       </nav>
     </header>
   );
+
+  if (proj && proj.demo === "trueline") {
+    const S = TRUELINE, next = FEAT[(FEAT.indexOf(proj) + 1) % FEAT.length];
+    return (
+      <div className="st pj story ready" ref={root} key={proj.id}>
+        <style>{CSS}</style>
+        {bar}
+        <div className="pj-bg" aria-hidden="true" />
+        <main className="pj-main">
+          <div className="pj-top">
+            <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>
+          </div>
+
+          <div className="pj-head">
+            <div>
+              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className="ch" style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
+              <p className="what">{proj.what}</p>
+              <div className="st-pills">{S.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}</div>
+            </div>
+            <dl className="pj-strip">{S.strip.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+          </div>
+
+          <section className="pj-why">
+            <h2 data-rv>Why I built it</h2>
+            <div>{S.why.map((t, i) => <p key={i} data-rv style={d(i + 1)}>{t}</p>)}</div>
+          </section>
+
+          <section className="pj-how" style={{ "--n": S.how.length } as CSSProperties}>
+            <div className="pj-howin">
+              <div className="pj-stps">
+                <h2>How it works</h2>
+                <div className="stps">
+                  {S.how.map((h, i) => (
+                    <article key={h.name} className={`stp${i === hw ? " on" : ""}`} aria-hidden={hw >= 0 && i !== hw}>
+                      <span>{two(i + 1)} / {two(S.how.length)}</span>
+                      <h3>{h.name}</h3>
+                      <p>{h.body}</p>
+                      <p className="fact"><b>{h.fact[0]}</b><span>{h.fact[1]}</span></p>
+                    </article>
+                  ))}
+                </div>
+                <div className="pj-ticks" aria-hidden="true">{S.how.map((h, i) => <i key={h.name} className={i === hw ? "on" : ""} />)}</div>
+              </div>
+              <div className="pv trueline"><Fit width={PV.trueline}><TrueLine stage={hw < 0 ? null : hw} /></Fit></div>
+            </div>
+          </section>
+
+          <section className="pj-hard">
+            <h2 data-rv>What was hard</h2>
+            {S.hard.map((x, i) => (
+              <article key={x.name} data-rv>
+                <div>
+                  <span>{two(i + 1)}</span>
+                  <h3>{x.name}</h3>
+                  <p>{x.body}</p>
+                </div>
+                <ul>{x.changes.map(c => <li key={c.label}><small>{c.label}</small><b>{c.from && <><em>{c.from}</em><i>→</i></>}{c.to}</b></li>)}</ul>
+              </article>
+            ))}
+          </section>
+
+          <section className="pj-stands">
+            <h2 data-rv>Where it stands</h2>
+            <dl className="figs">{S.stands.map(([k, v], i) => <div key={k} data-rv style={d(i)}><dd>{k}</dd><dt>{v}</dt></div>)}</dl>
+            <p className="made" data-rv>{S.made}</p>
+            <h2 data-rv>What’s next</h2>
+            <ol className="nexts">{S.next.map(([k, v], i) => <li key={k} data-rv style={d(i)}><b>{k}</b><p>{v}</p></li>)}</ol>
+          </section>
+
+          <a className="pj-next" href={href(slug(next))} onClick={go(slug(next))} data-rv>
+            <span>Next project</span>
+            <b>{next.name} <i>→</i></b>
+            <em>{next.what}</em>
+          </a>
+        </main>
+      </div>
+    );
+  }
 
   if (proj) {
     const next = WORK[(cur + 1) % WORK.length];
@@ -561,21 +649,21 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .open:hover i { transform: translateX(6px); }
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
 /* the demo sits straight on the card's dark side: no panel, no frame round it */
-.st-item .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
-.st-item .pv .win { background: none; box-shadow: none; padding: 0; }
-.st-item .pv .win > .edge, .st-item .pv .win > .corner { display: none; }
+.st .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
+.st .pv .win { background: none; box-shadow: none; padding: 0; }
+.st .pv .win > .edge, .st .pv .win > .corner { display: none; }
 .st-fit { position: absolute; inset: clamp(16px, 2.2vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
 /* a preview shows the demo's picture, large; its readouts and controls are on the project's page */
-.st-item .pv .democtl, .st-item .pv .nstats { display: none; }
+.st .pv .democtl, .st .pv .nstats { display: none; }
 /* TrueLine's measurements count up in a column beside the throw */
-.st-item .pv .tlgrid { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 40px; align-items: center; }
-.st-item .pv .app { max-width: 100%; }
-.st-item .pv .nums { grid-template-columns: 1fr; gap: 2px; margin: 0 0 30px; }
+.st .pv .tlgrid { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 40px; align-items: center; }
+.st .pv .app { max-width: 100%; }
+.st .pv .nums { grid-template-columns: 1fr; gap: 2px; margin: 0 0 30px; }
 /* nothing is shown until the throw has been tracked; then each one arrives as it is read off */
-.st-item .pv .nums .num { opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s, border-color .5s; }
-.st-item .pv .nums .num.on { opacity: 1; transform: none; transition: opacity .5s, transform .7s cubic-bezier(.16, 1, .3, 1), border-color .5s; }
-.st-item .pv .nums .num { padding: 11px 0 9px; } .st-item .pv .nums .num b { font-size: 27px; } .st-item .pv .nums .num small { font-size: 12px; }
-@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } }
+.st .pv .nums .num { opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s, border-color .5s; }
+.st .pv .nums .num.on { opacity: 1; transform: none; transition: opacity .5s, transform .7s cubic-bezier(.16, 1, .3, 1), border-color .5s; }
+.st .pv .nums .num { padding: 11px 0 9px; } .st .pv .nums .num b { font-size: 27px; } .st .pv .nums .num small { font-size: 12px; }
+@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } .pj-how .pv, .pj-hard ul, .pj-next { corner-shape: squircle; border-radius: 56px; } }
 
 /* on screens with room, each project is a screen of its own and the wheel moves one at a time */
 @media (min-width: 1000px) and (min-height: 700px) {
@@ -622,8 +710,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @keyframes pj-demo { from { opacity: 0; transform: translateY(70px) scale(.93); clip-path: inset(14% 8% 14% 8% round 28px); } to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 0px); } }
 
 /* a project's own page */
-.st.pj { --bg: color-mix(in srgb, var(--accent) 8%, #000); --card: color-mix(in srgb, var(--accent) 10%, #0b0b0d); --ln: color-mix(in srgb, var(--accent) 20%, #26262a); --hl: var(--accent); min-height: 100svh; }
-:root[data-theme="light"] .st.pj { --bg: color-mix(in srgb, var(--accent) 17%, #f4f4f2); --card: color-mix(in srgb, var(--accent) 26%, #ebebe8); --ln: color-mix(in srgb, var(--accent) 35%, #cfcfca); --hl: var(--ink); }
+.st.pj { --hl: var(--ink); min-height: 100svh; }
 .pj-main { padding: 96px 22px 22px; max-width: 1500px; margin: 0 auto; }
 .pj-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: clamp(28px, 5vh, 56px); }
 .pj-idx { font: 400 12px/1 var(--mono); letter-spacing: .04em; color: var(--mut); } .pj-idx b { font-weight: 400; color: var(--ink); }
@@ -649,9 +736,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-steps span { font: 400 11.5px/1 var(--mono); color: var(--mut); }
 .pj-steps b { font-weight: 400; font-size: clamp(22px, 2.3vw, 34px); letter-spacing: -.04em; }
 .pj-steps p { margin: 0; font-size: 17px; line-height: 1.45; }
-.pj-next { display: grid; gap: 10px; padding: clamp(28px, 5vw, 64px); border-radius: 26px; background: color-mix(in srgb, var(--accent) 14%, #0b0b0d); border: 1px solid color-mix(in srgb, var(--accent) 30%, #26262a); transition: border-color .25s, background .25s; }
-:root[data-theme="light"] .pj-next { background: color-mix(in srgb, var(--accent) 26%, #ebebe8); border-color: color-mix(in srgb, var(--accent) 40%, #cfcfca); }
-.pj-next:hover { border-color: var(--accent); }
+.pj-next { display: grid; gap: 10px; padding: clamp(28px, 5vw, 64px); border-radius: 26px; background: var(--card); border: 1px solid var(--ln); transition: border-color .25s; }
+.pj-next:hover { border-color: var(--ink); }
 .pj-next span { font: 400 12px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mut); }
 .pj-next b { font-weight: 500; font-size: clamp(54px, 9vw, 150px); line-height: .9; letter-spacing: -.06em; }
 .pj-next b i { display: inline-block; font-size: .7em; transition: transform .3s cubic-bezier(.2,.7,.2,1); }
@@ -677,6 +763,69 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-foot .big { font-weight: 500; font-size: 23.2vw; line-height: .8; letter-spacing: -.07em; white-space: nowrap; margin-left: -.05em; }
 .st-foot .meta { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--ln); font-size: 14px; color: var(--mut); }
 
+/* a project's page told in full: why, the pipeline stage by stage, what was hard, where it stands */
+.story .pj-head { align-items: end; }
+.pj-strip { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 28px; animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) 1.2s both; }
+.pj-strip > div { display: block; border: 0; padding: 0; }
+.pj-strip dt { font-size: 13.5px; color: var(--mut); margin-bottom: 6px; }
+.pj-strip dd { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.01em; }
+.st.story h2 { margin: 0 0 28px; font-family: inherit; font-weight: 500; font-size: clamp(30px, 3.2vw, 48px); line-height: 1; letter-spacing: -.045em; text-transform: none; color: var(--ink); }
+.pj-why { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.1fr); gap: clamp(24px, 5vw, 80px); align-content: center; padding: clamp(56px, 10vh, 120px) 0; }
+.pj-why p { margin: 0 0 1em; font-size: clamp(19px, 1.75vw, 27px); line-height: 1.38; letter-spacing: -.02em; max-width: 31em; }
+.pj-why p:last-child { margin-bottom: 0; }
+
+.pj-how { margin-bottom: clamp(56px, 10vh, 120px); }
+.pj-howin { display: grid; gap: 28px; }
+.stps { display: grid; gap: 34px; }
+.stp > span { display: block; font-size: 14px; color: var(--mut); margin-bottom: 12px; }
+.stp h3 { margin: 0 0 16px; font-weight: 500; font-size: clamp(34px, 3.8vw, 60px); line-height: .98; letter-spacing: -.05em; }
+.stp p { margin: 0; font-size: clamp(17px, 1.3vw, 20px); line-height: 1.45; max-width: 30em; }
+.stp .fact { margin-top: 22px; display: flex; align-items: baseline; gap: 14px; }
+.stp .fact b { font-weight: 500; font-size: clamp(30px, 3vw, 48px); line-height: 1; letter-spacing: -.05em; white-space: nowrap; }
+.stp .fact span { font-size: 15px; line-height: 1.35; color: var(--mut); }
+.pj-ticks { display: none; }
+.pj-how .pv { border-radius: 30px; }
+
+.pj-hard { padding-top: clamp(40px, 8vh, 90px); margin-bottom: clamp(56px, 10vh, 120px); }
+.pj-hard article { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 80px); align-items: center; padding: clamp(26px, 5vh, 52px) 0; }
+.pj-hard article span { display: block; font-size: 14px; color: var(--mut); margin-bottom: 12px; }
+.pj-hard h3 { margin: 0 0 16px; font-weight: 500; font-size: clamp(26px, 2.7vw, 42px); line-height: 1.02; letter-spacing: -.045em; max-width: 14em; }
+.pj-hard p { margin: 0; font-size: clamp(17px, 1.3vw, 20px); line-height: 1.48; max-width: 34em; }
+.pj-hard ul { margin: 0; padding: clamp(22px, 2.6vw, 38px); list-style: none; display: grid; gap: 22px; border-radius: 28px; background: var(--card); border: 1px solid var(--ln); }
+.pj-hard small { display: block; font-size: 14px; line-height: 1.35; color: var(--mut); margin-bottom: 8px; }
+.pj-hard li b { display: block; font-weight: 500; font-size: clamp(24px, 2.5vw, 38px); line-height: 1.05; letter-spacing: -.045em; }
+.pj-hard li em { font-style: normal; color: var(--mut); } .pj-hard li i { font-style: normal; margin: 0 .35em; color: var(--mut); }
+
+.pj-stands { margin-bottom: clamp(56px, 10vh, 120px); }
+.pj-stands .figs { margin: 0 0 30px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(18px, 2.4vw, 40px); }
+.pj-stands .figs > div { display: block; border: 0; padding: 0; }
+.pj-stands dd { margin: 0 0 12px; font-weight: 500; font-size: clamp(44px, 5.2vw, 88px); line-height: .92; letter-spacing: -.06em; white-space: nowrap; }
+.pj-stands dt { font-size: 15.5px; line-height: 1.4; color: var(--mut); max-width: 20em; }
+.pj-stands .made { margin: 0 0 clamp(48px, 9vh, 100px); font-size: clamp(18px, 1.5vw, 23px); line-height: 1.4; letter-spacing: -.015em; max-width: 34em; }
+.pj-stands .nexts { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 2.4vw, 40px); }
+.pj-stands .nexts b { display: block; font-weight: 500; font-size: clamp(20px, 1.8vw, 26px); letter-spacing: -.03em; margin-bottom: 10px; }
+.pj-stands .nexts p { margin: 0; font-size: 16.5px; line-height: 1.45; color: var(--mut); }
+
+/* with room, the pipeline pins: the demo holds on one stage while its words sit beside it, and each scroll moves one stage on */
+@media (min-width: 1000px) and (min-height: 700px) {
+  .pj-why { min-height: calc(100vh - 64px); padding: 0; }
+  .pj-how { height: calc(100vh - 64px + (var(--n) - 1) * 60vh); }
+  .pj-howin { position: sticky; top: 64px; height: calc(100vh - 64px); grid-template-columns: minmax(0, 33fr) minmax(0, 67fr); gap: clamp(24px, 3vw, 56px); padding: 12px 0 26px; }
+  .pj-stps { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+  .st.story .pj-stps h2 { margin: 6px 0 0; font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--mut); }
+  .stps { position: relative; display: block; }
+  .stp { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(calc(-50% + 20px)); opacity: 0; pointer-events: none; transition: opacity .25s, transform .35s; }
+  .stp.on { opacity: 1; transform: translateY(-50%); pointer-events: auto; transition: opacity .6s .12s, transform .8s cubic-bezier(.16, 1, .3, 1) .12s; }
+  .pj-ticks { display: flex; gap: 6px; }
+  .pj-ticks i { width: 30px; height: 3px; border-radius: 2px; background: var(--ln); transition: background .4s, width .5s cubic-bezier(.16, 1, .3, 1); }
+  .pj-ticks i.on { width: 56px; background: var(--ink); }
+  .pj-how .pv { aspect-ratio: auto; height: 100%; min-height: 0; }
+}
+@media (max-width: 900px) {
+  .pj-why, .pj-hard article { grid-template-columns: 1fr; }
+  .pj-stands .figs { grid-template-columns: 1fr 1fr; } .pj-stands .nexts { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .pj-strip { animation: none; } .stp, .stp.on { transition: none; } }
 @media (max-width: 820px) {
   .st-bar { grid-template-columns: auto 1fr; padding: 0 14px; } .st-bar nav { display: none; } .st-theme { justify-self: end; }
   .st-hero h1 { top: 30%; font-size: 19vw; }

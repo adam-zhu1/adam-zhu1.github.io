@@ -8,7 +8,7 @@ const STAGES = [
   ["Track", "A detector finds the ball in every frame; a Kalman filter joins the detections into one path."],
   ["Calibrate", "The lane is fixed in the frame, then drawn back onto the footage to prove the fit."],
   ["Map", "Lane and path leave the video and settle into the app's plan view."],
-  ["Read", "Nine measurements. This throw entered at board 16.3, just right of the pocket."],
+  ["Read", "The measurements. This throw entered at board 16.3, just right of the pocket."],
 ] as const;
 
 /**
@@ -16,7 +16,7 @@ const STAGES = [
  * The words about the app live with the project list; this is only the thing it does.
  * `held` keeps it paused while another project has the stage.
  */
-export function TrueLine({ held = false }: { held?: boolean }) {
+export function TrueLine({ held = false, stage = null }: { held?: boolean; stage?: number | null }) {
   const vid = useRef<HTMLVideoElement>(null);
   const ov = useRef<SVGSVGElement>(null);
   const steps = useRef<HTMLDivElement>(null);
@@ -40,6 +40,9 @@ export function TrueLine({ held = false }: { held?: boolean }) {
     });
     return () => { engine.current?.stop(); say(null); };
   }, []);
+
+  /* a page can hold the sequence on one stage of the pipeline */
+  useEffect(() => { engine.current?.setStage(stage); }, [stage]);
 
   const play = useCallback(() => { engine.current?.run(); setPaused(false); }, []);
   /* the sequence starts once the window has settled in front of you, holds while it is off

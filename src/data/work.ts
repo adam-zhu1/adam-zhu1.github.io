@@ -19,10 +19,10 @@ export const WORK: Entry[] = [
   { id: "p-trueline", name: "TrueLine", when: "Aug 2026", kind: "iPhone app, on the App Store", accent: "#40e69e", demo: "trueline",
     body: "A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it measures the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and the board and angle it entered on. Everything runs on the phone.",
     meta: "Swift, Vision, Core ML · on the App Store since August 2026",
-    result: "Tracked the ball down the full lane on 6 of 6 unseen clips; within 1 board and 1–2% on speed against the Python prototype.",
+    result: "Tracked the ball down the full lane on 6 of 6 unseen clips, across two bowling centers and three camera positions.",
     links: [
       { href: "https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797", label: "App Store" },
-      { href: "/trueline/", label: "How it works", page: true },
+      { href: "https://truelinebowling.com/", label: "truelinebowling.com", page: true },
     ],
     line: "6 of 6 unseen clips tracked down the full lane",
     big: ["6 of 6", "unseen clips tracked down the full lane"],
@@ -31,7 +31,7 @@ export const WORK: Entry[] = [
     facts: [
       ["Unseen clips tracked the full lane", "6 of 6"],
       ["Board, against the Python prototype", "within 1"],
-      ["Speed, against the Python prototype", "within 1–2%"],
+      ["Entry board error against labeled video", "0.43"],
       ["Labeled frames the detector learned from", "215"],
     ],
     steps: [

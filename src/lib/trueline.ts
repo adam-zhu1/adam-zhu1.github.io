@@ -227,14 +227,14 @@ export function createTrueLine(els: Els) {
     }
     else if (t < C.found) { capL.textContent = `Picking reference points \u00b7 ${found(t)} of 6`; capR.innerHTML = "<b>Reference points</b> on the lane"; }
     else if (t < C.fit) { capL.textContent = "Fitting the lane to them"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
-    else if (t < T.mv) { capL.textContent = "Reference fit, six points \u00b7 1.8 px rms"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
+    else if (t < T.mv) { capL.textContent = "Lane fitted to the six points"; capR.innerHTML = "<b>Homography</b>, pixels to boards"; }
     else if (t < T.met) { capL.textContent = "Lane and path leaving the footage"; capR.innerHTML = "<b>Lane view</b>, width shown 3.5 times"; }
-    else { capL.textContent = "Six of the nine metrics"; capR.innerHTML = "<b>16.3</b> entry, right of the pocket"; }
+    else { capL.textContent = "Six of the numbers it reads"; capR.innerHTML = "<b>16.3</b> entry, right of the pocket"; }
     /* the same moment in a few words, for whoever is listening (the bar's chip) */
     if (els.onLive) {
       const p = tracking && t < T.hold ? ptAt(clipT) : null;
       const said = t < T.hold ? (p ? `Board ${p.b.toFixed(1)} \u00b7 ${p.f.toFixed(1)} ft` : "Run-up")
-        : t < C.found ? `Landmarks ${found(t)} of 6` : t < C.fit ? "Fitting the lane" : t < T.mv ? "Fit \u00b7 1.8 px rms" : t < T.met ? "Lane view" : "Entry board 16.3";
+        : t < C.found ? `Landmarks ${found(t)} of 6` : t < C.fit ? "Fitting the lane" : t < T.mv ? "Lane fitted" : t < T.met ? "Lane view" : "Entry board 16.3";
       if (said !== lastSaid) { lastSaid = said; els.onLive(said); }
     }
     vid.style.opacity = String(clamp(1 - fade * .96 + back * .88, 0, 1));
@@ -250,14 +250,41 @@ export function createTrueLine(els: Els) {
   let byHand = false, offscreen = false, started = false, done = false;
   const halted = () => byHand || offscreen;
 
+  /* One stage on its own: the page that explains the pipeline holds the sequence on a
+     single stretch of it and plays that round and round, with a beat's rest at the end. */
+  const RANGES: [number, number][] = [
+    [0, T.play + T_START],                                             // film: the run-up, nothing drawn yet
+    [T.play + T_START - .1, T.play + T_START + (CLIP_END - T_START) * .55],   // find: the ball picked out frame by frame
+    [T.play + T_START - .1, T.hold - .04],                                 // follow: the whole path, joined
+    [T.hold, T.mv - .3],                                               // map: points picked, lane fitted
+    [T.mv - .3, T.end],                                                // read: the lane view and the numbers
+  ];
+  let range: [number, number] | null = null;
+  function seek(t) {
+    tNow = t; t0 = performance.now() - t * 1000;
+    try { vid.currentTime = clamp(t - T.play, 0, CLIP_END); } catch (e) {}
+    if (t < T.met) numsReset();
+  }
   function frame(now) {
     tNow = (now - t0) / 1000;
-    if (tNow < T.play) { try { vid.currentTime = 0; } catch (e) {} }
-    else if (tNow < T.hold) { if (vid.paused) vid.play().catch(() => {}); }
+    const end = range ? range[1] : T.end;
+    if (range && tNow > end + 1) seek(range[0]);
+    const tt = Math.min(tNow, end);
+    if (tt < T.play) { try { vid.currentTime = 0; } catch (e) {} }
+    else if (tt < T.hold && tNow <= end) { if (vid.paused) vid.play().catch(() => {}); }
     else if (!vid.paused) vid.pause();
-    draw(Math.min(tNow, T.end));
-    if (tNow < T.end) { raf = requestAnimationFrame(frame); return; }
+    draw(tt);
+    if (range || tNow < T.end) { raf = requestAnimationFrame(frame); return; }
     raf = null; done = true;
+  }
+  /** Hold the sequence on one stage (0 to 4), or pass null to play it straight through. */
+  function setStage(i: number | null) {
+    const next = i == null ? null : RANGES[i] ?? null;
+    if (next === range) return;
+    range = next; done = false;
+    if (range) seek(range[0]);
+    if (reduce) { draw(range ? range[1] : T.end); if (!range || range[1] >= T.end) numsShow(1); return; }
+    if (started) resume();
   }
   /** Picks the clock back up from wherever it was left. */
   function resume() {
@@ -277,7 +304,8 @@ export function createTrueLine(els: Els) {
     try { vid.currentTime = 0; } catch (e) {}
     numsReset();
     started = true; done = false; byHand = false; tNow = 0;
-    if (reduce) { draw(T.end); numsShow(1); done = true; return; }
+    if (range) seek(range[0]);
+    if (reduce) { draw(range ? range[1] : T.end); if (!range || range[1] >= T.end) numsShow(1); done = true; return; }
     resume();
   }
   /** The Pause button. Returns the new paused state so the label can follow it. */
@@ -295,6 +323,6 @@ export function createTrueLine(els: Els) {
   }
 
   draw(0);
-  return { run, toggle, setOffscreen, isDone: () => done, stop: halt };
+  return { run, toggle, setOffscreen, setStage, isDone: () => done, stop: halt };
 
 }
