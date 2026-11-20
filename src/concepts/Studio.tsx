@@ -208,13 +208,12 @@ export default function Studio() {
         if (!lit) { c.style.opacity = c.style.transform = ""; c.classList.add("near"); continue; }
         const r = c.parentElement!.getBoundingClientRect(), l = (r.top + r.height / 2 - vh / 2) / vh, u = Math.abs(l);
         c.classList.toggle("near", u < .3);
-        c.style.opacity = Math.min(1, Math.max(.4, 1 - (u - .2) * 1.5)).toFixed(3);   /* a card on its way in or out stays solid enough to read */
         c.style.transform = `translate3d(0, ${(l * 56).toFixed(1)}px, 0) scale(${(1 - Math.min(u, .7) * .09).toFixed(4)})`;
       }
       setWide(paged());
-      /* the dots step back behind the lists of text under the projects, so nothing is read through them */
+      /* the dots step back a little behind the lists of text under the projects; the lists sit on frosted panels */
       const more = el.querySelector<HTMLElement>("#more");
-      if (more) el.style.setProperty("--dq", (1 - .9 * clamp((vh * .8 - more.getBoundingClientRect().top) / (vh * .45))).toFixed(3));
+      if (more) el.style.setProperty("--dq", (1 - .35 * clamp((vh * .8 - more.getBoundingClientRect().top) / (vh * .45))).toFixed(3));
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
@@ -809,7 +808,11 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-next:hover b i { transform: translateX(.12em); }
 .pj-next em { font-style: normal; font-size: 18px; }
 
-.st-grp + .st-grp { margin-top: clamp(56px, 9vh, 96px); }
+/* each list is a frosted panel: the dots still drift behind it, blurred and dimmed, and never cross the words */
+.st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+@supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
+.st-grp .st-rows li:last-child > * { border-bottom: 0; }
+.st-grp + .st-grp { margin-top: 28px; }
 .st-grp h2 { margin: 0 0 22px; font-weight: 500; font-size: clamp(28px, 3vw, 44px); line-height: 1; letter-spacing: -.045em; }
 .st-rows { border-top: 1px solid var(--ln); }
 .st-rows li > * { display: grid; grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1.35fr) 40px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
