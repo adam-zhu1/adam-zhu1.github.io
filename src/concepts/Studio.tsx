@@ -105,7 +105,12 @@ export default function Studio() {
   const [page, setPage] = useState(readPage);
   const [instant] = useState(() => seenRecently() || !!readPage());
   const [ready, setReady] = useState(instant);
-  const [hw, setHw] = useState(-1);   /* the stage of "How it works" on screen; -1 where it is a plain list */
+  /* "How it works" plays by itself: the demo says which stage it is on and the words follow.
+     On a narrow screen the stages are a plain list (-1). */
+  const [stg, setStg] = useState(0);
+  const [wide, setWide] = useState(false);
+  const [at, setAt] = useState<{ i: number } | null>(null);
+  const hw = wide ? stg : -1;
   const root = useRef<HTMLDivElement>(null);
   const cur = WORK.findIndex(w => slug(w) === page);
   const proj = cur < 0 ? null : WORK[cur];
@@ -197,17 +202,12 @@ export default function Studio() {
         c.style.opacity = Math.min(1, Math.max(.05, 1 - (u - .1) * 2.2)).toFixed(3);
         c.style.transform = `translate3d(0, ${(l * 56).toFixed(1)}px, 0) scale(${(1 - Math.min(u, .7) * .09).toFixed(4)})`;
       }
-      if (how) setHw(paged() ? Math.max(0, Math.min(nHow - 1, Math.round((scrollY - offTop(how) + BAR) / (innerHeight * HSTEP)))) : -1);
+      setWide(paged());
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
     const settle = () => {
-      /* on a project's page the scroll is free; inside the pinned pipeline it only comes to rest on the nearest stage */
-      if (how && paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        const k = (scrollY - offTop(how) + BAR) / (innerHeight * HSTEP);
-        if (k > -.3 && k < nHow - .7) { const y = Math.round(offTop(how) - BAR + Math.max(0, Math.min(nHow - 1, Math.round(k))) * innerHeight * HSTEP); if (Math.abs(y - scrollY) > 6) lenis.current?.scrollTo(y, { duration: .8, easing: reach }); }
-        return;
-      }
+      if (how) return;   /* a project's page scrolls freely and never moves by itself */
       if (!stack || !paged() || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const pr = (scrollY - deckY(0)) / innerHeight;
       if (pr < -.4 || pr > FEAT.length - .55) return;
@@ -366,9 +366,9 @@ export default function Studio() {
                     </article>
                   ))}
                 </div>
-                <div className="pj-ticks" aria-hidden="true">{S.how.map((h, i) => <i key={h.name} className={i === hw ? "on" : ""} />)}</div>
+                <div className="pj-ticks">{S.how.map((h, i) => <button type="button" key={h.name} className={i === hw ? "on" : ""} aria-current={i === hw ? "step" : undefined} onClick={() => setAt({ i })}>{h.name}</button>)}</div>
               </div>
-              <div className="pv trueline"><Fit width={PV.trueline}><TrueLine stage={hw < 0 ? null : hw} /></Fit></div>
+              <div className="pv trueline"><Fit width={PV.trueline}><TrueLine loop onStage={setStg} at={at} /></Fit></div>
             </div>
           </section>
 
@@ -855,16 +855,17 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* with room, the pipeline pins: the demo holds on one stage while its words sit beside it, and each scroll moves one stage on */
 @media (min-width: 1000px) and (min-height: 700px) {
   .pj-why { min-height: calc(100vh - 64px); padding: 0; }
-  .pj-how { height: calc(100vh - 64px + (var(--n) - 1) * 75vh); }
+  .pj-how { height: calc(100vh - 64px); }
   .pj-howin { position: sticky; top: 64px; height: calc(100vh - 64px); grid-template-columns: minmax(0, 33fr) minmax(0, 67fr); gap: clamp(24px, 3vw, 56px); padding: 12px 0 26px; }
   .pj-stps { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
   .st.story .pj-stps h2 { margin: 6px 0 0; font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--mut); }
   .stps { position: relative; display: block; }
   .stp { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(calc(-50% + 20px)); opacity: 0; pointer-events: none; transition: opacity .25s, transform .35s; }
   .stp.on { opacity: 1; transform: translateY(-50%); pointer-events: auto; transition: opacity .6s .12s, transform .8s cubic-bezier(.16, 1, .3, 1) .12s; }
-  .pj-ticks { display: flex; gap: 6px; }
-  .pj-ticks i { width: 30px; height: 3px; border-radius: 2px; background: var(--ln); transition: background .4s, width .5s cubic-bezier(.16, 1, .3, 1); }
-  .pj-ticks i.on { width: 56px; background: var(--ink); }
+  .pj-ticks { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pj-ticks button { height: 32px; padding: 0 13px; border: 1px solid var(--ln); border-radius: 999px; background: none; font: inherit; font-size: 13px; color: var(--mut); cursor: pointer; white-space: nowrap; transition: background .3s, color .3s, border-color .3s; }
+  .pj-ticks button:hover { color: var(--ink); border-color: var(--ink); }
+  .pj-ticks button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   .pj-how .pv { aspect-ratio: auto; height: 100%; min-height: 0; }
 }
 @media (max-width: 900px) {

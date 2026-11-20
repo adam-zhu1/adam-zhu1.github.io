@@ -8,7 +8,7 @@
 import TRACK from "../data/trueline-track.json";
 import GEO from "../data/trueline-lane.json";
 
-type Els = { vid: HTMLVideoElement; ov: SVGSVGElement; steps: HTMLElement; capL: HTMLElement; capR: HTMLElement; nums: HTMLElement; onLive?: (t: string) => void };
+type Els = { vid: HTMLVideoElement; ov: SVGSVGElement; steps: HTMLElement; capL: HTMLElement; capR: HTMLElement; nums: HTMLElement; onLive?: (t: string) => void; onStage?: (i: number) => void };
 
 export function createTrueLine(els: Els) {
   const NS = "http://www.w3.org/2000/svg";
@@ -260,21 +260,48 @@ export function createTrueLine(els: Els) {
     [T.mv - .3, T.end],                                                // read: the lane view and the numbers
   ];
   let range: [number, number] | null = null;
+  /* Played straight through, the sequence can also go round and round, and say which stage
+     of the pipeline it is on, so the words beside it can keep up. */
+  let loop = false, stageNow = -1;
+  const stageAt = (t: number) => t < RANGES[0][1] ? 0 : t < RANGES[1][1] ? 1 : t < T.hold ? 2 : t < T.mv - .3 ? 3 : 4;
+  const tell = (t: number) => { const s = stageAt(t); if (s !== stageNow) { stageNow = s; els.onStage?.(s); } };
+  /* The throw is over in two seconds, too quick to read a sentence beside it. Going round,
+     the footage holds for a moment once the ball is picked out and again once the path is whole. */
+  const RESTS: [number, number][] = [[RANGES[1][1] - .02, 2.2], [T.hold - .03, 2.6]];
+  let rested = 0, restTill = 0;
+  function setLoop(v: boolean) { loop = v; if (v && done) { done = false; seek(0); if (started) resume(); } }
+  /** Carry on from the start of one stage. */
+  function jump(i: number) {
+    if (!RANGES[i]) return;
+    range = null; done = false; seek(RANGES[i][0] + (i === 2 ? RANGES[1][1] - RANGES[1][0] : 0)); tell(tNow);
+    if (reduce) { draw(RANGES[i][1]); if (i === 4) numsShow(1); return; }
+    if (started) { if (!raf) resume(); } else draw(tNow);
+  }
   function seek(t) {
     tNow = t; t0 = performance.now() - t * 1000;
+    restTill = 0; rested = RESTS.filter(r => r[0] < t).length;
     try { vid.currentTime = clamp(t - T.play, 0, CLIP_END); } catch (e) {}
     if (t < T.met) numsReset();
   }
   function frame(now) {
     tNow = (now - t0) / 1000;
+    if (loop && !range) {
+      if (!restTill && rested < RESTS.length && tNow >= RESTS[rested][0]) restTill = now + RESTS[rested][1] * 1000;
+      if (restTill) {
+        if (now < restTill) { tNow = RESTS[rested][0]; t0 = now - tNow * 1000; if (!vid.paused) vid.pause(); draw(tNow); tell(tNow); raf = requestAnimationFrame(frame); return; }
+        restTill = 0; rested++;
+      }
+    }
     const end = range ? range[1] : T.end;
     if (range && tNow > end + 1) seek(range[0]);
+    if (!range && loop && tNow > end + 2.4) seek(0);
     const tt = Math.min(tNow, end);
     if (tt < T.play) { try { vid.currentTime = 0; } catch (e) {} }
     else if (tt < T.hold && tNow <= end) { if (vid.paused) vid.play().catch(() => {}); }
     else if (!vid.paused) vid.pause();
     draw(tt);
-    if (range || tNow < T.end) { raf = requestAnimationFrame(frame); return; }
+    if (!range) tell(tt);
+    if (range || loop || tNow < T.end) { raf = requestAnimationFrame(frame); return; }
     raf = null; done = true;
   }
   /** Hold the sequence on one stage (0 to 4), or pass null to play it straight through. */
@@ -323,6 +350,6 @@ export function createTrueLine(els: Els) {
   }
 
   draw(0);
-  return { run, toggle, setOffscreen, setStage, isDone: () => done, stop: halt };
+  return { run, toggle, setOffscreen, setStage, setLoop, jump, isDone: () => done, stop: halt };
 
 }

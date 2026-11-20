@@ -16,7 +16,9 @@ const STAGES = [
  * The words about the app live with the project list; this is only the thing it does.
  * `held` keeps it paused while another project has the stage.
  */
-export function TrueLine({ held = false, stage = null }: { held?: boolean; stage?: number | null }) {
+export function TrueLine({ held = false, stage = null, loop = false, onStage, at }: { held?: boolean; stage?: number | null; loop?: boolean; onStage?: (i: number) => void; at?: { i: number } | null }) {
+  const told = useRef(onStage);
+  useEffect(() => { told.current = onStage; }, [onStage]);
   const vid = useRef<HTMLVideoElement>(null);
   const ov = useRef<SVGSVGElement>(null);
   const steps = useRef<HTMLDivElement>(null);
@@ -37,12 +39,16 @@ export function TrueLine({ held = false, stage = null }: { held?: boolean; stage
       vid: vid.current, ov: ov.current, steps: steps.current,
       capL: capL.current, capR: capR.current, nums: nums.current,
       onLive: t => { saying.current = t; if (!heldRef.current) say(t); },
+      onStage: i => told.current?.(i),
     });
     return () => { engine.current?.stop(); say(null); };
   }, []);
 
   /* a page can hold the sequence on one stage of the pipeline */
   useEffect(() => { engine.current?.setStage(stage); }, [stage]);
+  /* or let it play round and round, and be sent to the start of any stage */
+  useEffect(() => { engine.current?.setLoop(loop); }, [loop]);
+  useEffect(() => { if (at) engine.current?.jump(at.i); }, [at]);
 
   const play = useCallback(() => { engine.current?.run(); setPaused(false); }, []);
   /* the sequence starts once the window has settled in front of you, holds while it is off
