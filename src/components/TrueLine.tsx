@@ -27,6 +27,8 @@ export function TrueLine({ held = false, stage = null, loop = false, onStage, at
   const nums = useRef<HTMLDivElement>(null);
   const engine = useRef<ReturnType<typeof createTrueLine> | null>(null);
   const [paused, setPaused] = useState(false);
+  /* until the lane leaves the footage for the plan view there is nothing beside the footage, so a layout may centre it */
+  const [solo, setSolo] = useState(true);
 
   // while another project has the stage, this demo has nothing to say
   const heldRef = useRef(held);
@@ -39,7 +41,7 @@ export function TrueLine({ held = false, stage = null, loop = false, onStage, at
       vid: vid.current, ov: ov.current, steps: steps.current,
       capL: capL.current, capR: capR.current, nums: nums.current,
       onLive: t => { saying.current = t; if (!heldRef.current) say(t); },
-      onStage: i => told.current?.(i),
+      onStage: i => { setSolo(i < 4); told.current?.(i); },
     });
     return () => { engine.current?.stop(); say(null); };
   }, []);
@@ -57,7 +59,7 @@ export function TrueLine({ held = false, stage = null, loop = false, onStage, at
   const centreRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 500, held);
 
   return (
-    <div className="demo" ref={centreRef}>
+    <div className={`demo${solo ? " solo" : ""}`} ref={centreRef}>
       <Frame className="appwin tlwin" seed={1}>
         {/* the readout sits inside the frame: beside the footage on a wide stage, under it otherwise */}
         <div className="tlgrid"><div>

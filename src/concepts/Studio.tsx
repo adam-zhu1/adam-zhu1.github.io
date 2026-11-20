@@ -696,6 +696,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
 /* in the light theme the dark demo is a screen set into the light card, with a margin round it, and not a black half of the card */
 :root[data-theme="light"] .st-item .pv { margin: 10px; border-radius: 20px; background: #121214; }
+:root[data-theme="light"] .pj-how .pv { background: #121214; }
 @media (min-width: 1000px) and (min-height: 700px) { :root[data-theme="light"] .st-item .pv { margin: 14px; height: calc(100% - 28px); border-radius: 26px; } }
 @supports (corner-shape: squircle) { :root[data-theme="light"] .st-item .pv { corner-shape: squircle; border-radius: 50px; } }
 .st .pv .win { background: none; box-shadow: none; padding: 0; }
@@ -706,6 +707,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* TrueLine's measurements count up in a column beside the throw */
 .st .pv .tlgrid { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 40px; align-items: center; }
 .st .pv .app { max-width: 100%; }
+/* the footage has the middle of the screen to itself until the lane leaves it for the plan view, then moves aside */
+.st .pv .tlgrid .app { transition: transform .8s cubic-bezier(.45, 0, .1, 1); }
+.st .pv .solo .tlgrid .app { transform: translateX(calc(27.85% + 115px)); }
+@media (prefers-reduced-motion: reduce) { .st .pv .tlgrid .app { transition: none; } }
 .st .pv .nums { grid-template-columns: 1fr; gap: 2px; margin: 0 0 30px; }
 /* nothing is shown until the throw has been tracked; then each one arrives as it is read off */
 .st .pv .nums .num { opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s, border-color .5s; }
