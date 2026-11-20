@@ -514,7 +514,6 @@ export default function Studio() {
                     </div>
                     <div>
                       <p className="what">{w.what}</p>
-                      <p className="big"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
                       <p className="by">{[w.role, w.when].filter(Boolean).join(" · ")}</p>
                       <div className="acts">
                         <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
@@ -687,10 +686,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .kind { margin: 0 0 14px; font-size: 14px; line-height: 1.3; color: var(--mut); }
 .st-item h3 { margin: 0; width: fit-content; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
 .st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
-.st-item .big { margin: 18px 0 0; display: flex; align-items: baseline; gap: 12px; max-width: 30em; }
-.st-item .big b { flex: none; font-weight: 500; font-size: clamp(26px, 2.1vw, 36px); line-height: 1; letter-spacing: -.04em; }
-.st-item .big span { font-size: 15px; line-height: 1.35; color: var(--mut); }
-.st-item .by { margin: 12px 0 0; font-size: 14px; line-height: 1.3; color: var(--mut); }
+.st-item .by { margin: 14px 0 0; font-size: 14px; line-height: 1.3; color: var(--mut); }
 .st-item .acts { margin: 26px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
@@ -728,10 +724,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 }
 /* a card's words and its demo come in as it reaches the middle */
 @media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
-  .st-item .kind, .st-item h3, .st-item .what, .st-item .big, .st-item .by, .st-item .acts { opacity: 0; transform: translateY(22px); transition: opacity .3s, transform .4s; }
+  .st-item .kind, .st-item h3, .st-item .what, .st-item .by, .st-item .acts { opacity: 0; transform: translateY(22px); transition: opacity .3s, transform .4s; }
   .st-item .pv .st-fit { opacity: 0; transform: scale(.96); transition: opacity .3s, transform .4s; }
-  .st-item .near :is(.kind, h3, .what, .big, .by, .acts) { opacity: 1; transform: none; transition: opacity .7s var(--dl, 0s), transform .9s cubic-bezier(.16, 1, .3, 1) var(--dl, 0s); }
-  .st-item .near h3 { --dl: .06s; } .st-item .near .what { --dl: .14s; } .st-item .near .big { --dl: .2s; } .st-item .near .by { --dl: .23s; } .st-item .near .acts { --dl: .26s; }
+  .st-item .near :is(.kind, h3, .what, .by, .acts) { opacity: 1; transform: none; transition: opacity .7s var(--dl, 0s), transform .9s cubic-bezier(.16, 1, .3, 1) var(--dl, 0s); }
+  .st-item .near h3 { --dl: .06s; } .st-item .near .what { --dl: .14s; } .st-item .near .by { --dl: .2s; } .st-item .near .acts { --dl: .26s; }
   .st-item .near .pv .st-fit { opacity: 1; transform: none; transition: opacity .8s .1s, transform 1.1s cubic-bezier(.16, 1, .3, 1) .1s; }
 }
 @media (min-width: 1000px) and (min-height: 700px) { .st.pj .pj-head { min-height: calc(100svh - 175px - 44px); margin-bottom: 150px; } }
