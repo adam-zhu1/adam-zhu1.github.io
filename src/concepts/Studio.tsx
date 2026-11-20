@@ -343,9 +343,8 @@ export default function Studio() {
 
   const S = proj ? STORY[proj.demo] : undefined;
   if (proj && S) {
-    const next = FEAT[(FEAT.indexOf(proj) + 1) % FEAT.length];
     return (
-      <div className="st pj story ready" ref={root} key={proj.id}>
+      <div className="st pj story ready" ref={root} key={proj.id} style={{ "--accent": proj.accent } as CSSProperties}>
         <style>{CSS}</style>
         {bar}
         <div className="pj-bg" aria-hidden="true" />
@@ -415,18 +414,13 @@ export default function Studio() {
             <ol className="nexts">{S.next.map(([k, v], i) => <li key={k} data-rv style={d(i)}><b>{k}</b><p>{v}</p></li>)}</ol>
           </section>
 
-          <a className="pj-next" href={href(slug(next))} onClick={go(slug(next))} data-rv>
-            <span>Next project</span>
-            <b>{next.name} <i>→</i></b>
-            <em>{next.what}</em>
-          </a>
+          <div className="pj-ret" data-rv><a className="st-pill st-back" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> Return to all projects</a></div>
         </main>
       </div>
     );
   }
 
   if (proj) {
-    const next = WORK[(cur + 1) % WORK.length];
     return (
       <div className="st pj ready" ref={root} key={proj.id} style={{ "--accent": proj.accent } as CSSProperties}>
         <style>{CSS}</style>
@@ -468,11 +462,7 @@ export default function Studio() {
             <ol>{proj.steps.map(([k, v], i) => <li key={k} data-rv style={d(i)}><span>{two(i + 1)}</span><b>{k}</b><p>{v}</p></li>)}</ol>
           </section>
 
-          <a className="pj-next" href={href(slug(next))} onClick={go(slug(next))} style={{ "--accent": next.accent } as CSSProperties} data-rv>
-            <span>Next project</span>
-            <b>{next.name} <i>→</i></b>
-            <em>{next.what}</em>
-          </a>
+          <div className="pj-ret" data-rv><a className="st-pill st-back" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> Return to all projects</a></div>
         </main>
       </div>
     );
@@ -513,7 +503,7 @@ export default function Studio() {
         <div className="st-stack">
           <ol className="st-stage">
             {FEAT.map(w => (
-              <li key={w.id} className="st-item">
+              <li key={w.id} className="st-item" style={{ "--accent": w.accent } as CSSProperties}>
                 <article className="card" data-card={slug(w)} onClick={e => { if (!(e.target as HTMLElement).closest("a, button")) go(slug(w))(e); }}>
                   <div className="tx">
                     <div>
@@ -610,6 +600,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
 .st.ready .st-bar { opacity: 1; transform: none; }
+/* page text scrolling under the bar fades and blurs out instead of colliding with the buttons */
+.st-bar::before { content: ""; position: absolute; z-index: -1; inset: 0 0 -28px; pointer-events: none; background: linear-gradient(color-mix(in srgb, var(--bg) 72%, transparent) 35%, color-mix(in srgb, var(--bg) 0%, transparent)); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
 .st-left { display: flex; align-items: center; gap: 18px; }
 .st-bar .st-pill.st-back { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .st-bar .st-pill.st-back:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }
@@ -691,8 +683,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* projects: one card each. The demo is the card; the words are a short label beside it. */
 .st-stack { padding-bottom: 6vh; }
 .st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 28px; }
-.st-item .card { display: grid; cursor: pointer; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
-.st-item .tx { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 26px 24px 28px; background: color-mix(in srgb, var(--ink) 4.5%, var(--card)); }
+.st-item .card { display: grid; cursor: pointer; border-radius: 30px; overflow: hidden; background: color-mix(in srgb, var(--card) 58%, transparent); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); border: 1px solid var(--ln); }
+.st-item .tx { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 26px 24px 28px; background: color-mix(in srgb, var(--ink) 4.5%, transparent); }
 .st-item .kind { margin: 0 0 14px; font-size: 14px; line-height: 1.3; color: var(--mut); }
 .st-item h3 { margin: 0; width: fit-content; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
 .st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
@@ -726,7 +718,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st .pv .nums .num { opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s, border-color .5s; }
 .st .pv .nums .num.on { opacity: 1; transform: none; transition: opacity .5s, transform .7s cubic-bezier(.16, 1, .3, 1), border-color .5s; }
 .st .pv .nums .num { padding: 11px 0 9px; } .st .pv .nums .num b { font-size: 27px; } .st .pv .nums .num small { font-size: 12px; }
-@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } .pj-how .pv, .pj-hard ul, .pj-next { corner-shape: squircle; border-radius: 56px; } }
+@supports (corner-shape: squircle) { .st-item .card { corner-shape: squircle; border-radius: 64px; } .pj-how .pv, .pj-hard ul { corner-shape: squircle; border-radius: 56px; } }
 
 /* on screens with room, each project is a screen of its own and the wheel moves one at a time */
 @media (min-width: 1000px) and (min-height: 700px) {
@@ -801,16 +793,34 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-steps span { font: 400 11.5px/1 var(--mono); color: var(--mut); }
 .pj-steps b { font-weight: 400; font-size: clamp(22px, 2.3vw, 34px); letter-spacing: -.04em; }
 .pj-steps p { margin: 0; font-size: 17px; line-height: 1.45; }
-.pj-next { display: grid; gap: 10px; padding: clamp(28px, 5vw, 64px); border-radius: 26px; background: var(--card); border: 1px solid var(--ln); transition: border-color .25s; }
-.pj-next:hover { border-color: var(--ink); }
-.pj-next span { font: 400 12px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mut); }
-.pj-next b { font-weight: 500; font-size: clamp(54px, 9vw, 150px); line-height: .9; letter-spacing: -.06em; }
-.pj-next b i { display: inline-block; font-size: .7em; transition: transform .3s cubic-bezier(.2,.7,.2,1); }
-.pj-next:hover b i { transform: translateX(.12em); }
-.pj-next em { font-style: normal; font-size: 18px; }
+/* each project's own colour, kept small: a dot on its card, and the counters and arrows on its page.
+   --at is the colour pulled toward the text colour so it stays readable in both themes */
+.st { --at: color-mix(in srgb, var(--accent, var(--mut)) 72%, var(--ink)); }
+.st-item, .st.story { --at: color-mix(in srgb, var(--accent) 72%, var(--ink)); }
+.st-item .kind::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 9px; border-radius: 50%; background: var(--at); vertical-align: .08em; }
+.story .stp > span, .story .pj-hard article span, .story .pj-hard li i, .story .pj-shots figcaption span { color: var(--at); }
+.story .nexts li { border-top: 1px solid color-mix(in srgb, var(--at) 45%, var(--ln)); padding-top: 18px; }
+.story ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+/* the page is its own layer so the backdrop sits above the page colour and under everything else */
+.st.story { isolation: isolate; background: none; }
+/* a project's page gets a quiet backdrop: a fine dot grid and two soft glows in its colour */
+.story .pj-bg { background:
+  radial-gradient(70vw 60vh at 88% -8%, color-mix(in srgb, var(--accent) 17%, transparent), transparent 70%),
+  radial-gradient(55vw 50vh at -5% 105%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+  radial-gradient(circle, color-mix(in srgb, var(--ink) 13%, transparent) 1px, transparent 1.6px) 0 0 / 30px 30px,
+  var(--bg); }
+:root[data-theme="light"] .story .pj-bg { background:
+  radial-gradient(70vw 60vh at 88% -8%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+  radial-gradient(55vw 50vh at -5% 105%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 70%),
+  radial-gradient(circle, color-mix(in srgb, var(--ink) 15%, transparent) 1px, transparent 1.6px) 0 0 / 30px 30px,
+  var(--bg); }
+.pj-ret { display: flex; justify-content: center; padding: clamp(20px, 5vh, 56px) 0 clamp(8px, 2vh, 24px); }
+.pj-ret .st-pill { height: 56px; padding: 0 28px; font-size: 18px; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.pj-ret .st-pill:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }
+.pj-ret .st-pill:hover i { transform: translateX(-4px); }
 
 /* each list is a frosted panel: the dots still drift behind it, blurred and dimmed, and never cross the words */
-.st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 52%, transparent); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 58%, transparent); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
 @supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
 .st-grp .st-rows li:last-child > * { border-bottom: 0; }
 .st-grp + .st-grp { margin-top: 28px; }
