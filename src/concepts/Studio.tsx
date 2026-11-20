@@ -625,6 +625,20 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st.sc .st-left { gap: 4px; margin-left: 0; } .st.sc .st-bar nav { gap: 4px; }
 .st-theme { display: flex; align-items: center; padding: 3px; border: 1px solid var(--ln); border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); transition: border-radius .55s cubic-bezier(.16, 1, .3, 1), border-color .5s, background .5s; }
 .st.sc .st-theme { background: color-mix(in srgb, var(--ink) 6%, transparent); border-color: transparent; }
+/* on a wide screen the scrolled bar stands up: a vertical capsule in the top right corner with
+   everything stacked. The row cannot turn into a column gradually, so the contents fade back in
+   while the box changes shape. Narrow screens keep the horizontal capsule. */
+@media (min-width: 900px) {
+  .st.sc .st-bar { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 6px; width: 164px; height: 232px; padding: 10px; border-radius: 26px; }
+  .st.sc .st-left, .st.sc .st-bar nav { flex-direction: column; align-items: stretch; gap: 6px; margin: 0; }
+  .st.sc .st-bar .st-pill, .st.sc .st-mark { justify-content: center; }
+  .st.sc .st-theme { justify-content: center; } .st.sc .st-theme button { flex: 1; text-align: center; padding: 0; }
+  .st.sc .st-bar > * { animation: st-barin .55s cubic-bezier(.16, 1, .3, 1) .12s both; }
+  .st:not(.sc) .st-bar > * { animation: st-barout .55s cubic-bezier(.16, 1, .3, 1) .12s both; }
+}
+@keyframes st-barin { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes st-barout { from { opacity: 0; transform: translateX(8px); } }
+@media (prefers-reduced-motion: reduce) { .st .st-bar > * { animation: none !important; } }
 .st-mark { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
 .st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); transition: background .3s, color .2s, border-color .45s, border-radius .55s cubic-bezier(.16, 1, .3, 1), transform .2s cubic-bezier(.2,.7,.2,1); }
 .st.sc .st-bar .st-pill:not(.st-back):not(.acc):not(:hover) { border-color: transparent; background: transparent; }
