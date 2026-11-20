@@ -696,6 +696,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
 /* the demo sits straight on the card's dark side: no panel, no frame round it */
 .st .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
+/* on a home card in the dark theme the demo side is glass too, so the dots show behind the whole card */
+:root:not([data-theme="light"]) .st-item .pv { background: color-mix(in srgb, #070708 30%, transparent); }
 /* in the light theme the dark demo is a screen set into the light card, with a margin round it, and not a black half of the card */
 :root[data-theme="light"] .st-item .pv { margin: 10px; border-radius: 20px; background: #121214; }
 :root[data-theme="light"] .pj-how .pv { background: #121214; }
