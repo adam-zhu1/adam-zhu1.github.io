@@ -9,7 +9,7 @@ import { CLARITY_ACCENT, CLARITY_SITE, CLARITY_STAGES } from "./clarity";
  */
 export type Entry = {
   id: string; name: string; when: string;
-  kind: string; role?: string; /* where the name changes to the project's colour: "True" + "Line" */ split?: number; accent: string; demo: "trueline" | "clarity" | "nist";
+  kind: string; role?: string; /* where the name changes to the project's colour: 4 gives "True" + "Line", 0 colours the whole name */ split?: number; accent: string; demo: "trueline" | "clarity" | "nist";
   body: string; meta?: string; result?: string;
   line: string; what: string; big: [string, string]; fig: string; facts: [string, string][]; steps: [string, string][];
   links?: { href: string; label: string; page?: boolean }[];
@@ -41,7 +41,7 @@ export const WORK: Entry[] = [
       ["Map", "Calibration turns every pixel into a board and a distance down the lane."],
       ["Read", "Smoothing and fitted slopes give speed, angles and the entry board."],
     ] },
-  { id: "p-clarity", name: "Clarity", when: "Sep 2026", kind: "Mac app, HackCMU 2026", role: "Team of four", accent: CLARITY_ACCENT, demo: "clarity",
+  { id: "p-clarity", name: "Clarity", when: "Sep 2026", kind: "Mac app, HackCMU 2026", role: "Team of four", split: 0, accent: CLARITY_ACCENT, demo: "clarity",
     body: "A macOS menu-bar app that explains any problem on your screen. Press one hotkey, drag a box around the problem, and a written explanation arrives in seconds, then an animation made for that exact problem about a minute later.",
     meta: "Python, Go, LangGraph, Manim",
     result: "Built in two days at HackCMU by a team of four.",

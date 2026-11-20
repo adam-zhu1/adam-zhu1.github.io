@@ -366,7 +366,7 @@ export default function Studio() {
         <main className="pj-main">
           <div className="pj-head">
             <div>
-              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
+              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split != null && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
               <div className="st-pills">{S.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}</div>
             </div>
@@ -449,7 +449,7 @@ export default function Studio() {
 
           <div className="pj-head">
             <div>
-              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
+              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split != null && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
               <p className="kind">{proj.kind} · {proj.when}</p>
               {proj.links && <div className="st-pills">{proj.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
@@ -523,7 +523,7 @@ export default function Studio() {
                   <div className="tx">
                     <div>
                       <p className="kind">{w.kind}</p>
-                      <h3>{w.split ? <>{w.name.slice(0, w.split)}<span className="ac">{w.name.slice(w.split)}</span></> : w.name}</h3>
+                      <h3>{w.split != null ? <>{w.name.slice(0, w.split)}<span className="ac">{w.name.slice(w.split)}</span></> : w.name}</h3>
                     </div>
                     <div>
                       <p className="what">{w.what}</p>
@@ -618,12 +618,14 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 
 /* bar */
 .st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-  border-bottom: 1px solid transparent; opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
-.st.ready .st-bar { opacity: 1; transform: none; transition: opacity .6s, transform .5s cubic-bezier(.16, 1, .3, 1), background .35s, border-color .35s; }
+  border: 1px solid transparent; border-radius: 22px; opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
+.st.ready .st-bar { opacity: 1; transform: none; transition: opacity .6s, transform .5s cubic-bezier(.16, 1, .3, 1), background .35s, border-color .35s, top .5s cubic-bezier(.16, 1, .3, 1), left .5s cubic-bezier(.16, 1, .3, 1), right .5s cubic-bezier(.16, 1, .3, 1), height .5s cubic-bezier(.16, 1, .3, 1), padding .5s cubic-bezier(.16, 1, .3, 1); }
 /* Scrolling down slides the bar away so nothing sits on top of the page; scrolling up brings it back.
-   When it is showing anywhere but the top of the page it is a plain solid strip with a hairline. */
-.st.ready.hid .st-bar { transform: translateY(-105%); }
-.st.sc .st-bar { background: var(--bg); border-bottom-color: var(--ln); }
+   When it is showing anywhere but the top of the page it is a panel like the others on the site: set in
+   from the edges, squircle corners, a thin border and the same frosted fill as the cards and lists. */
+.st.ready.hid .st-bar { transform: translateY(-140%); }
+.st.sc .st-bar { top: 10px; left: 22px; right: 22px; height: 56px; padding: 0 10px 0 16px; border-color: var(--ln); background: color-mix(in srgb, var(--card) 93%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+@supports (corner-shape: squircle) { .st-bar { corner-shape: squircle; border-radius: 40px; } }
 .st-left, .st-bar nav { display: flex; align-items: center; }
 .st-left { justify-self: start; gap: 12px; margin-left: -12px; }
 .st-bar nav { justify-self: end; gap: 8px; }
