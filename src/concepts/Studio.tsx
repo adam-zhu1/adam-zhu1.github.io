@@ -149,6 +149,13 @@ export default function Studio() {
   };
   const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
 
+  /* Escape leaves a project's page */
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape" && !e.defaultPrevented) root.current?.querySelector<HTMLElement>(".st-back")?.click(); };
+    addEventListener("keydown", esc);
+    return () => removeEventListener("keydown", esc);
+  }, []);
+
   useEffect(() => {
     const sync = () => setPage(readPage());
     addEventListener("popstate", sync);
@@ -304,13 +311,16 @@ export default function Studio() {
 
   const bar = (
     <header className="st-bar">
-      <a className="st-mark" href={href(null)} onClick={go(null)}>Adam Zhu</a>
+      <div className="st-left">
+        <a className="st-mark" href={href(null)} onClick={go(null)}>Adam Zhu</a>
+        {proj && <a className="st-pill st-back" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>}
+      </div>
       <div className="st-theme" role="group" aria-label="Theme">
         <button type="button" className={theme === "dark" ? "on" : ""} onClick={() => setTheme("dark")}>dark</button>
         <button type="button" className={theme === "light" ? "on" : ""} onClick={() => setTheme("light")}>light</button>
       </div>
       <nav>
-        <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}>Projects</a>
+        {!proj && <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}>Projects</a>}
         <a className="st-pill" href="/Adam-Zhu-Resume.pdf" {...out}>Resume <i>↗</i></a>
         <a className="st-pill acc" href={LINKS[0].href}>Email</a>
       </nav>
@@ -325,10 +335,6 @@ export default function Studio() {
         {bar}
         <div className="pj-bg" aria-hidden="true" />
         <main className="pj-main">
-          <div className="pj-top">
-            <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>
-          </div>
-
           <div className="pj-head">
             <div>
               <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className="ch" style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
@@ -408,7 +414,7 @@ export default function Studio() {
         <div className="pj-bg" aria-hidden="true" />
         <main className="pj-main">
           <div className="pj-top">
-            <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>
+            <span />
             <span className="pj-idx"><b>{two(cur + 1)}</b> / {two(WORK.length)}</span>
           </div>
 
@@ -582,6 +588,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
 .st.ready .st-bar { opacity: 1; transform: none; }
+.st-left { display: flex; align-items: center; gap: 18px; }
+.st-bar .st-pill.st-back { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.st-bar .st-pill.st-back:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }
+.st-back i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); } .st-bar .st-back:hover i { transform: translateX(-4px); }
 .st-mark { font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
 .st-bar nav { display: flex; gap: 8px; justify-content: flex-end; }
 .st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(10px); }
@@ -788,7 +798,9 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-foot .meta { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--ln); font-size: 14px; color: var(--mut); }
 
 /* a project's page told in full: why, the pipeline stage by stage, what was hard, where it stands */
-.story .pj-head { align-items: end; }
+/* this page opens on its title with the reason it exists straight under it, not on a title alone at the foot of an empty screen */
+.st.pj.story .pj-head { align-items: end; min-height: 0; margin-bottom: 0; padding-top: clamp(20px, 5vh, 64px); }
+.st.pj.story .pj-why { min-height: 0; padding: clamp(56px, 9vh, 110px) 0 clamp(64px, 11vh, 130px); }
 .pj-strip { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 28px; animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) 1.2s both; }
 .pj-strip > div { display: block; border: 0; padding: 0; }
 .pj-strip dt { font-size: 13.5px; color: var(--mut); margin-bottom: 6px; }
