@@ -208,10 +208,13 @@ export default function Studio() {
         if (!lit) { c.style.opacity = c.style.transform = ""; c.classList.add("near"); continue; }
         const r = c.parentElement!.getBoundingClientRect(), l = (r.top + r.height / 2 - vh / 2) / vh, u = Math.abs(l);
         c.classList.toggle("near", u < .3);
-        c.style.opacity = Math.min(1, Math.max(.05, 1 - (u - .1) * 2.2)).toFixed(3);
+        c.style.opacity = Math.min(1, Math.max(.4, 1 - (u - .2) * 1.5)).toFixed(3);   /* a card on its way in or out stays solid enough to read */
         c.style.transform = `translate3d(0, ${(l * 56).toFixed(1)}px, 0) scale(${(1 - Math.min(u, .7) * .09).toFixed(4)})`;
       }
       setWide(paged());
+      /* the dots step back behind the lists of text under the projects, so nothing is read through them */
+      const more = el.querySelector<HTMLElement>("#more");
+      if (more) el.style.setProperty("--dq", (1 - .9 * clamp((vh * .8 - more.getBoundingClientRect().top) / (vh * .45))).toFixed(3));
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
@@ -623,7 +626,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 
 /* first screen */
 .st-hero { position: relative; height: 100svh; min-height: 620px; overflow: hidden; }
-.st-dots { position: fixed; z-index: 0; inset: 0; width: 100%; height: 100%; color: var(--ink); pointer-events: none; }
+.st-dots { position: fixed; z-index: 0; inset: 0; width: 100%; height: 100%; color: var(--ink); pointer-events: none; opacity: var(--dq, 1); }
 .st-hud span { position: absolute; font: 400 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--mut); transition: opacity .5s; white-space: pre; }
 .st-hud b { font-weight: 400; color: var(--ink); }
 .st-hud .tl { left: 22px; top: 26px; } .st-hud .tr { right: 22px; top: 26px; } .st-hud .bl { left: 22px; bottom: 26px; }
