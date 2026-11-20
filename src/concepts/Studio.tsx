@@ -77,6 +77,7 @@ const FEAT = WORK.filter(w => w.demo !== "nist");
 /* the projects whose page is told in full: why, how it works stage by stage, what was hard, where it stands */
 const STORY: Partial<Record<Entry["demo"], Story>> = { trueline: TRUELINE, clarity: CLARITY };
 const paged = () => matchMedia(PAGED).matches;
+const STEP = false;
 /* where to scroll so that project i sits in the middle of the screen */
 const deckY = (i: number) => {
   const st = document.querySelector(".st-stack");
@@ -258,7 +259,10 @@ export default function Studio() {
       window.setTimeout(() => { if (id === run) { busy = false; done = performance.now(); } }, GUARD);
       window.setTimeout(() => { if (id === run) { bound = null; flow.aim = null; } }, dur * 1000 + 300);
     };
-    const locking = () => !how && paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* STEP off: the page scrolls freely and, once it stops inside the projects, settles on the
+       nearest one (settle, above). Usability testing found forced one-step scrolling disorients
+       most people, so the lock is kept here but switched off. */
+    const locking = () => STEP && !how && paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wheel = (e: WheelEvent) => {
       if (!locking() || e.ctrlKey) return;
       /* some browsers report a mouse wheel in lines or pages, not pixels */
@@ -347,6 +351,10 @@ export default function Studio() {
             </div>
             <dl className="pj-strip">{S.strip.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
           </div>
+
+          {S.shots && <section className={`pj-shots ${proj.demo}`} aria-label={`Screenshots of ${proj.name}`}>
+            {S.shots.map(s => <figure key={s.src} style={{ "--r": s.w / s.h } as CSSProperties}><img src={s.src} width={s.w} height={s.h} alt={s.cap} loading="lazy" /><figcaption>{s.cap}</figcaption></figure>)}
+          </section>}
 
           <section className="pj-why">
             <h2 data-rv>{S.whyTitle}</h2>
@@ -506,7 +514,8 @@ export default function Studio() {
                     </div>
                     <div>
                       <p className="what">{w.what}</p>
-                      <p className="res">{w.result}</p>
+                      <p className="big"><b>{w.big[0]}</b><span>{w.big[1]}</span></p>
+                      <p className="by">{[w.role, w.when].filter(Boolean).join(" · ")}</p>
                       <div className="acts">
                         <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
                         {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
@@ -678,7 +687,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .kind { margin: 0 0 14px; font-size: 14px; line-height: 1.3; color: var(--mut); }
 .st-item h3 { margin: 0; width: fit-content; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
 .st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
-.st-item .res { margin: 14px 0 0; font-size: 15px; line-height: 1.45; color: var(--mut); max-width: 30em; }
+.st-item .big { margin: 18px 0 0; display: flex; align-items: baseline; gap: 12px; max-width: 30em; }
+.st-item .big b { flex: none; font-weight: 500; font-size: clamp(26px, 2.1vw, 36px); line-height: 1; letter-spacing: -.04em; }
+.st-item .big span { font-size: 15px; line-height: 1.35; color: var(--mut); }
+.st-item .by { margin: 12px 0 0; font-size: 14px; line-height: 1.3; color: var(--mut); }
 .st-item .acts { margin: 26px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
@@ -716,10 +728,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 }
 /* a card's words and its demo come in as it reaches the middle */
 @media (min-width: 1000px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
-  .st-item .kind, .st-item h3, .st-item .what, .st-item .res, .st-item .acts { opacity: 0; transform: translateY(22px); transition: opacity .3s, transform .4s; }
+  .st-item .kind, .st-item h3, .st-item .what, .st-item .big, .st-item .by, .st-item .acts { opacity: 0; transform: translateY(22px); transition: opacity .3s, transform .4s; }
   .st-item .pv .st-fit { opacity: 0; transform: scale(.96); transition: opacity .3s, transform .4s; }
-  .st-item .near :is(.kind, h3, .what, .res, .acts) { opacity: 1; transform: none; transition: opacity .7s var(--dl, 0s), transform .9s cubic-bezier(.16, 1, .3, 1) var(--dl, 0s); }
-  .st-item .near h3 { --dl: .06s; } .st-item .near .what { --dl: .14s; } .st-item .near .res { --dl: .2s; } .st-item .near .acts { --dl: .26s; }
+  .st-item .near :is(.kind, h3, .what, .big, .by, .acts) { opacity: 1; transform: none; transition: opacity .7s var(--dl, 0s), transform .9s cubic-bezier(.16, 1, .3, 1) var(--dl, 0s); }
+  .st-item .near h3 { --dl: .06s; } .st-item .near .what { --dl: .14s; } .st-item .near .big { --dl: .2s; } .st-item .near .by { --dl: .23s; } .st-item .near .acts { --dl: .26s; }
   .st-item .near .pv .st-fit { opacity: 1; transform: none; transition: opacity .8s .1s, transform 1.1s cubic-bezier(.16, 1, .3, 1) .1s; }
 }
 @media (min-width: 1000px) and (min-height: 700px) { .st.pj .pj-head { min-height: calc(100svh - 175px - 44px); margin-bottom: 150px; } }
@@ -805,6 +817,13 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* this page opens on its title with the reason it exists straight under it, not on a title alone at the foot of an empty screen */
 .st.pj.story .pj-head { align-items: end; min-height: 0; margin-bottom: 0; padding-top: clamp(20px, 5vh, 64px); }
 .st.pj.story .pj-why { min-height: 0; padding: clamp(56px, 9vh, 110px) 0 clamp(64px, 11vh, 130px); }
+/* the real product, under the title: screenshots at one shared height */
+.pj-shots { display: flex; flex-wrap: wrap; align-items: flex-start; gap: clamp(16px, 2.4vw, 40px); margin-top: clamp(36px, 7vh, 80px); --h: clamp(300px, 52vh, 520px); animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) .5s both; }
+.pj-shots figure { margin: 0; width: calc(var(--h) * var(--r)); max-width: 100%; }
+.pj-shots img { display: block; width: 100%; height: auto; border-radius: 22px; border: 1px solid var(--ln); background: #070708; }
+.pj-shots figcaption { margin-top: 12px; font-size: 14px; line-height: 1.35; color: var(--mut); max-width: 24em; }
+.pj-shots.clarity { align-items: center; } .pj-shots.clarity figure:first-child { width: min(100%, 620px); } .pj-shots.clarity img { border-radius: 14px; }
+@media (prefers-reduced-motion: reduce) { .pj-shots { animation: none; } }
 .pj-strip { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 28px; animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) 1.2s both; }
 .pj-strip > div { display: block; border: 0; padding: 0; }
 .pj-strip dt { font-size: 13.5px; color: var(--mut); margin-bottom: 6px; }

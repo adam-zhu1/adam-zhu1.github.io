@@ -19,6 +19,12 @@ export const CLARITY: Story = {
 
   links: [
     { href: CLARITY_SITE, label: "Clarity’s site" },
+    { href: "https://github.com/s0hamjain/Clarity", label: "Code" },
+  ],
+
+  shots: [
+    { src: "/media/clarity/spotlight-typed.webp", cap: "The box that opens after a capture, with a question typed", w: 1360, h: 192 },
+    { src: "/media/clarity/result-video.webp", cap: "The result window: the written explanation, then the animation", w: 880, h: 1360 },
   ],
 
   whyTitle: "Why we built it",

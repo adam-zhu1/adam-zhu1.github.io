@@ -9,14 +9,14 @@ import { CLARITY_ACCENT, CLARITY_SITE, CLARITY_STAGES } from "./clarity";
  */
 export type Entry = {
   id: string; name: string; when: string;
-  kind: string; accent: string; demo: "trueline" | "clarity" | "nist";
+  kind: string; role?: string; accent: string; demo: "trueline" | "clarity" | "nist";
   body: string; meta?: string; result?: string;
   line: string; what: string; big: [string, string]; fig: string; facts: [string, string][]; steps: [string, string][];
   links?: { href: string; label: string; page?: boolean }[];
 };
 
 export const WORK: Entry[] = [
-  { id: "p-trueline", name: "TrueLine", when: "Aug 2026", kind: "iPhone app, on the App Store", accent: "#40e69e", demo: "trueline",
+  { id: "p-trueline", name: "TrueLine", when: "Aug 2026", kind: "iPhone app, on the App Store", role: "Solo project", accent: "#40e69e", demo: "trueline",
     body: "A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it measures the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and the board and angle it entered on. Everything runs on the phone.",
     meta: "Swift, Vision, Core ML · on the App Store since August 2026",
     result: "Tracked the ball down the full lane on 6 of 6 unseen clips, across two bowling centers and three camera positions.",
@@ -41,13 +41,13 @@ export const WORK: Entry[] = [
       ["Map", "Calibration turns every pixel into a board and a distance down the lane."],
       ["Read", "Smoothing and fitted slopes give speed, angles and the entry board."],
     ] },
-  { id: "p-clarity", name: "Clarity", when: "Sep 2026", kind: "Mac app, HackCMU 2026", accent: CLARITY_ACCENT, demo: "clarity",
+  { id: "p-clarity", name: "Clarity", when: "Sep 2026", kind: "Mac app, HackCMU 2026", role: "Team of four", accent: CLARITY_ACCENT, demo: "clarity",
     body: "A macOS menu-bar app that explains any problem on your screen. Press one hotkey, drag a box around the problem, and a written explanation arrives in seconds, then an animation made for that exact problem about a minute later.",
     meta: "Python, Go, LangGraph, Manim",
     result: "Built in two days at HackCMU by a team of four.",
     links: [{ href: CLARITY_SITE, label: "Clarity’s site" }],
     line: "Built in two days at HackCMU, team of four",
-    big: ["2 days", "to build it at HackCMU, team of four"],
+    big: ["20 hours", "from the first commit to the last, at HackCMU"],
     what: "A Mac app that explains any problem on your screen.",
     fig: "One capture, from the hotkey to the video, rebuilt from the app’s own windows.",
     facts: [

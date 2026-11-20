@@ -8,6 +8,8 @@ export type Change = { label: string; from: string; to: string };
 export type Story = {
   strip: [string, string][];
   links: { href: string; label: string }[];
+  /* the real product: screenshots, shown under the title */
+  shots?: { src: string; cap: string; w: number; h: number }[];
   whyTitle: string; whyShort: string; why: string[];
   how: { name: string; short: string; body: string; fact: [string, string] }[];
   hard: { name: string; sum: string; body: string; changes: Change[] }[];
@@ -27,7 +29,13 @@ export const TRUELINE: Story = {
   links: [
     { href: "https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797", label: "App Store" },
     { href: "https://truelinebowling.com/", label: "truelinebowling.com" },
-    { href: "https://truelinebowling.com/press/", label: "Press kit" },
+    { href: "https://github.com/adam-zhu1/TrueLine", label: "Code" },
+  ],
+
+  shots: [
+    { src: "/media/trueline/app/05-shot-result-lane.webp", cap: "One throw: its path, where it broke and the angle it entered on", w: 660, h: 1434 },
+    { src: "/media/trueline/app/06-shot-result-tiles.webp", cap: "The numbers for that throw", w: 660, h: 1434 },
+    { src: "/media/trueline/app/03-session-consistency.webp", cap: "A session: how consistent six throws were", w: 660, h: 1434 },
   ],
 
   whyTitle: "Why I built it",
