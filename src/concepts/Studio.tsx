@@ -123,8 +123,11 @@ export default function Studio() {
     u.hash = "";
     history.pushState({}, "", u);
     const named: HTMLElement[] = [];
-    const name = (el: HTMLElement | null) => { if (el) { el.style.viewTransitionName = "pj-bg"; named.push(el); } };
-    name(card(to));
+    const name = (el: HTMLElement | null | undefined, n = "pj-bg") => { if (el) { el.style.viewTransitionName = n; named.push(el); } };
+    /* the project's name is the one thing on both sides, so it travels: card heading to page title and back */
+    const opened = card(to);
+    name(opened); name(opened?.querySelector<HTMLElement>("h3"), "pj-name");
+    if (!to && anchor === "projects") name(root.current?.querySelector<HTMLElement>(".pj-head h1"), "pj-name");
     const apply = () => {
       const fi = FEAT.findIndex(w => slug(w) === from);
       flushSync(() => setPage(to));
@@ -134,11 +137,15 @@ export default function Studio() {
       lenis.current?.scrollTo(y, { immediate: true, force: true });
       scrollTo(0, y);
       name(back);
+      /* the card's heading must already be in place for the name to land on it, not still on its way in */
+      const h = back?.querySelector<HTMLElement>("h3");
+      if (back && h) { back.classList.add("near"); h.style.transition = "none"; name(h, "pj-name"); }
+      if (opened) { root.current?.classList.add("via"); name(root.current?.querySelector<HTMLElement>(".pj-head h1"), "pj-name"); }
     };
     const start = (document as Document & { startViewTransition?: (f: () => void) => { finished: Promise<void> } }).startViewTransition;
     if (start && !matchMedia("(prefers-reduced-motion: reduce)").matches)
-      start.call(document, apply).finished.finally(() => named.forEach(el => { el.style.viewTransitionName = ""; }));
-    else { apply(); named.forEach(el => { el.style.viewTransitionName = ""; }); }
+      start.call(document, apply).finished.finally(() => named.forEach(el => { el.style.viewTransitionName = el.style.transition = ""; }));
+    else { apply(); named.forEach(el => { el.style.viewTransitionName = el.style.transition = ""; }); }
   };
   const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
 
@@ -220,8 +227,8 @@ export default function Studio() {
        feel the same, a step needs the same small amount of travel from either (one wheel
        click is already enough, a trackpad gets there within a few events), and after a step
        the leftover glide is swallowed until the wheel rests or is clearly pushed again. */
-    const NEED = 24, REST = 140;
-    let busy = false, done = 0, lastWheel = 0, acc = 0, dir = 0, bound: number | null = null, run = 0;
+    const NEED = 24, REST = 140, GUARD = 320;
+    let busy = false, started = 0, done = 0, lastWheel = 0, acc = 0, dir = 0, bound: number | null = null, run = 0;
     const mags: number[] = [];
     const after = el.querySelector<HTMLElement>("#more");
     const stopsNow = (vh: number) => stack ? [0, vh * 1.2, ...FEAT.map((_, i) => deckY(i)), ...(after ? [Math.round(after.getBoundingClientRect().top + scrollY - BAR)] : [])] : pageStops(vh);
@@ -233,11 +240,12 @@ export default function Studio() {
     const step = (to: number) => {
       if (!lenis.current) return;
       const id = ++run, far = Math.abs(to - scrollY) > innerHeight * 1.2, dur = far ? 1.35 : 1.15;
-      busy = true; acc = 0; bound = to;
+      busy = true; started = performance.now(); acc = 0; bound = to;
       if (stack) flow.aim = to > innerHeight * .5 ? 1 : 0;   /* the dots set off with the page, not once it has got somewhere */
       lenis.current.scrollTo(to, { duration: dur, easing: reach, lock: true, force: true, onComplete: () => { if (id === run) { bound = null; flow.aim = null; } } });
-      /* the page has all but arrived well before the move formally ends, so the next push is taken from then */
-      window.setTimeout(() => { if (id === run) { busy = false; done = performance.now(); } }, dur * 620);
+      /* a step can be redirected while it is still moving: after a moment to let the push that
+         started it finish, a new push sets off for the stop after, from wherever the page is */
+      window.setTimeout(() => { if (id === run) { busy = false; done = performance.now(); } }, GUARD);
       window.setTimeout(() => { if (id === run) { bound = null; flow.aim = null; } }, dur * 1000 + 300);
     };
     const locking = () => !how && paged() && !matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -249,7 +257,11 @@ export default function Studio() {
       const now = performance.now(), gap = now - lastWheel, d = dy > 0 ? 1 : -1; lastWheel = now;
       const avg = mags.length ? mags.reduce((a, b) => a + b, 0) / mags.length : 0;
       mags.push(mag); if (mags.length > 4) mags.shift();
-      if (busy) { e.preventDefault(); e.stopPropagation(); return; }
+      if (busy) {
+        /* turning round is taken almost at once: a glide never reverses, so it can only be meant */
+        if (d === dir || now - started < 120) { e.preventDefault(); e.stopPropagation(); return; }
+        busy = false; done = 0;
+      }
       if (done) {
         /* still the glide from the last push? It is, unless the wheel rested, turned round,
            or is suddenly moving harder than it just was */
@@ -266,7 +278,7 @@ export default function Studio() {
     };
     /* the keyboard steps the same way */
     const key = (e: KeyboardEvent) => {
-      if (!locking() || busy || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable]")) return;
+      if (!locking() || busy && e.repeat || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable]")) return;
       const d = e.key === "ArrowDown" || e.key === "PageDown" || e.key === " " && !e.shiftKey ? 1 : e.key === "ArrowUp" || e.key === "PageUp" || e.key === " " && e.shiftKey ? -1 : 0;
       if (e.key === " " && (e.target as HTMLElement | null)?.closest?.("button, a")) return;
       const to = d ? target(d) : undefined;
@@ -476,7 +488,7 @@ export default function Studio() {
           <ol className="st-stage">
             {FEAT.map(w => (
               <li key={w.id} className="st-item">
-                <article className="card" data-card={slug(w)}>
+                <article className="card" data-card={slug(w)} onClick={e => { if (!(e.target as HTMLElement).closest("a, button")) go(slug(w))(e); }}>
                   <div className="tx">
                     <div>
                       <p className="kind">{w.kind}</p>
@@ -647,16 +659,16 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* projects: one card each. The demo is the card; the words are a short label beside it. */
 .st-stack { padding-bottom: 6vh; }
 .st-stage { margin: 0; padding: 0; list-style: none; display: grid; gap: 28px; }
-.st-item .card { display: grid; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
+.st-item .card { display: grid; cursor: pointer; border-radius: 30px; overflow: hidden; background: var(--card); border: 1px solid var(--ln); }
 .st-item .tx { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 26px 24px 28px; background: color-mix(in srgb, var(--ink) 4.5%, var(--card)); }
 .st-item .kind { margin: 0 0 14px; font-size: 14px; line-height: 1.3; color: var(--mut); }
-.st-item h3 { margin: 0; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
+.st-item h3 { margin: 0; width: fit-content; font-weight: 500; font-size: clamp(44px, 9vw, 64px); line-height: .95; letter-spacing: -.055em; }
 .st-item .what { margin: 0; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; max-width: 22em; }
 .st-item .res { margin: 14px 0 0; font-size: 15px; line-height: 1.45; color: var(--mut); max-width: 30em; }
 .st-item .acts { margin: 26px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .st-item .open { display: inline-flex; align-items: center; gap: 22px; height: 50px; padding: 0 22px; border-radius: 999px; font-size: 16px; background: var(--ink); color: var(--bg); transition: background .25s, color .25s; }
 .st-item .open i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); }
-.st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .open:hover i { transform: translateX(6px); }
+.st-item .open:hover { background: var(--acc); color: var(--onacc); } .st-item .card:hover .open i { transform: translateX(6px); }
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
 /* the demo sits straight on the card's dark side: no panel, no frame round it */
 .st .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
@@ -703,20 +715,22 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-bar { view-transition-name: st-bar; }
 .pj-bg { position: fixed; inset: 0; z-index: -1; background: var(--bg); view-transition-name: pj-bg; }
 .pj-main { view-transition-name: pj-main; }
-::view-transition-group(pj-bg) { animation-duration: .8s; animation-timing-function: cubic-bezier(.7, 0, .15, 1); }
-::view-transition-old(pj-bg), ::view-transition-new(pj-bg) { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; animation-duration: .5s; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; }
-::view-transition-new(pj-main):only-child { animation: pj-in .01s linear .45s both; }
-::view-transition-old(pj-main):only-child { animation: pj-out .28s ease both; }
-::view-transition-old(pj-main):not(:only-child) { animation: pj-out .28s ease both; }
-::view-transition-new(pj-main):not(:only-child) { animation: pj-in .01s linear .3s both; }
+::view-transition-group(pj-bg), ::view-transition-group(pj-name) { animation-duration: .55s; animation-timing-function: cubic-bezier(.45, 0, .1, 1); }
+::view-transition-old(pj-bg), ::view-transition-new(pj-bg) { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; animation-duration: .35s; }
+::view-transition-old(pj-name), ::view-transition-new(pj-name) { height: 100%; width: auto; animation-duration: .3s; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
+::view-transition-new(pj-main):only-child { animation: pj-in .01s linear .26s both; }
+::view-transition-old(pj-main):only-child { animation: pj-out .2s ease both; }
+::view-transition-old(pj-main):not(:only-child) { animation: pj-out .2s ease both; }
+::view-transition-new(pj-main):not(:only-child) { animation: pj-in .01s linear .2s both; }
 @keyframes pj-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pj-out { to { opacity: 0; transform: translateY(-24px); } }
 .pj .pj-top, .pj .pj-head .what, .pj .pj-head .kind, .pj .pj-head .st-pills, .pj .pj-stat { animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) both; }
-.pj .pj-top { animation-delay: .5s; } .pj .pj-head .what { animation-delay: .95s; } .pj .pj-head .kind { animation-delay: 1.05s; } .pj .pj-head .st-pills { animation-delay: 1.15s; } .pj .pj-stat { animation-delay: 1.1s; }
+.pj .pj-top { animation-delay: .26s; } .pj .pj-head .what { animation-delay: .32s; } .pj .pj-head .kind { animation-delay: .38s; } .pj .pj-head .st-pills { animation-delay: .44s; } .pj .pj-stat { animation-delay: .44s; }
 .st.pj h1 { overflow: hidden; padding: .1em .04em .04em; }
-.st.pj h1 .ch { display: inline-block; animation: st-letter 1.15s cubic-bezier(.16, 1, .3, 1) calc(.55s + var(--i) * 50ms) both; transform-origin: 0 100%; }
-.pj .pj-demo { animation: pj-demo 1.3s cubic-bezier(.16, 1, .3, 1) 1.15s both; }
+.st.pj h1 .ch { display: inline-block; animation: st-letter 1.15s cubic-bezier(.16, 1, .3, 1) calc(.2s + var(--i) * 40ms) both; transform-origin: 0 100%; }
+.st.pj.via h1 .ch { animation: none; }   /* arriving from its card, the name is carried across and does not rise in again */
+.pj .pj-demo { animation: pj-demo 1.1s cubic-bezier(.16, 1, .3, 1) .5s both; }
 @keyframes pj-demo { from { opacity: 0; transform: translateY(70px) scale(.93); clip-path: inset(14% 8% 14% 8% round 28px); } to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 0px); } }
 
 /* a project's own page */
