@@ -37,6 +37,8 @@ const ICON: Record<string, ReactNode> = {
   GitHub: <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" /></svg>,
   Email: <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.6" y="3.2" width="12.8" height="9.6" rx="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m2.2 4.4 5.8 4.4 5.8-4.4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
 };
+/* the rows of the Contact panel after Email: the label, and what is written out for it */
+const CONTACT: [string, string][] = [["GitHub", "github.com/adam-zhu1"], ["LinkedIn", "linkedin.com/in/adam-zhu-cmu"], ["Resume", "Adam-Zhu-Resume.pdf"]];
 const ORDER = ["Resume", "LinkedIn", "GitHub", "Email"].map(l => LINKS.find(x => x.label === l)!);
 
 /* A line of text that settles out of noise, left to right. */
@@ -112,6 +114,8 @@ function Fit({ width, children }: { width: number; children: ReactNode }) {
 export default function Studio() {
   const theme = useTheme();
   const [page, setPage] = useState(readPage);
+  const [copied, setCopied] = useState(false);
+  const copy = () => { navigator.clipboard?.writeText(MAIL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }).catch(() => {}); };
   const [instant] = useState(() => seenRecently() || !!readPage());
   const [ready, setReady] = useState(instant);
   /* "How it works" plays by itself: the demo says which stage it is on and the words follow.
@@ -183,11 +187,10 @@ export default function Studio() {
     return () => { l.destroy(); lenis.current = null; };
   }, []);
 
-  /* what follows the scroll: the first screen fading, which project is showing, the name at the foot rising into place */
+  /* what follows the scroll: the first screen fading, which project is showing */
   useEffect(() => {
     const el = root.current!;
     let raf = 0;
-    const foot = el.querySelector<HTMLElement>(".st-foot");
     const stack = el.querySelector<HTMLElement>(".st-stack"), cards = [...el.querySelectorAll<HTMLElement>(".st-item .card")];
     let idle = 0;
     const clamp = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
@@ -214,7 +217,6 @@ export default function Studio() {
       /* the dots step back a little behind the lists of text under the projects; the lists sit on frosted panels */
       const more = el.querySelector<HTMLElement>("#more");
       if (more) el.style.setProperty("--dq", (1 - .12 * clamp((vh * .8 - more.getBoundingClientRect().top) / (vh * .45))).toFixed(3));
-      if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
     const settle = () => {
@@ -574,18 +576,23 @@ export default function Studio() {
         ))}
       </section>
 
+      {/* the page ends on how to reach him: one panel, a labelled row per route, the address written out */}
       <section className="st-sec st-contact" id="contact">
-        <h2 data-rv className="mask"><span>Get in touch</span></h2>
-        <div data-rv style={d(1)}>
-          <a className="mail" href={LINKS[0].href}>{MAIL}</a>
-          <div className="st-links">{ORDER.slice(0, 3).map(l => <a key={l.label} href={l.href} {...out}>{ICON[l.label]}<span>{l.label}</span></a>)}</div>
+        <div className="st-grp">
+          <h2 data-rv>Contact</h2>
+          <p className="avail" data-rv>Looking for Summer 2027 internships in software, ML, data science or quant.</p>
+          <ul className="st-ct">
+            <li data-rv>
+              <a href={LINKS[0].href}><span className="i">Email</span><span className="n">{MAIL}</span><span className="go">→</span></a>
+              <button type="button" className="cp" onClick={copy} aria-live="polite">{copied ? "Copied" : "Copy"}</button>
+            </li>
+            {CONTACT.map(([label, shown]) => { const l = LINKS.find(x => x.label === label)!; return (
+              <li key={label} data-rv><a href={l.href} {...out}><span className="i">{label}</span><span className="n">{shown}</span><span className="go">↗</span></a></li>
+            ); })}
+          </ul>
         </div>
+        <p className="st-end"><span>Adam Zhu, Pittsburgh</span><span>Updated November 2026</span></p>
       </section>
-
-      <div className="st-foot">
-        <div className="big" aria-hidden="true">Adam Zhu</div>
-        <div className="meta"><span>Adam Zhu, Pittsburgh</span><span>2026</span></div>
-      </div>
       </div>
     </div>
   );
@@ -770,7 +777,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-item .near .pv .st-fit { opacity: 1; transform: none; transition: opacity .8s .1s, transform 1.1s cubic-bezier(.16, 1, .3, 1) .1s; }
 }
 @media (min-width: 1000px) and (min-height: 700px) { .st.pj .pj-head { min-height: calc(100svh - 175px - 44px); margin-bottom: 150px; } }
-.st-foot .big { transform: translateY(calc((1 - var(--f, 1)) * 45%)); will-change: transform; }
 
 /* card to page: the card grows into the page's sheet, then the page's parts come in */
 .st-bar { view-transition-name: st-bar; }
@@ -853,13 +859,21 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-rows .go:empty { visibility: hidden; }
 .st-rows a:hover .go { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
 
-.st-contact { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: end; }
-.st-contact .st-links { justify-content: flex-start; }
-.st-contact .mail { display: inline-block; font-size: clamp(20px, 2.5vw, 36px); letter-spacing: -.035em; border-bottom: 1px solid var(--ln); padding-bottom: 6px; margin-bottom: 20px; transition: border-color .2s; }
-.st-contact .mail:hover { border-color: var(--ink); }
-.st-foot { padding: clamp(70px, 12vh, 150px) 22px 22px; }
-.st-foot .big { font-weight: 500; font-size: 23.2vw; line-height: .8; letter-spacing: -.07em; white-space: nowrap; margin-left: -.05em; }
-.st-foot .meta { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--ln); font-size: 14px; color: var(--mut); }
+.st-contact { padding-bottom: 22px; }
+.st-contact .avail { margin: -6px 0 26px; font-size: clamp(17px, 1.4vw, 21px); line-height: 1.4; letter-spacing: -.015em; color: var(--mut); max-width: 34em; }
+.st-ct { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ln); }
+.st-ct li { position: relative; border-bottom: 1px solid var(--ln); }
+.st-ct li:last-child { border-bottom: 0; }
+.st-ct a { display: grid; grid-template-columns: 150px minmax(0, 1fr) 40px; gap: 20px; align-items: center; padding: 20px 0; transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
+.st-ct a:hover { padding-left: 14px; padding-right: 14px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.st-ct .i { font-size: 14px; color: var(--mut); }
+.st-ct .n { font-size: clamp(20px, 1.9vw, 27px); letter-spacing: -.035em; line-height: 1.15; overflow-wrap: anywhere; }
+.st-ct .go { justify-self: end; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ln); display: grid; place-items: center; font-size: 12px; transition: background .2s, color .2s, border-color .2s; }
+.st-ct a:hover .go { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
+.st-ct .cp { all: unset; position: absolute; right: 56px; top: 50%; transform: translateY(-50%); height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--ln); font-size: 13px; cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .2s cubic-bezier(.2,.7,.2,1); }
+.st-ct .cp:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: translateY(calc(-50% - 2px)); }
+.st-ct .cp:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.st-end { display: flex; justify-content: space-between; gap: 16px; margin: 26px 0 0; padding: 0 4px; font-size: 14px; color: var(--mut); }
 
 /* a project's page told in full: why, the pipeline stage by stage, what was hard, where it stands */
 /* this page opens on its title with the reason it exists straight under it, not on a title alone at the foot of an empty screen */
@@ -959,19 +973,20 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .pj-steps li { grid-template-columns: 30px minmax(0, 1fr); } .pj-steps p { grid-column: 2; }
   .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; top: 46px; } .st-hud .bl { left: 14px; bottom: 18px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
-  .st-head, .st-contact { grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  .st-head { grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  .st-ct a { grid-template-columns: minmax(0, 1fr) 34px; gap: 6px 14px; } .st-ct .i { grid-column: 1; } .st-ct .n { grid-column: 1; } .st-ct .go { grid-column: 2; grid-row: 1 / span 2; }
+  .st-ct .cp { position: static; transform: none; margin: 0 0 16px; } .st-ct .cp:hover { transform: none; }
   .st-rows li > * { grid-template-columns: minmax(0, 1fr) 34px; gap: 8px 14px; }
   .st-rows .i { grid-column: 1; grid-row: 1; padding-top: 0; }
   .st-rows .n { grid-column: 1; grid-row: 2; }
   .st-rows .b { grid-column: 1; grid-row: 3; }
   .st-rows .go { grid-column: 2; grid-row: 2; }
-  .st-foot { padding-left: 14px; padding-right: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .st-left, .st-bar nav, .st-theme, .st-bar .st-pill, .st-theme button, .st-mark { transition: none; }
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
   .st-hero h1 .ch, .st-id .st-links a { animation: none !important; opacity: 1; transform: none; }
-  .st-hero h1, .st-id { opacity: 1; } .st-foot .big { transform: none; }
+  .st-hero h1, .st-id { opacity: 1; }
   .st-title { height: auto; } .st-tin { position: static; height: auto; padding: 90px 22px 30px; opacity: 1; transform: none; } .st-hint { display: none; }
   .st-dots { position: absolute; }
   [data-rv].mask > span { transform: none; transition: none; }
