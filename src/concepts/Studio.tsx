@@ -694,6 +694,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .acts .st-pill { height: 50px; padding: 0 20px; font-size: 15px; }
 /* the demo sits straight on the card's dark side: no panel, no frame round it */
 .st .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
+/* in the light theme the dark demo is a screen set into the light card, with a margin round it, and not a black half of the card */
+:root[data-theme="light"] .st-item .pv { margin: 10px; border-radius: 20px; background: #121214; }
+@media (min-width: 1000px) and (min-height: 700px) { :root[data-theme="light"] .st-item .pv { margin: 14px; height: calc(100% - 28px); border-radius: 26px; } }
+@supports (corner-shape: squircle) { :root[data-theme="light"] .st-item .pv { corner-shape: squircle; border-radius: 50px; } }
 .st .pv .win { background: none; box-shadow: none; padding: 0; }
 .st .pv .win > .edge, .st .pv .win > .corner { display: none; }
 .st-fit { position: absolute; inset: clamp(16px, 2.2vw, 40px); } .st-fit > div { transform-origin: 0 0; pointer-events: none; }
