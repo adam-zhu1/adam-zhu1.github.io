@@ -609,23 +609,16 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-pill.acc:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 
 /* bar */
-.st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; margin: 0 auto; width: 100%; max-width: 100%; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+.st-bar { position: fixed; z-index: 30; top: 0; right: 0; width: 100%; max-width: 100%; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   border: 1px solid transparent; border-radius: 0; opacity: 0; transform: translateY(-10px);
-  transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1), width .75s cubic-bezier(.3, 1.35, .45, 1), max-width .75s cubic-bezier(.3, 1.35, .45, 1), top .75s cubic-bezier(.3, 1.35, .45, 1), height .6s cubic-bezier(.16, 1, .3, 1), padding .6s cubic-bezier(.16, 1, .3, 1), border-radius .6s cubic-bezier(.16, 1, .3, 1), background .5s, border-color .5s, box-shadow .5s; }
+  transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1), width .75s cubic-bezier(.3, 1.35, .45, 1), max-width .75s cubic-bezier(.3, 1.35, .45, 1), top .75s cubic-bezier(.3, 1.35, .45, 1), right .75s cubic-bezier(.3, 1.35, .45, 1), height .6s cubic-bezier(.16, 1, .3, 1), padding .6s cubic-bezier(.16, 1, .3, 1), border-radius .6s cubic-bezier(.16, 1, .3, 1), background .5s, border-color .5s, box-shadow .5s; }
 .st.ready .st-bar { opacity: 1; transform: none; }
 /* The bar has two states. At the top of a page it is attached: it spans the whole width, flush with
-   the top, with nothing behind it. Once the page scrolls (.sc) it lets go and pulls itself together
-   into one short glass capsule floating in the middle, with a little overshoot as it lands; the links
-   square off into rounded rectangles. Scrolling back to the top stretches it out again. */
-.st.sc .st-bar { top: 14px; width: 780px; max-width: calc(100% - 24px); height: 54px; padding: 0 9px; border-radius: 27px; border-color: color-mix(in srgb, var(--ink) 17%, transparent);
-  /* frosted glass in the manner of Apple's liquid glass, but denser: a heavy blur with the colours behind
-     pushed up, a tint of the page colour, a faint sheen from top to bottom, and a bright rim along the
-     top edge where light would catch it */
-  background: linear-gradient(color-mix(in srgb, var(--ink) 11%, transparent), color-mix(in srgb, var(--ink) 2%, transparent) 55%, color-mix(in srgb, var(--ink) 6%, transparent)), color-mix(in srgb, var(--card) 64%, transparent);
-  -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.08); backdrop-filter: blur(28px) saturate(190%) brightness(1.08);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .34), inset 0 -1px 0 rgb(255 255 255 / .08), inset 0 0 14px rgb(255 255 255 / .05), 0 20px 46px -22px rgb(0 0 0 / .75), 0 2px 6px -2px rgb(0 0 0 / .3); }
-:root[data-theme="light"] .st.sc .st-bar { background: linear-gradient(rgb(255 255 255 / .75), rgb(255 255 255 / .3) 55%, rgb(255 255 255 / .5)), color-mix(in srgb, var(--bg) 50%, transparent);
-  border-color: rgb(255 255 255 / .9); box-shadow: inset 0 1px 0 #fff, inset 0 0 14px rgb(255 255 255 / .5), 0 20px 46px -22px rgb(0 0 0 / .32), 0 0 0 1px rgb(0 0 0 / .07); }
+   the top, with nothing behind it. Once the page scrolls (.sc) it lets go and slides over to the right,
+   pulling itself together into one compact capsule in the corner. The capsule is a plain solid surface
+   in the card colour: no glass, no shine. Scrolling back to the top stretches it out again. */
+.st.sc .st-bar { top: 14px; right: 18px; width: 610px; max-width: calc(100% - 36px); height: 54px; padding: 0 9px; border-radius: 27px; border-color: var(--ln);
+  background: var(--card); box-shadow: 0 16px 36px -22px rgb(0 0 0 / .6); }
 .st-left, .st-bar nav { display: flex; align-items: center; transition: gap .55s cubic-bezier(.16, 1, .3, 1); }
 .st-left { justify-self: start; gap: 12px; margin-left: -12px; }
 .st-bar nav { justify-self: end; gap: 8px; }
