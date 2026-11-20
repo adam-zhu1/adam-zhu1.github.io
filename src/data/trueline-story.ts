@@ -5,13 +5,24 @@
  */
 export type Change = { label: string; from: string; to: string };
 
-export const TRUELINE = {
+export type Story = {
+  strip: [string, string][];
+  links: { href: string; label: string }[];
+  whyTitle: string; whyShort: string; why: string[];
+  how: { name: string; short: string; body: string; fact: [string, string] }[];
+  hard: { name: string; sum: string; body: string; changes: Change[] }[];
+  stands: [string, string][];
+  next: [string, string][];
+  made?: string;
+};
+
+export const TRUELINE: Story = {
   strip: [
     ["Role", "Solo project"],
     ["Built with", "Swift, Vision, Core ML"],
     ["Status", "On the App Store since August 2026"],
     ["Runs", "On the phone. No video is uploaded."],
-  ] as [string, string][],
+  ],
 
   links: [
     { href: "https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797", label: "App Store" },
@@ -19,6 +30,7 @@ export const TRUELINE = {
     { href: "https://truelinebowling.com/press/", label: "Press kit" },
   ],
 
+  whyTitle: "Why I built it",
   whyShort: "I bowled on my high school team, and when a shot missed I never knew whether I had missed my target, changed speed, or the lane had changed. The systems that measure this cost over $10,000. TrueLine reads the same kind of numbers from one iPhone propped behind the approach.",
 
   why: [
@@ -43,7 +55,7 @@ export const TRUELINE = {
         { label: "Error at the pin deck", from: "about 7 boards", to: "fixed" },
         { label: "Strike clip, entry board against the reference", from: "", to: "17.9 vs 17.56" },
         { label: "Miss clip, entry board against the reference", from: "", to: "11.8 vs 11.7" },
-      ] as Change[] },
+      ] },
     { name: "Accurate numbers, not only plausible ones",
       sum: "I built a benchmark from 223 labeled ball positions, found the error was in the smoothing and not the detector, and cut it about fivefold.",
       body: "I labeled 223 ball positions across 7 clips, checked each by eye, and built a benchmark that runs the app’s own analysis code against them. The detector turned out to be within about a pixel. The error came later: the metrics were read off a smoothing filter that lagged the ball by 3 to 11 pixels. Fitting the raw detections instead cut it. The same throw filmed at 30 and at 60 frames a second used to read 16.0 and 13.6 mph. It now reads 17.6 and 17.7.",
@@ -51,13 +63,13 @@ export const TRUELINE = {
         { label: "Entry board", from: "2.13 boards off", to: "0.43" },
         { label: "Entry angle", from: "2.09° off", to: "0.21°" },
         { label: "Launch speed", from: "2.16 mph off", to: "0.18" },
-      ] as Change[] },
+      ] },
     { name: "Calibrating the lane",
       sum: "Automatic detection kept finding the wrong lane and four dragged corners were fragile, so I simulated tapping mistakes and rebuilt the step around six lane markings.",
       body: "Automatic lane detection found nothing on most clips and was 270 to 450 pixels off on the rest, because every lane looks like the one beside it. Dragging four corners, as 1.0 does, is fragile: the far end of the lane is a few pixels wide, and the shiny gutter edge a careful person picks is 66 pixels from where the wood really ends. I simulated tapping mistakes on 8 real calibrations, 2,000 trials for each setup, and rebuilt the step around six painted markings, followed by a final nudge that lines drawn pins up with the real ones.",
       changes: [
         { label: "Median entry error in simulation, four corners to six taps and the nudge", from: "2.95 boards", to: "0.52 to 0.72" },
-      ] as Change[] },
+      ] },
   ],
 
   stands: [
@@ -65,13 +77,13 @@ export const TRUELINE = {
     ["107", "unit tests in the app"],
     ["1 board", "or less between the Swift app and the Python prototype it was ported from, on 5 clips"],
     ["285 MB", "peak memory on a 25 second clip, down from 740"],
-  ] as [string, string][],
+  ],
 
   next: [
     ["Measured truth", "A session at the alley with tape on the lane and the speed display, to check the numbers against something physical. So far they are checked against labeled video."],
     ["More centers", "Most of my footage comes from one center. Other lighting and lane surfaces are next."],
     ["Rev rate", "It works as a Python experiment. It is not in the app yet."],
-  ] as [string, string][],
+  ],
 
   made: "I built the whole pipeline in Python first, starting in March 2026, then ported it to Swift in July and shipped 1.0 in August.",
 };

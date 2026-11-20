@@ -13,7 +13,8 @@ import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
 import { NistFigure } from "../components/ProjectStage";
 import { LINKS } from "./links";
-import { TRUELINE } from "../data/trueline-story";
+import { TRUELINE, type Story } from "../data/trueline-story";
+import { CLARITY } from "../data/clarity-story";
 
 /**
  * Draft. Home is two things: a first screen that says who this is (the name over the dot
@@ -73,6 +74,8 @@ const HSTEP = .75;
 const PV = { trueline: 820, clarity: 800, nist: 600 };
 /* the projects with something to watch get a card; NIST, an internship, leads the list under them */
 const FEAT = WORK.filter(w => w.demo !== "nist");
+/* the projects whose page is told in full: why, how it works stage by stage, what was hard, where it stands */
+const STORY: Partial<Record<Entry["demo"], Story>> = { trueline: TRUELINE, clarity: CLARITY };
 const paged = () => matchMedia(PAGED).matches;
 /* where to scroll so that project i sits in the middle of the screen */
 const deckY = (i: number) => {
@@ -327,8 +330,9 @@ export default function Studio() {
     </header>
   );
 
-  if (proj && proj.demo === "trueline") {
-    const S = TRUELINE, next = FEAT[(FEAT.indexOf(proj) + 1) % FEAT.length];
+  const S = proj ? STORY[proj.demo] : undefined;
+  if (proj && S) {
+    const next = FEAT[(FEAT.indexOf(proj) + 1) % FEAT.length];
     return (
       <div className="st pj story ready" ref={root} key={proj.id}>
         <style>{CSS}</style>
@@ -345,7 +349,7 @@ export default function Studio() {
           </div>
 
           <section className="pj-why">
-            <h2 data-rv>Why I built it</h2>
+            <h2 data-rv>{S.whyTitle}</h2>
             <div>
               <p data-rv style={d(1)}>{S.whyShort}</p>
               <details data-rv style={d(2)}><summary>The longer version</summary>{S.why.map((t, i) => <p key={i}>{t}</p>)}</details>
@@ -368,7 +372,7 @@ export default function Studio() {
                 </div>
                 <div className="pj-ticks">{S.how.map((h, i) => <button type="button" key={h.name} className={i === hw ? "on" : ""} aria-current={i === hw ? "step" : undefined} onClick={() => setAt({ i })}>{h.name}</button>)}</div>
               </div>
-              <div className="pv trueline"><Fit width={PV.trueline}><TrueLine loop onStage={setStg} at={at} /></Fit></div>
+              <div className={`pv ${proj.demo}`}><Fit width={PV[proj.demo]}>{proj.demo === "clarity" ? <Clarity loop onStage={setStg} at={at} /> : <TrueLine loop onStage={setStg} at={at} />}</Fit></div>
             </div>
           </section>
 
@@ -382,7 +386,7 @@ export default function Studio() {
                   <p>{x.sum}</p>
                   <details><summary>The full story</summary><p>{x.body}</p></details>
                 </div>
-                <ul>{x.changes.map(c => <li key={c.label}><small>{c.label}</small><b>{c.from && <><em>{c.from}</em><i>→</i></>}{c.to}</b></li>)}</ul>
+                {x.changes.length > 0 && <ul>{x.changes.map(c => <li key={c.label}><small>{c.label}</small><b>{c.from && <><em>{c.from}</em><i>→</i></>}{c.to}</b></li>)}</ul>}
               </article>
             ))}
           </section>
@@ -390,7 +394,7 @@ export default function Studio() {
           <section className="pj-stands">
             <h2 data-rv>Where it stands</h2>
             <dl className="figs">{S.stands.map(([k, v], i) => <div key={k} data-rv style={d(i)}><dd>{k}</dd><dt>{v}</dt></div>)}</dl>
-            <p className="made" data-rv>{S.made}</p>
+            {S.made && <p className="made" data-rv>{S.made}</p>}
             <h2 data-rv>What’s next</h2>
             <ol className="nexts">{S.next.map(([k, v], i) => <li key={k} data-rv style={d(i)}><b>{k}</b><p>{v}</p></li>)}</ol>
           </section>

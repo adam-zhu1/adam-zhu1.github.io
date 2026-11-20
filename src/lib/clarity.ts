@@ -12,7 +12,7 @@
  * `toggle`, `setOffscreen`, `isDone`, `stop`.
  */
 
-type Els = { stage: HTMLElement; steps: HTMLElement; capL: HTMLElement; capR: HTMLElement };
+type Els = { stage: HTMLElement; steps: HTMLElement; capL: HTMLElement; capR: HTMLElement; onStage?: (i: number) => void };
 
 const CODE = [
   ["def ", "binary_search", "(arr, target):"],
@@ -139,6 +139,7 @@ export function createClarity(els: Els) {
   const bx = (i: number) => X0 + i * (BOX + GAP);
   const BEAT = 1.0;
 
+  let stageNow = -1;
   function drawVideo(v: number) {
     /* v: seconds into the clip */
     const g = document.createDocumentFragment();
@@ -238,6 +239,7 @@ export function createClarity(els: Els) {
     /* ---------- chrome ---------- */
     let st = 0; STAGE_AT.forEach((a, i) => { if (t >= a) st = i; });
     Array.from(steps.children).forEach((c, i) => c.classList.toggle("cur", i === st));
+    if (st !== stageNow) { stageNow = st; els.onStage?.(st); }
     let L = "", R = "";
     if (t < T.keys) { L = "A binary search that returns the wrong index, open in an editor"; R = "<b>⌘⇧E</b> works in any app"; }
     else if (t < T.spot) { L = "Drag a box around the problem"; R = "<b>screencapture -i</b> · the screen dims, the edge glows"; }
@@ -256,10 +258,21 @@ export function createClarity(els: Els) {
   let byHand = false, offscreen = false, started = false, done = false;
   const halted = () => byHand || offscreen;
 
+  /* a page can have it go round and round, and send it to the start of any stage */
+  let loop = false;
+  function seek(t: number) { tNow = t; t0 = performance.now() - t * 1000; lastStatus = ""; if (t < T.result) rbody.scrollTop = 0; }
+  function setLoop(v: boolean) { loop = v; if (v && done) { done = false; seek(0); if (started) resume(); } }
+  function jump(i: number) {
+    if (STAGE_AT[i] == null) return;
+    done = false; seek(STAGE_AT[i]);
+    if (reduce) { draw(i + 1 < STAGE_AT.length ? STAGE_AT[i + 1] - .05 : T.end); return; }
+    if (started) { if (!raf) resume(); } else draw(tNow);
+  }
   function frame(now: number) {
     tNow = (now - t0) / 1000;
+    if (loop && tNow > T.end + 2) seek(0);
     draw(Math.min(tNow, T.end));
-    if (tNow < T.end) { raf = requestAnimationFrame(frame); return; }
+    if (loop || tNow < T.end) { raf = requestAnimationFrame(frame); return; }
     raf = null; done = true;
   }
   function resume() {
@@ -278,5 +291,5 @@ export function createClarity(els: Els) {
   function setOffscreen(v: boolean) { if (offscreen === v) return; offscreen = v; if (v) halt(); else resume(); }
 
   draw(0);
-  return { run, toggle, setOffscreen, isDone: () => done, stop: halt };
+  return { run, toggle, setOffscreen, setLoop, jump, isDone: () => done, stop: halt };
 }

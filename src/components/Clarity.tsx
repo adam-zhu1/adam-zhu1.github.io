@@ -9,7 +9,9 @@ import { CLARITY_STAGES } from "../data/clarity";
  * windows. Lens teal is its colour. Like TrueLine's, the words live with the project list,
  * and `held` keeps it paused while another project has the stage.
  */
-export function Clarity({ held = false }: { held?: boolean }) {
+export function Clarity({ held = false, loop = false, onStage, at }: { held?: boolean; loop?: boolean; onStage?: (i: number) => void; at?: { i: number } | null }) {
+  const told = useRef(onStage);
+  useEffect(() => { told.current = onStage; }, [onStage]);
   const stage = useRef<HTMLDivElement>(null);
   const steps = useRef<HTMLDivElement>(null);
   const capL = useRef<HTMLSpanElement>(null);
@@ -19,9 +21,12 @@ export function Clarity({ held = false }: { held?: boolean }) {
 
   useEffect(() => {
     if (!stage.current || !steps.current || !capL.current || !capR.current) return;
-    engine.current = createClarity({ stage: stage.current, steps: steps.current, capL: capL.current, capR: capR.current });
+    engine.current = createClarity({ stage: stage.current, steps: steps.current, capL: capL.current, capR: capR.current, onStage: i => told.current?.(i) });
     return () => engine.current?.stop();
   }, []);
+
+  useEffect(() => { engine.current?.setLoop(loop); }, [loop]);
+  useEffect(() => { if (at) engine.current?.jump(at.i); }, [at]);
 
   const play = useCallback(() => { engine.current?.run(); setPaused(false); }, []);
   const centreRef = usePlayInView<HTMLDivElement>(useCallback(() => engine.current, []), 500, held);
