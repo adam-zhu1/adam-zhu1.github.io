@@ -44,7 +44,7 @@ export const WORK: Entry[] = [
   { id: "p-clarity", name: "Clarity", when: "Sep 2026", kind: "Mac app, HackCMU 2026", accent: CLARITY_ACCENT, demo: "clarity",
     body: "A macOS menu-bar app that explains any problem on your screen. Press one hotkey, drag a box around the problem, and a written explanation arrives in seconds, then an animation made for that exact problem about a minute later.",
     meta: "Python, Go, LangGraph, Manim",
-    result: "Built in two days at HackCMU, team of four. I built the Mac app.",
+    result: "Built in two days at HackCMU by a team of four.",
     links: [{ href: CLARITY_SITE, label: "Clarity’s site" }],
     line: "Built in two days at HackCMU, team of four",
     big: ["2 days", "to build it at HackCMU, team of four"],
@@ -53,7 +53,6 @@ export const WORK: Entry[] = [
     facts: [
       ["Built in", "2 days"],
       ["Team", "4"],
-      ["My part", "the Mac app"],
       ["Written explanation", "seconds"],
       ["Animation for the problem", "about a minute"],
     ],
