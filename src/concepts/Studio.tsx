@@ -604,25 +604,32 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-pill.acc:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 
 /* bar */
-.st-bar { position: fixed; z-index: 30; top: 8px; left: 0; right: 0; height: 56px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+.st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
 .st.ready .st-bar { opacity: 1; transform: none; }
-/* the bar is three separate islands that float clear of the top edge: the name, the theme switch
-   and the links. The name's island only gets its glass once the page has scrolled (.sc), so on the
-   first screen it reads as plain text and then lifts off as its own piece. */
-.st-left, .st-bar nav, .st-theme { display: flex; align-items: center; padding: 5px; border-radius: 17px; border: 1px solid transparent; transition: background .5s cubic-bezier(.16, 1, .3, 1), border-color .5s cubic-bezier(.16, 1, .3, 1); }
-.st-bar nav, .st-theme, .st.sc .st-left { background: color-mix(in srgb, var(--card) 88%, transparent); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); border-color: var(--ln); }
-.st-left { justify-self: start; gap: 6px; margin-left: -6px; }
-.st-bar nav { justify-self: end; gap: 4px; margin-right: -6px; }
+/* The bar has two states. At the top of a page it is attached: plain name, outlined pill links,
+   flush with the top. Once the page scrolls (.sc) it lets go: each group drops a little and becomes
+   its own glass island, and the links square off into rounded rectangles. Every part of that change
+   is animated. */
+.st-left, .st-bar nav, .st-theme { display: flex; align-items: center; padding: 5px; border-radius: 22px; border: 1px solid transparent;
+  transition: background .55s cubic-bezier(.16, 1, .3, 1), border-color .55s cubic-bezier(.16, 1, .3, 1), border-radius .55s cubic-bezier(.16, 1, .3, 1), transform .7s cubic-bezier(.16, 1, .3, 1), gap .55s cubic-bezier(.16, 1, .3, 1), box-shadow .55s; }
+.st-left { justify-self: start; gap: 12px; margin-left: -6px; transform-origin: 0 50%; }
+.st-bar nav { justify-self: end; gap: 8px; margin-right: -6px; transform-origin: 100% 50%; }
+.st-theme { border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); border-color: var(--ln); }
+.st.sc .st-left, .st.sc .st-bar nav, .st.sc .st-theme { background: color-mix(in srgb, var(--card) 95%, transparent); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); border-color: var(--ln); border-radius: 17px; transform: translateY(8px); box-shadow: 0 10px 30px -18px rgb(0 0 0 / .55); }
+.st.sc .st-left { gap: 6px; } .st.sc .st-bar nav { gap: 4px; }
 .st-mark { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
-.st-bar .st-pill { border-radius: 12px; border-color: transparent; }
+.st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); transition: background .3s, color .2s, border-color .45s, border-radius .55s cubic-bezier(.16, 1, .3, 1), transform .2s cubic-bezier(.2,.7,.2,1); }
+.st.sc .st-bar .st-pill { border-radius: 12px; }
+.st.sc .st-bar .st-pill:not(.st-back):not(.acc):not(:hover) { border-color: transparent; background: transparent; }
 .st-bar .st-pill:hover { background: var(--ink); }
 .st-bar .st-pill.st-back { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .st-bar .st-pill.st-back:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }
 .st-back i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); } .st-bar .st-back:hover i { transform: translateX(-4px); }
 .st-bar .st-pill.acc { background: var(--acc); }
 .st-bar .st-pill.acc:hover { background: var(--ink); }
-.st-theme button { all: unset; cursor: pointer; font-size: 12px; height: 34px; line-height: 34px; padding: 0 14px; border-radius: 12px; color: var(--mut); transition: background .25s, color .25s; }
+.st-theme button { all: unset; cursor: pointer; font-size: 12px; height: 30px; line-height: 30px; padding: 0 14px; border-radius: 999px; color: var(--mut); transition: background .25s, color .25s, border-radius .55s cubic-bezier(.16, 1, .3, 1); }
+.st.sc .st-theme button { border-radius: 12px; }
 .st-theme button.on { background: var(--ink); color: var(--bg); }
 
 /* first screen */
@@ -706,7 +713,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* the demo sits straight on the card's dark side: no panel, no frame round it */
 .st .pv { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #070708; }
 /* on a home card in the dark theme the demo side is glass too, so the dots show behind the whole card */
-:root:not([data-theme="light"]) .st-item .pv { background: color-mix(in srgb, #070708 30%, transparent); }
+:root:not([data-theme="light"]) .st-item .pv { background: color-mix(in srgb, #070708 68%, transparent); }
 /* in the light theme the dark demo is a screen set into the light card, with a margin round it, and not a black half of the card */
 :root[data-theme="light"] .st-item .pv { margin: 10px; border-radius: 20px; background: #121214; }
 :root[data-theme="light"] .pj-how .pv { background: #121214; }
@@ -962,6 +969,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-foot { padding-left: 14px; padding-right: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .st-left, .st-bar nav, .st-theme, .st-bar .st-pill, .st-theme button { transition: none; }
   .st-in, [data-rv], .st-bar { transition: none; filter: none; transform: none; }
   .st-hero h1 .ch, .st-id .st-links a { animation: none !important; opacity: 1; transform: none; }
   .st-hero h1, .st-id { opacity: 1; } .st-foot .big { transform: none; }
