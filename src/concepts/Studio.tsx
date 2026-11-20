@@ -358,7 +358,7 @@ export default function Studio() {
         <main className="pj-main">
           <div className="pj-head">
             <div>
-              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className="ch" style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
+              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
               <div className="st-pills">{S.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}</div>
             </div>
@@ -441,7 +441,7 @@ export default function Studio() {
 
           <div className="pj-head">
             <div>
-              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className="ch" style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
+              <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
               <p className="kind">{proj.kind} · {proj.when}</p>
               {proj.links && <div className="st-pills">{proj.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
@@ -515,7 +515,7 @@ export default function Studio() {
                   <div className="tx">
                     <div>
                       <p className="kind">{w.kind}</p>
-                      <h3>{w.name}</h3>
+                      <h3>{w.split ? <>{w.name.slice(0, w.split)}<span className="ac">{w.name.slice(w.split)}</span></> : w.name}</h3>
                     </div>
                     <div>
                       <p className="what">{w.what}</p>
@@ -617,17 +617,23 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
    the top, with nothing behind it. Once the page scrolls (.sc) it lets go and pulls itself together
    into one short glass capsule floating in the middle, with a little overshoot as it lands; the links
    square off into rounded rectangles. Scrolling back to the top stretches it out again. */
-.st.sc .st-bar { top: 14px; width: 780px; max-width: calc(100% - 24px); height: 54px; padding: 0 9px; border-radius: 20px; border-color: var(--ln);
-  background: color-mix(in srgb, var(--card) 90%, transparent); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); box-shadow: 0 18px 44px -22px rgb(0 0 0 / .7); }
+.st.sc .st-bar { top: 14px; width: 780px; max-width: calc(100% - 24px); height: 54px; padding: 0 9px; border-radius: 27px; border-color: color-mix(in srgb, var(--ink) 17%, transparent);
+  /* frosted glass in the manner of Apple's liquid glass, but denser: a heavy blur with the colours behind
+     pushed up, a tint of the page colour, a faint sheen from top to bottom, and a bright rim along the
+     top edge where light would catch it */
+  background: linear-gradient(color-mix(in srgb, var(--ink) 11%, transparent), color-mix(in srgb, var(--ink) 2%, transparent) 55%, color-mix(in srgb, var(--ink) 6%, transparent)), color-mix(in srgb, var(--card) 64%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.08); backdrop-filter: blur(28px) saturate(190%) brightness(1.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .34), inset 0 -1px 0 rgb(255 255 255 / .08), inset 0 0 14px rgb(255 255 255 / .05), 0 20px 46px -22px rgb(0 0 0 / .75), 0 2px 6px -2px rgb(0 0 0 / .3); }
+:root[data-theme="light"] .st.sc .st-bar { background: linear-gradient(rgb(255 255 255 / .75), rgb(255 255 255 / .3) 55%, rgb(255 255 255 / .5)), color-mix(in srgb, var(--bg) 50%, transparent);
+  border-color: rgb(255 255 255 / .9); box-shadow: inset 0 1px 0 #fff, inset 0 0 14px rgb(255 255 255 / .5), 0 20px 46px -22px rgb(0 0 0 / .32), 0 0 0 1px rgb(0 0 0 / .07); }
 .st-left, .st-bar nav { display: flex; align-items: center; transition: gap .55s cubic-bezier(.16, 1, .3, 1); }
 .st-left { justify-self: start; gap: 12px; margin-left: -12px; }
 .st-bar nav { justify-self: end; gap: 8px; }
 .st.sc .st-left { gap: 4px; margin-left: 0; } .st.sc .st-bar nav { gap: 4px; }
 .st-theme { display: flex; align-items: center; padding: 3px; border: 1px solid var(--ln); border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); transition: border-radius .55s cubic-bezier(.16, 1, .3, 1), border-color .5s, background .5s; }
-.st.sc .st-theme { border-radius: 14px; background: color-mix(in srgb, var(--ink) 6%, transparent); border-color: transparent; }
+.st.sc .st-theme { background: color-mix(in srgb, var(--ink) 6%, transparent); border-color: transparent; }
 .st-mark { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
 .st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); transition: background .3s, color .2s, border-color .45s, border-radius .55s cubic-bezier(.16, 1, .3, 1), transform .2s cubic-bezier(.2,.7,.2,1); }
-.st.sc .st-bar .st-pill { border-radius: 12px; }
 .st.sc .st-bar .st-pill:not(.st-back):not(.acc):not(:hover) { border-color: transparent; background: transparent; }
 .st-bar .st-pill:hover { background: var(--ink); }
 .st-bar .st-pill.st-back { background: var(--ink); color: var(--bg); border-color: var(--ink); }
@@ -637,7 +643,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-bar .st-pill.acc:hover { background: var(--ink); }
 .st-theme button { all: unset; cursor: pointer; font-size: 12px; height: 30px; line-height: 30px; padding: 0 14px; border-radius: 999px; color: var(--mut); transition: background .25s, color .25s, transform .25s cubic-bezier(.2, .7, .2, 1), border-radius .55s cubic-bezier(.16, 1, .3, 1); }
 .st-theme button:not(.on):hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 14%, transparent); transform: translateY(-1px) scale(1.07); }
-.st.sc .st-theme button { border-radius: 12px; }
 .st-theme button.on { background: var(--ink); color: var(--bg); }
 
 /* first screen */
@@ -828,6 +833,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-item .kind, .story .stp > span, .story .stp .fact b, .story .pj-hard article span, .story .pj-hard li i, .story .pj-shots figcaption span, .story .pj-stands .figs dd, .story .pj-strip dt { color: var(--at); }
 .story .nexts li { border-top: 1px solid color-mix(in srgb, var(--at) 45%, var(--ln)); padding-top: 18px; }
 .story ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+.st .ac { color: var(--accent); } :root[data-theme="light"] .st .ac { color: var(--at); }
 .pj-ret { display: flex; justify-content: center; padding: clamp(20px, 5vh, 56px) 0 clamp(8px, 2vh, 24px); }
 .pj-ret .st-pill { height: 56px; padding: 0 28px; font-size: 18px; background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .pj-ret .st-pill:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }

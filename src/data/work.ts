@@ -9,14 +9,14 @@ import { CLARITY_ACCENT, CLARITY_SITE, CLARITY_STAGES } from "./clarity";
  */
 export type Entry = {
   id: string; name: string; when: string;
-  kind: string; role?: string; accent: string; demo: "trueline" | "clarity" | "nist";
+  kind: string; role?: string; /* where the name changes to the project's colour: "True" + "Line" */ split?: number; accent: string; demo: "trueline" | "clarity" | "nist";
   body: string; meta?: string; result?: string;
   line: string; what: string; big: [string, string]; fig: string; facts: [string, string][]; steps: [string, string][];
   links?: { href: string; label: string; page?: boolean }[];
 };
 
 export const WORK: Entry[] = [
-  { id: "p-trueline", name: "TrueLine", when: "Aug 2026", kind: "iPhone app, on the App Store", role: "Solo project", accent: "#40e69e", demo: "trueline",
+  { id: "p-trueline", name: "TrueLine", when: "Aug 2026", kind: "iPhone app, on the App Store", role: "Solo project", split: 4, accent: "#40e69e", demo: "trueline",
     body: "A bowling ball tracker for iPhone. Prop the phone behind the approach, bowl, and it measures the throw: where the ball crossed the arrows, where it hooked, how fast it left your hand, and the board and angle it entered on. Everything runs on the phone.",
     meta: "Swift, Vision, Core ML · on the App Store since August 2026",
     result: "Tracked the ball down the full lane on 6 of 6 unseen clips, across two bowling centers and three camera positions.",
