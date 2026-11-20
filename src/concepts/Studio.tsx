@@ -213,7 +213,7 @@ export default function Studio() {
       setWide(paged());
       /* the dots step back a little behind the lists of text under the projects; the lists sit on frosted panels */
       const more = el.querySelector<HTMLElement>("#more");
-      if (more) el.style.setProperty("--dq", (1 - .35 * clamp((vh * .8 - more.getBoundingClientRect().top) / (vh * .45))).toFixed(3));
+      if (more) el.style.setProperty("--dq", (1 - .12 * clamp((vh * .8 - more.getBoundingClientRect().top) / (vh * .45))).toFixed(3));
       if (foot) foot.style.setProperty("--f", clamp((vh - foot.getBoundingClientRect().top) / (vh * .8)).toFixed(4));
     };
     /* once the scrolling stops inside the projects, settle on the nearest one */
@@ -360,7 +360,8 @@ export default function Studio() {
           </div>
 
           {S.shots && <section className={`pj-shots ${proj.demo}`} aria-label={`Screenshots of ${proj.name}`}>
-            {S.shots.map(s => <figure key={s.src} style={{ "--r": s.w / s.h } as CSSProperties}><img src={s.src} width={s.w} height={s.h} alt={s.cap} loading="lazy" /><figcaption>{s.cap}</figcaption></figure>)}
+            <h2>What it looks like</h2>
+            <div className="row">{S.shots.map((s, i) => <figure key={s.src} style={{ "--r": s.w / s.h } as CSSProperties}><img src={s.src} width={s.w} height={s.h} alt={s.cap} loading="lazy" /><figcaption><span>{i + 1}</span>{s.cap}</figcaption></figure>)}</div>
           </section>}
 
           <section className="pj-why">
@@ -809,7 +810,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-next em { font-style: normal; font-size: 18px; }
 
 /* each list is a frosted panel: the dots still drift behind it, blurred and dimmed, and never cross the words */
-.st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 52%, transparent); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 @supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
 .st-grp .st-rows li:last-child > * { border-bottom: 0; }
 .st-grp + .st-grp { margin-top: 28px; }
@@ -838,11 +839,17 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st.pj.story .pj-head { align-items: end; min-height: 0; margin-bottom: 0; padding-top: clamp(20px, 5vh, 64px); }
 .st.pj.story .pj-why { min-height: 0; padding: clamp(56px, 9vh, 110px) 0 clamp(64px, 11vh, 130px); }
 /* the real product, under the title: screenshots at one shared height */
-.pj-shots { display: flex; flex-wrap: wrap; align-items: flex-start; gap: clamp(16px, 2.4vw, 40px); margin-top: clamp(36px, 7vh, 80px); --h: clamp(300px, 52vh, 520px); animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) .5s both; }
+.pj-shots { margin-top: clamp(36px, 7vh, 80px); padding: clamp(24px, 3vw, 48px); border-radius: 30px; border: 1px solid var(--ln); background: var(--card); --h: clamp(300px, 52vh, 520px); animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) .5s both; }
+@supports (corner-shape: squircle) { .pj-shots { corner-shape: squircle; border-radius: 64px; } }
+.st.story .pj-shots h2 { margin-bottom: clamp(24px, 3vw, 44px); }
+.pj-shots .row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: clamp(20px, 4vw, 72px); }
 .pj-shots figure { margin: 0; width: calc(var(--h) * var(--r)); max-width: 100%; }
 .pj-shots img { display: block; width: 100%; height: auto; border-radius: 22px; border: 1px solid var(--ln); background: #070708; }
-.pj-shots figcaption { margin-top: 12px; font-size: 14px; line-height: 1.35; color: var(--mut); max-width: 24em; }
-.pj-shots.clarity { align-items: center; } .pj-shots.clarity figure:first-child { width: min(100%, 620px); } .pj-shots.clarity img { border-radius: 14px; }
+@supports (corner-shape: squircle) { .pj-shots img { corner-shape: squircle; border-radius: 44px; } }
+.pj-shots figcaption { display: flex; gap: 10px; margin-top: 14px; font-size: 14px; line-height: 1.35; color: var(--mut); }
+.pj-shots figcaption span { color: var(--ink); font-variant-numeric: tabular-nums; }
+.pj-shots.clarity .row { align-items: center; } .pj-shots.clarity figure:first-child { width: min(100%, 620px); } .pj-shots.clarity img { border-radius: 14px; }
+@supports (corner-shape: squircle) { .pj-shots.clarity img { border-radius: 26px; } }
 @media (prefers-reduced-motion: reduce) { .pj-shots { animation: none; } }
 .pj-strip { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 28px; animation: st-rise .95s cubic-bezier(.16, 1, .3, 1) 1.2s both; }
 .pj-strip > div { display: block; border: 0; padding: 0; }
