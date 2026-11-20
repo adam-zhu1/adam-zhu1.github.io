@@ -74,6 +74,11 @@ const HSTEP = .75;
 const PV = { trueline: 820, clarity: 800, nist: 600 };
 /* the projects with something to watch get a card; NIST, an internship, leads the list under them */
 const FEAT = WORK.filter(w => w.demo !== "nist");
+/* the list under the cards, in two groups; NIST, which has a page of its own, leads the first */
+const GROUPS = [
+  { title: "Experience", nist: true, names: ["ScottyLabs AI", "VR evacuation study", "Forensic image research"] },
+  { title: "Other projects and a paper", nist: false, names: ["Fantasy draft assistant", "March Madness predictor", "Matched binary diagnostic tests"] },
+];
 /* the projects whose page is told in full: why, how it works stage by stage, what was hard, where it stands */
 const STORY: Partial<Record<Entry["demo"], Story>> = { trueline: TRUELINE, clarity: CLARITY };
 const paged = () => matchMedia(PAGED).matches;
@@ -530,33 +535,35 @@ export default function Studio() {
       </section>
 
       <section className="st-sec" id="more">
-        <div className="st-head">
-          <h2 data-rv className="mask"><span>More work</span></h2>
-          <p data-rv style={d(1)}>A research internship at NIST, a campus AI team, two side projects, a paper, and research at Iowa State.</p>
-        </div>
-        <ol className="st-rows">
-          {WORK.filter(w => !FEAT.includes(w)).map(w => (
-            <li key={w.id} data-rv>
-              <a href={href(slug(w))} onClick={go(slug(w))}>
-                <span className="i">01</span>
-                <span className="n">{w.name}<em>{w.kind} · {w.when}</em></span>
-                <span className="b">{w.result}</span>
-                <span className="go">→</span>
-              </a>
-            </li>
-          ))}
-          {MORE.map((m, i) => {
-            const row = (
-              <>
-                <span className="i">{two(i + 2)}</span>
-                <span className="n">{m.name}<em>{m.role}{m.org && <> · {m.org}</>} · {m.when}</em></span>
-                <span className="b">{m.body}</span>
-                <span className="go">{m.href ? "↗" : ""}</span>
-              </>
-            );
-            return <li key={m.name} data-rv>{m.href ? <a href={m.href} {...out}>{row}</a> : <div>{row}</div>}</li>;
-          })}
-        </ol>
+        {/* the rest, as two plain lists: where I have worked, then smaller things I made */}
+        {GROUPS.map(g => (
+          <div className="st-grp" key={g.title}>
+            <h2 data-rv>{g.title}</h2>
+            <ol className="st-rows">
+              {g.nist && WORK.filter(w => !FEAT.includes(w)).map(w => (
+                <li key={w.id} data-rv>
+                  <a href={href(slug(w))} onClick={go(slug(w))}>
+                    <span className="i">{w.when}</span>
+                    <span className="n">{w.name}<em>{w.kind}</em></span>
+                    <span className="b">{w.result}</span>
+                    <span className="go">→</span>
+                  </a>
+                </li>
+              ))}
+              {MORE.filter(m => g.names.includes(m.name)).map(m => {
+                const row = (
+                  <>
+                    <span className="i">{m.when}</span>
+                    <span className="n">{m.name}<em>{m.role}{m.role === "Paper" && <> · {m.tags}</>}{m.org && <> · {m.org}</>}</em></span>
+                    <span className="b">{m.body}</span>
+                    <span className="go">{m.href ? "↗" : ""}</span>
+                  </>
+                );
+                return <li key={m.name} data-rv>{m.href ? <a href={m.href} {...out}>{row}</a> : <div>{row}</div>}</li>;
+              })}
+            </ol>
+          </div>
+        ))}
       </section>
 
       <section className="st-sec st-contact" id="contact">
@@ -799,13 +806,15 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .pj-next:hover b i { transform: translateX(.12em); }
 .pj-next em { font-style: normal; font-size: 18px; }
 
+.st-grp + .st-grp { margin-top: clamp(56px, 9vh, 96px); }
+.st-grp h2 { margin: 0 0 22px; font-weight: 500; font-size: clamp(28px, 3vw, 44px); line-height: 1; letter-spacing: -.045em; }
 .st-rows { border-top: 1px solid var(--ln); }
-.st-rows li > * { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1.25fr) 40px; gap: 20px; align-items: start; padding: 24px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
+.st-rows li > * { display: grid; grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1.35fr) 40px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
 .st-rows li > a:hover { padding-left: 14px; padding-right: 14px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.st-rows .i { font: 400 11px/2.6 var(--mono); color: var(--mut); }
-.st-rows .n { font-size: clamp(22px, 2.4vw, 34px); letter-spacing: -.04em; line-height: 1.1; }
+.st-rows .i { font-size: 14px; line-height: 1.3; padding-top: 7px; color: var(--mut); }
+.st-rows .n { font-size: clamp(20px, 1.9vw, 27px); letter-spacing: -.035em; line-height: 1.15; }
 .st-rows .b { font-size: 16px; line-height: 1.45; }
-.st-rows .n em { display: block; font-style: normal; margin-top: 10px; font-size: 14px; letter-spacing: 0; line-height: 1.3; color: var(--mut); }
+.st-rows .n em { display: block; font-style: normal; margin-top: 8px; font-size: 14px; letter-spacing: 0; line-height: 1.3; color: var(--mut); }
 .st-rows .go { justify-self: end; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ln); display: grid; place-items: center; font-size: 12px; transition: background .2s, color .2s, border-color .2s; }
 .st-rows .go:empty { visibility: hidden; }
 .st-rows a:hover .go { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
@@ -911,8 +920,11 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; top: 46px; } .st-hud .bl { left: 14px; bottom: 18px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
   .st-head, .st-contact { grid-template-columns: 1fr; gap: 16px; align-items: start; }
-  .st-rows li > * { grid-template-columns: 30px minmax(0, 1fr) 34px; }
-  .st-rows .b { grid-column: 2 / 3; grid-row: 2; }
+  .st-rows li > * { grid-template-columns: minmax(0, 1fr) 34px; gap: 8px 14px; }
+  .st-rows .i { grid-column: 1; grid-row: 1; padding-top: 0; }
+  .st-rows .n { grid-column: 1; grid-row: 2; }
+  .st-rows .b { grid-column: 1; grid-row: 3; }
+  .st-rows .go { grid-column: 2; grid-row: 2; }
   .st-foot { padding-left: 14px; padding-right: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
