@@ -323,6 +323,13 @@ export default function Studio() {
     return () => io.disconnect();
   }, [page]);
 
+  /* once the page has moved, the name in the bar gets its own glass island */
+  useEffect(() => {
+    const on = () => root.current?.classList.toggle("sc", scrollY > 24);
+    on(); addEventListener("scroll", on, { passive: true });
+    return () => removeEventListener("scroll", on);
+  }, [page]);
+
   const bar = (
     <header className="st-bar">
       <div className="st-left">
@@ -597,23 +604,25 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-pill.acc:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 
 /* bar */
-.st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+.st-bar { position: fixed; z-index: 30; top: 8px; left: 0; right: 0; height: 56px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
 .st.ready .st-bar { opacity: 1; transform: none; }
-/* page text scrolling under the bar fades and blurs out instead of colliding with the buttons */
-.st-bar::before { content: ""; position: absolute; z-index: -1; inset: 0 0 -28px; pointer-events: none; background: linear-gradient(color-mix(in srgb, var(--bg) 72%, transparent) 35%, color-mix(in srgb, var(--bg) 0%, transparent)); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
-.st-left { display: flex; align-items: center; gap: 18px; }
+/* the bar is three separate islands that float clear of the top edge: the name, the theme switch
+   and the links. The name's island only gets its glass once the page has scrolled (.sc), so on the
+   first screen it reads as plain text and then lifts off as its own piece. */
+.st-left, .st-bar nav, .st-theme { display: flex; align-items: center; padding: 5px; border-radius: 17px; border: 1px solid transparent; transition: background .5s cubic-bezier(.16, 1, .3, 1), border-color .5s cubic-bezier(.16, 1, .3, 1); }
+.st-bar nav, .st-theme, .st.sc .st-left { background: color-mix(in srgb, var(--card) 88%, transparent); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); border-color: var(--ln); }
+.st-left { justify-self: start; gap: 6px; margin-left: -6px; }
+.st-bar nav { justify-self: end; gap: 4px; margin-right: -6px; }
+.st-mark { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
+.st-bar .st-pill { border-radius: 12px; border-color: transparent; }
+.st-bar .st-pill:hover { background: var(--ink); }
 .st-bar .st-pill.st-back { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .st-bar .st-pill.st-back:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }
 .st-back i { transition: transform .3s cubic-bezier(.16, 1, .3, 1); } .st-bar .st-back:hover i { transform: translateX(-4px); }
-.st-mark { font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
-.st-bar nav { display: flex; gap: 8px; justify-content: flex-end; }
-.st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(10px); }
-.st-bar .st-pill:hover { background: var(--ink); }
 .st-bar .st-pill.acc { background: var(--acc); }
 .st-bar .st-pill.acc:hover { background: var(--ink); }
-.st-theme { display: flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--ln); }
-.st-theme button { all: unset; cursor: pointer; font-size: 12px; padding: 5px 13px; border-radius: 999px; color: var(--mut); transition: background .25s, color .25s; }
+.st-theme button { all: unset; cursor: pointer; font-size: 12px; height: 34px; line-height: 34px; padding: 0 14px; border-radius: 12px; color: var(--mut); transition: background .25s, color .25s; }
 .st-theme button.on { background: var(--ink); color: var(--bg); }
 
 /* first screen */
