@@ -323,9 +323,17 @@ export default function Studio() {
     return () => io.disconnect();
   }, [page]);
 
-  /* once the page has moved, the name in the bar gets its own glass island */
+  /* The bar gets out of the way while reading: it slides off (.hid) when the page scrolls down and
+     comes back as soon as it scrolls up. Away from the top of the page (.sc) it has a solid backing. */
   useEffect(() => {
-    const on = () => root.current?.classList.toggle("sc", scrollY > 24);
+    let last = scrollY;
+    const on = () => {
+      const el = root.current, y = scrollY; if (!el) return;
+      el.classList.toggle("sc", y > 24);
+      if (y < 80) el.classList.remove("hid");
+      else if (Math.abs(y - last) > 6) el.classList.toggle("hid", y > last);
+      if (Math.abs(y - last) > 6 || y < 80) last = y;
+    };
     on(); addEventListener("scroll", on, { passive: true });
     return () => removeEventListener("scroll", on);
   }, [page]);
@@ -609,25 +617,19 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-pill.acc:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 
 /* bar */
-.st-bar { position: fixed; z-index: 30; top: 0; right: 0; width: 100%; max-width: 100%; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-  border: 1px solid transparent; border-radius: 0; opacity: 0; transform: translateY(-10px);
-  transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1), width .75s cubic-bezier(.3, 1.35, .45, 1), max-width .75s cubic-bezier(.3, 1.35, .45, 1), top .75s cubic-bezier(.3, 1.35, .45, 1), right .75s cubic-bezier(.3, 1.35, .45, 1), height .6s cubic-bezier(.16, 1, .3, 1), padding .6s cubic-bezier(.16, 1, .3, 1), border-radius .6s cubic-bezier(.16, 1, .3, 1), background .5s, border-color .5s, box-shadow .5s; }
-.st.ready .st-bar { opacity: 1; transform: none; }
-/* The bar has two states. At the top of a page it is attached: it spans the whole width, flush with
-   the top, with nothing behind it. Once the page scrolls (.sc) it lets go and slides over to the right,
-   pulling itself together into one compact capsule in the corner. The capsule is a plain solid surface
-   in the card colour: no glass, no shine. Scrolling back to the top stretches it out again. */
-.st.sc .st-bar { top: 14px; right: 18px; width: 610px; max-width: calc(100% - 36px); height: 54px; padding: 0 9px; border-radius: 27px; border-color: var(--ln);
-  background: var(--card); box-shadow: 0 16px 36px -22px rgb(0 0 0 / .6); }
-.st-left, .st-bar nav { display: flex; align-items: center; transition: gap .55s cubic-bezier(.16, 1, .3, 1); }
+.st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  border-bottom: 1px solid transparent; opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
+.st.ready .st-bar { opacity: 1; transform: none; transition: opacity .6s, transform .5s cubic-bezier(.16, 1, .3, 1), background .35s, border-color .35s; }
+/* Scrolling down slides the bar away so nothing sits on top of the page; scrolling up brings it back.
+   When it is showing anywhere but the top of the page it is a plain solid strip with a hairline. */
+.st.ready.hid .st-bar { transform: translateY(-105%); }
+.st.sc .st-bar { background: var(--bg); border-bottom-color: var(--ln); }
+.st-left, .st-bar nav { display: flex; align-items: center; }
 .st-left { justify-self: start; gap: 12px; margin-left: -12px; }
 .st-bar nav { justify-self: end; gap: 8px; }
-.st.sc .st-left { gap: 4px; margin-left: 0; } .st.sc .st-bar nav { gap: 4px; }
-.st-theme { display: flex; align-items: center; padding: 3px; border: 1px solid var(--ln); border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); transition: border-radius .55s cubic-bezier(.16, 1, .3, 1), border-color .5s, background .5s; }
-.st.sc .st-theme { background: color-mix(in srgb, var(--ink) 6%, transparent); border-color: transparent; }
+.st-theme { display: flex; align-items: center; padding: 3px; border: 1px solid var(--ln); border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
 .st-mark { display: inline-flex; align-items: center; height: 34px; padding: 0 12px; font-size: 16px; font-weight: 500; letter-spacing: -.02em; }
 .st-bar .st-pill { background: color-mix(in srgb, var(--bg) 70%, transparent); transition: background .3s, color .2s, border-color .45s, border-radius .55s cubic-bezier(.16, 1, .3, 1), transform .2s cubic-bezier(.2,.7,.2,1); }
-.st.sc .st-bar .st-pill:not(.st-back):not(.acc):not(:hover) { border-color: transparent; background: transparent; }
 .st-bar .st-pill:hover { background: var(--ink); }
 .st-bar .st-pill.st-back { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .st-bar .st-pill.st-back:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }
