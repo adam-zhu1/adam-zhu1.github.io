@@ -343,11 +343,11 @@ export default function Studio() {
   }, [page]);
 
   /* everything under the two featured projects, as one kind of mini card */
-  type Mini = { key: string; label: string; name: string; sub?: string; body: string; tags?: string; img?: string; alt?: string; rows?: string[][]; mark?: [string, string]; href?: string; page?: string };
-  const mini = (m: (typeof MORE)[number]): Mini => ({ key: m.name, label: m.when, name: m.name, sub: m.role === "Paper" ? "Paper" : [m.role, m.org].filter(Boolean).join(" · "), body: m.body, tags: m.role === "Paper" ? undefined : m.tags, img: m.img, alt: m.alt, rows: m.rows, mark: m.mark, href: m.href });
+  type Mini = { key: string; label: string; name: string; sub?: string; body: string; tags?: string; img?: string; alt?: string; rows?: string[][]; mark?: [string, string]; logo?: string; white?: boolean; href?: string; page?: string };
+  const mini = (m: (typeof MORE)[number]): Mini => ({ key: m.name, label: m.when, name: m.name, sub: m.role === "Paper" ? "Paper" : [m.role, m.org].filter(Boolean).join(" · "), body: m.body, tags: m.role === "Paper" ? undefined : m.tags, img: m.img, alt: m.alt, rows: m.rows, mark: m.mark, logo: m.logo, href: m.href });
   const minis = (g: (typeof GROUPS)[number]): Mini[] => [
     ...MORE.filter(m => g.lead.includes(m.name)).map(mini),
-    ...(g.nist ? WORK.filter(w => !FEAT.includes(w)).map((w): Mini => ({ key: w.id, label: w.when, name: w.name, sub: w.kind, body: w.result ?? w.what, tags: w.meta?.split(" · ")[0], mark: ["NIST", "Gaithersburg, MD"], page: slug(w) })) : []),
+    ...(g.nist ? WORK.filter(w => !FEAT.includes(w)).map((w): Mini => ({ key: w.id, label: w.when, name: w.name, sub: w.kind, body: w.result ?? w.what, tags: w.meta?.split(" · ")[0], mark: ["NIST", "Gaithersburg, MD"], logo: "/media/orgs/nist.svg", white: true, page: slug(w) })) : []),
     ...MORE.filter(m => g.names.includes(m.name)).map(mini),
   ];
 
@@ -568,7 +568,8 @@ export default function Studio() {
                 const inner = (
                   <>
                     <div className="pic">
-                      {m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
+                      {m.logo ? <img className={`logo${m.white ? " white" : ""}`} src={m.logo} alt={`${m.mark?.[0]} logo`} loading="lazy" />
+                        : m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
                         : m.rows ? <table aria-label="The top of the board it printed"><thead><tr><th /><th /><th>player</th><th>value</th></tr></thead><tbody>{m.rows.map(r => <tr key={r[0]}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table>
                         : m.mark && <div className="cite"><b>{m.mark[0]}</b><span>{m.mark[1]}</span></div>}
                     </div>
@@ -867,7 +868,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
 .st-grp + .st-grp { margin-top: 28px; }
 /* the lists sit in a narrower column than the featured cards, and their cards are small on purpose */
-.st-grp { max-width: 1180px; margin-left: auto; margin-right: auto; }
+.st-grp { max-width: 1290px; margin-left: auto; margin-right: auto; }
 .st-minis { margin: 0; padding: 0 0 clamp(12px, 1.4vw, 22px); list-style: none; display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: clamp(10px, 1.1vw, 16px); }
 .st-minis li > * { display: flex; flex-direction: column; height: 100%; padding: 9px 9px 18px; border-radius: 20px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--card) 82%, transparent); transition: border-color .25s, transform .35s cubic-bezier(.16, 1, .3, 1), background .25s; }
 @supports (corner-shape: squircle) { .st-minis li > * { corner-shape: squircle; border-radius: 40px; } .st-minis .pic { corner-shape: squircle; border-radius: 28px; } }
@@ -875,6 +876,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-minis .pic { aspect-ratio: 16 / 10; overflow: hidden; border-radius: 13px; background: #0b0d12; border: 1px solid var(--ln); display: grid; color: #e9e9ec; }
 .st-minis .pic img { width: 100%; height: 100%; object-fit: cover; object-position: 0 0; display: block; transition: transform .6s cubic-bezier(.16, 1, .3, 1); }
 .st-minis a:hover .pic img { transform: scale(1.03); }
+/* an organisation's logo sits small in the middle of its tile; NIST's one-colour mark is shown in white */
+.st-minis .pic img.logo { place-self: center; width: 64%; height: 56%; object-fit: contain; object-position: 50% 50%; } .st-minis .pic img.logo.white { filter: brightness(0) invert(1); width: 78%; }
 .st-minis table { align-self: center; width: calc(100% - 28px); margin: 0 auto; border-collapse: collapse; font: 400 11.5px/1 var(--mono); }
 .st-minis th { text-align: left; font-weight: 400; color: #7d7d86; padding: 0 0 7px; } .st-minis th:last-child, .st-minis td:last-child { text-align: right; }
 .st-minis td { padding: 5.5px 0; border-top: 1px solid #23242b; white-space: nowrap; } .st-minis td:nth-child(-n+2) { color: #7d7d86; width: 2.3em; }
