@@ -4,6 +4,8 @@ import { out } from "../lib/router";
 type Item = {
   year: string; when: string; name: string; role: string; org?: string;
   stats?: [string, string][]; body: string; tags: string; href?: string; cta?: string;
+  /* for its mini card: a screenshot, or a few real rows of its output (rank, position, player, value) */
+  img?: string; alt?: string; rows?: [string, string, string, string][];
 };
 
 /* Newest first. Every figure here is the resume's, word for word in substance; the paper is
@@ -15,10 +17,13 @@ export const MORE: Item[] = [
   { year: "2026", when: "Sep 2026", name: "Fantasy draft assistant", role: "Side project",
     stats: [["3", "seasons of weekly variance"]],
     body: "Ranks players by floor-adjusted value over replacement, built from three seasons of weekly scoring variance, with a live draft board that tracks picks as they are made.",
-    tags: "Python", href: "https://github.com/adam-zhu1/fantasy-football-draft", cta: "GitHub" },
+    tags: "Python", href: "https://github.com/adam-zhu1/fantasy-football-draft", cta: "GitHub",
+    /* the top of the board the tool printed for the 2026 draft (board.txt) */
+    rows: [["1", "RB", "Jahmyr Gibbs", "187.9"], ["2", "RB", "Bijan Robinson", "179.9"], ["3", "WR", "Ja’Marr Chase", "134.4"], ["4", "WR", "Jaxon Smith-Njigba", "123.9"], ["5", "WR", "Puka Nacua", "121.4"], ["6", "RB", "Christian McCaffrey", "119.3"]] },
   { year: "2026", when: "Mar 2026", name: "March Madness predictor", role: "Side project",
     body: "A year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
-    tags: "Python, Streamlit", href: "https://github.com/adam-zhu1/march-madness-2026", cta: "GitHub" },
+    tags: "Python, Streamlit", href: "https://github.com/adam-zhu1/march-madness-2026", cta: "GitHub",
+    img: "/media/more/march-madness.webp", alt: "The predictor’s Streamlit app, showing its recommended Round of 64 picks with win probabilities" },
   { year: "2024", when: "2024", name: "Matched binary diagnostic tests", role: "Paper", org: "Mathematics 12(5), 741",
     body: "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, applied to environmental testing for Salmonella in the United States. I joined at the revision stage: manuscript preparation, literature review, and data cleaning.",
     tags: "Lin, Zhu, Wang", href: "https://doi.org/10.3390/math12050741", cta: "Paper" },

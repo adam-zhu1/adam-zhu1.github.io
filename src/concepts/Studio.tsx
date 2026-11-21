@@ -567,6 +567,26 @@ export default function Studio() {
         {GROUPS.map(g => (
           <div className="st-grp" key={g.title}>
             <h2 data-rv>{g.title}</h2>
+            {!g.nist ? (
+              /* the smaller work as mini cards: a picture of the real thing, where it lives, its name, what it is */
+              <ul className="st-minis">
+                {MORE.filter(m => g.names.includes(m.name)).map((m, i) => (
+                  <li key={m.name} data-rv style={d(i)}>
+                    <a href={m.href} {...out}>
+                      <div className="pic">
+                        {m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
+                          : m.rows ? <table aria-label="The top of the board it printed"><thead><tr><th /><th /><th>player</th><th>value</th></tr></thead><tbody>{m.rows.map(r => <tr key={r[0]}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table>
+                          : <div className="cite"><b>{m.org?.split(" ")[0]}</b><span>{m.org?.split(" ").slice(1).join(" ")} · {m.year}</span><span>{m.tags}</span></div>}
+                      </div>
+                      <span className="lab">{m.cta} <i>↗</i></span>
+                      <h3>{m.name}</h3>
+                      <p>{m.body}</p>
+                      {m.role !== "Paper" && <span className="tg">{m.tags}</span>}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
             <ol className="st-rows">
               {MORE.filter(m => g.lead.includes(m.name)).map(more)}
               {g.nist && WORK.filter(w => !FEAT.includes(w)).map(w => (
@@ -581,6 +601,7 @@ export default function Studio() {
               ))}
               {MORE.filter(m => g.names.includes(m.name)).map(more)}
             </ol>
+            )}
           </div>
         ))}
       </section>
@@ -862,6 +883,22 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
 .st-grp .st-rows li:last-child > * { border-bottom: 0; }
 .st-grp + .st-grp { margin-top: 28px; }
+.st-minis { margin: 0; padding: 0 0 clamp(14px, 1.6vw, 28px); list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 1.6vw, 26px); }
+.st-minis a { display: flex; flex-direction: column; height: 100%; padding: 12px 12px 22px; border-radius: 24px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--card) 82%, transparent); transition: border-color .25s, transform .35s cubic-bezier(.16, 1, .3, 1), background .25s; }
+@supports (corner-shape: squircle) { .st-minis a { corner-shape: squircle; border-radius: 48px; } .st-minis .pic { corner-shape: squircle; border-radius: 34px; } }
+.st-minis a:hover { border-color: color-mix(in srgb, var(--ink) 55%, transparent); transform: translateY(-4px); background: var(--card); }
+.st-minis .pic { aspect-ratio: 3 / 2; overflow: hidden; border-radius: 15px; background: #0b0d12; border: 1px solid var(--ln); display: grid; color: #e9e9ec; }
+.st-minis .pic img { width: 100%; height: 100%; object-fit: cover; object-position: 0 0; display: block; transition: transform .6s cubic-bezier(.16, 1, .3, 1); }
+.st-minis a:hover .pic img { transform: scale(1.03); }
+.st-minis table { align-self: center; width: calc(100% - 36px); margin: 0 auto; border-collapse: collapse; font: 400 clamp(11px, .95vw, 13.5px)/1 var(--mono); }
+.st-minis th { text-align: left; font-weight: 400; color: #7d7d86; padding: 0 0 9px; } .st-minis th:last-child, .st-minis td:last-child { text-align: right; }
+.st-minis td { padding: 7px 0; border-top: 1px solid #23242b; white-space: nowrap; } .st-minis td:nth-child(-n+2) { color: #7d7d86; width: 2.4em; }
+.st-minis .cite { align-self: center; padding: 0 20px; display: grid; gap: 8px; } .st-minis .cite b { font-weight: 500; font-size: clamp(24px, 2.6vw, 38px); letter-spacing: -.045em; line-height: 1; } .st-minis .cite span { font-size: 13.5px; color: #9a9aa3; }
+.st-minis .lab { margin: 18px 10px 0; font-size: 13px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; display: inline-block; transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
+.st-minis h3 { margin: 8px 10px 0; font-weight: 500; font-size: clamp(20px, 1.7vw, 25px); letter-spacing: -.035em; line-height: 1.15; }
+.st-minis p { margin: 10px 10px 0; font-size: 15px; line-height: 1.45; color: var(--mut); }
+.st-minis .tg { margin: auto 10px 0; padding-top: 16px; font-size: 13.5px; }
+@media (max-width: 900px) { .st-minis { grid-template-columns: 1fr; } }
 .st-grp h2 { margin: 0 0 22px; font-weight: 500; font-size: clamp(28px, 3vw, 44px); line-height: 1; letter-spacing: -.045em; }
 .st-rows { border-top: 1px solid var(--ln); }
 .st-rows li > * { display: grid; grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1.35fr) 40px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
