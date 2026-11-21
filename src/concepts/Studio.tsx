@@ -21,7 +21,7 @@ import { CLARITY } from "../data/clarity-story";
  * object, the school, the major, four links, and the three projects along the bottom), and
  * the projects as full-size cards that stack over one another as the page scrolls. Each
  * project then has a page of its own, in its own colour: its card grows into the page
- * (?concept=studio&p=trueline). Scrolling is smoothed; the first screen recedes under the
+ * (?p=trueline). Scrolling is smoothed; the first screen recedes under the
  * rest of the page.
  */
 
@@ -165,7 +165,7 @@ export default function Studio() {
       start.call(document, apply).finished.finally(() => named.forEach(el => { el.style.viewTransitionName = el.style.transition = ""; }));
     else { apply(); named.forEach(el => { el.style.viewTransitionName = el.style.transition = ""; }); }
   };
-  const href = (to: string | null) => `?concept=studio${to ? `&p=${to}` : ""}`;
+  const href = (to: string | null) => to ? `?p=${to}` : "/";
 
   /* Escape leaves a project's page */
   useEffect(() => {
@@ -380,6 +380,7 @@ export default function Studio() {
               <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split != null && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
               <div className="st-pills">{S.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}</div>
+              {S.note && <p className="note">{S.note}</p>}
             </div>
             <dl className="pj-strip">{S.strip.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
           </div>
@@ -822,6 +823,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st.pj h1 { margin: -.1em 0 22px; font-weight: 500; font-size: clamp(76px, 15vw, 250px); line-height: .84; letter-spacing: -.065em; color: var(--hl); width: fit-content; margin-left: -.04em; }
 .pj-head .what { margin: 0 0 12px; font-size: clamp(22px, 2.3vw, 34px); line-height: 1.2; letter-spacing: -.03em; max-width: 22em; }
 .pj-head .kind { margin: 0 0 22px; font-size: 16px; color: var(--mut); }
+.pj-head .note { margin: 16px 0 0; font-size: 14.5px; line-height: 1.4; color: var(--mut); max-width: 34em; }
 .pj-stat { padding: 22px 0 6px; border-top: 1px solid var(--ln); }
 .pj-stat b { display: block; font-weight: 400; font-size: clamp(56px, 7vw, 112px); line-height: .9; letter-spacing: -.06em; margin-bottom: 12px; white-space: nowrap; }
 .pj-stat span { font-size: 17px; line-height: 1.35; }

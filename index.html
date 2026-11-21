@@ -112,16 +112,15 @@
       <h2>Selected work</h2>
       <ul>
         <li>
-          NIST, Research Data and Computing Office (research intern, May to August 2026):
-          built a five-stage Python pipeline (pandas, scikit-learn) that separates automated
-          from human traffic across 1.04M requests to NIST's public data portal (271 days,
-          117K unique IPs). A random forest using only behavioral signals reached F1 = 0.94.
-          Caught a disguised scraper that hit the portal monthly from fresh IPs and spoofed
-          hundreds of browser user-agents; an isolation forest surfaced it and log
-          investigation confirmed it. Turning that into auditable cleaning rules raised the
-          measured automated share of traffic from 21.7% to 41.9%. Found that 21.5% of 109K
-          human searches returned no results and built a TF-IDF query-failure classifier
-          (F1 0.80).
+          NIST (research intern, SURF program, May to August 2026): made the access logs of
+          NIST's public data portal readable and separated automated traffic from people, so
+          usage numbers describe real readers. Worked through nine months of logs, about a
+          million requests. Found a duplicated export that inflated every count by about 18%.
+          Behavior-based rules and an anomaly detector surfaced a scraper posing as a normal
+          browser, which raised the measured automated share from 21.7% to 41.9%. A model
+          using only behavioral signals reached F1 = 0.94. About one in five searches made by
+          people returned nothing. Built a dashboard for the team and presented the work at
+          NIST's SURF colloquium in August 2026.
         </li>
         <li>
           TrueLine (Jan 2026–present): iOS app that measures a bowling ball's launch speed,
@@ -139,9 +138,7 @@
           Clarity (Sep 2026): a macOS menu-bar app built by four people at HackCMU in
           two days. Press ⌘⇧E on any problem on screen, drag a box around it, and get a
           written explanation in seconds and an animation generated for that exact problem
-          (a model writes Manim code, a sandbox renders it) about a minute later. Adam built
-          the desktop app: menu bar, global hotkey, region capture, the spotlight and result
-          windows, local recents, and the signed app bundle and DMG. Python, pywebview, Go,
+          (a model writes Manim code, a sandbox renders it) about a minute later. Python, Go,
           LangGraph, Docker. <a href="https://clarity-web-black.vercel.app/">Clarity's site</a>,
           <a href="https://github.com/s0hamjain/Clarity">GitHub repo</a>.
         </li>

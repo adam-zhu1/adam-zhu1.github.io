@@ -16,6 +16,8 @@ export type Story = {
   stands: [string, string][];
   next: [string, string][];
   made?: string;
+  /* a short line under the links, for anything a visitor should know first */
+  note?: string;
 };
 
 export const TRUELINE: Story = {
@@ -31,6 +33,8 @@ export const TRUELINE: Story = {
     { href: "https://truelinebowling.com/", label: "truelinebowling.com" },
     { href: "https://github.com/adam-zhu1/TrueLine", label: "Code" },
   ],
+
+  note: "This page describes version 1.1, which is in progress. Version 1.0 is on the App Store now.",
 
   shots: [
     { src: "/media/trueline/app/05-shot-result-lane.webp", cap: "One throw: its path, where it broke and the angle it entered on", w: 660, h: 1434 },

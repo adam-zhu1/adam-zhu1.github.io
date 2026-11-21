@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import TrueLinePage from "./pages/TrueLinePage";
 import Studio from "./concepts/Studio";
 
-/* draft-only: ?concept=studio shows the draft in place of the home page */
+/* the previous home page is kept reachable at ?concept=old, in case something needs comparing */
 const CONCEPT = typeof location === "undefined" ? null : new URLSearchParams(location.search).get("concept");
 
 /* the same titles the prerender writes, so moving between the routes in-app matches a cold load */
@@ -22,6 +22,6 @@ export default function App() {
   const path = useRoute();
   useEffect(() => { document.title = TITLES[path] ?? TITLES["/"]; }, [path]);
   if (path === "/trueline") return <TrueLinePage />;
-  if (CONCEPT === "studio") return <Studio />;
-  return <Home />;
+  if (CONCEPT === "old") return <Home />;
+  return <Studio />;
 }
