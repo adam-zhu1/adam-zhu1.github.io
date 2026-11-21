@@ -342,18 +342,14 @@ export default function Studio() {
     return () => removeEventListener("scroll", on);
   }, [page]);
 
-  /* one row of the lists under the projects */
-            const more = (m: (typeof MORE)[number]) => {
-                const row = (
-                  <>
-                    <span className="i">{m.when}</span>
-                    <span className="n">{m.name}<em>{m.role}{m.role === "Paper" && <> · {m.tags}</>}{m.org && <> · {m.org}</>}</em></span>
-                    <span className="b">{m.body}</span>
-                    <span className="go">{m.href ? "↗" : ""}</span>
-                  </>
-                );
-                return <li key={m.name} data-rv>{m.href ? <a href={m.href} {...out}>{row}</a> : <div>{row}</div>}</li>;
-            };
+  /* everything under the two featured projects, as one kind of mini card */
+  type Mini = { key: string; label: string; name: string; sub?: string; body: string; tags?: string; img?: string; alt?: string; rows?: string[][]; mark?: [string, string]; href?: string; page?: string };
+  const mini = (m: (typeof MORE)[number]): Mini => ({ key: m.name, label: m.when, name: m.name, sub: m.role === "Paper" ? "Paper" : [m.role, m.org].filter(Boolean).join(" · "), body: m.body, tags: m.role === "Paper" ? undefined : m.tags, img: m.img, alt: m.alt, rows: m.rows, mark: m.mark, href: m.href });
+  const minis = (g: (typeof GROUPS)[number]): Mini[] => [
+    ...MORE.filter(m => g.lead.includes(m.name)).map(mini),
+    ...(g.nist ? WORK.filter(w => !FEAT.includes(w)).map((w): Mini => ({ key: w.id, label: w.when, name: w.name, sub: w.kind, body: w.result ?? w.what, tags: w.meta?.split(" · ")[0], mark: ["NIST", "Gaithersburg, MD"], page: slug(w) })) : []),
+    ...MORE.filter(m => g.names.includes(m.name)).map(mini),
+  ];
 
   const bar = (
     <header className="st-bar">
@@ -567,41 +563,29 @@ export default function Studio() {
         {GROUPS.map(g => (
           <div className="st-grp" key={g.title}>
             <h2 data-rv>{g.title}</h2>
-            {!g.nist ? (
-              /* the smaller work as mini cards: a picture of the real thing, where it lives, its name, what it is */
-              <ul className="st-minis">
-                {MORE.filter(m => g.names.includes(m.name)).map((m, i) => (
-                  <li key={m.name} data-rv style={d(i)}>
-                    <a href={m.href} {...out}>
-                      <div className="pic">
-                        {m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
-                          : m.rows ? <table aria-label="The top of the board it printed"><thead><tr><th /><th /><th>player</th><th>value</th></tr></thead><tbody>{m.rows.map(r => <tr key={r[0]}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table>
-                          : <div className="cite"><b>{m.org?.split(" ")[0]}</b><span>{m.org?.split(" ").slice(1).join(" ")} · {m.year}</span><span>{m.tags}</span></div>}
-                      </div>
-                      <span className="lab">{m.cta} <i>↗</i></span>
-                      <h3>{m.name}</h3>
-                      <p>{m.body}</p>
-                      {m.role !== "Paper" && <span className="tg">{m.tags}</span>}
-                    </a>
+            <ul className="st-minis" style={{ "--cols": g.nist ? 4 : 3 } as CSSProperties}>
+              {minis(g).map((m, i) => {
+                const inner = (
+                  <>
+                    <div className="pic">
+                      {m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
+                        : m.rows ? <table aria-label="The top of the board it printed"><thead><tr><th /><th /><th>player</th><th>value</th></tr></thead><tbody>{m.rows.map(r => <tr key={r[0]}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table>
+                        : m.mark && <div className="cite"><b>{m.mark[0]}</b><span>{m.mark[1]}</span></div>}
+                    </div>
+                    <span className="lab">{m.label}{(m.href || m.page) && <i>{m.page ? "→" : "↗"}</i>}</span>
+                    <h3>{m.name}</h3>
+                    {m.sub && <em>{m.sub}</em>}
+                    <p>{m.body}</p>
+                    {m.tags && <span className="tg">{m.tags}</span>}
+                  </>
+                );
+                return (
+                  <li key={m.key} data-rv style={d(i)}>
+                    {m.page ? <a href={href(m.page)} onClick={go(m.page)}>{inner}</a> : m.href ? <a href={m.href} {...out}>{inner}</a> : <div className="card">{inner}</div>}
                   </li>
-                ))}
-              </ul>
-            ) : (
-            <ol className="st-rows">
-              {MORE.filter(m => g.lead.includes(m.name)).map(more)}
-              {g.nist && WORK.filter(w => !FEAT.includes(w)).map(w => (
-                <li key={w.id} data-rv>
-                  <a href={href(slug(w))} onClick={go(slug(w))}>
-                    <span className="i">{w.when}</span>
-                    <span className="n">{w.name}<em>{w.kind}</em></span>
-                    <span className="b">{w.result}</span>
-                    <span className="go">→</span>
-                  </a>
-                </li>
-              ))}
-              {MORE.filter(m => g.names.includes(m.name)).map(more)}
-            </ol>
-            )}
+                );
+              })}
+            </ul>
           </div>
         ))}
       </section>
@@ -881,35 +865,28 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* each list is a frosted panel: the dots still drift behind it, blurred and dimmed, and never cross the words */
 .st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 58%, transparent); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
 @supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
-.st-grp .st-rows li:last-child > * { border-bottom: 0; }
 .st-grp + .st-grp { margin-top: 28px; }
-.st-minis { margin: 0; padding: 0 0 clamp(14px, 1.6vw, 28px); list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 1.6vw, 26px); }
-.st-minis a { display: flex; flex-direction: column; height: 100%; padding: 12px 12px 22px; border-radius: 24px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--card) 82%, transparent); transition: border-color .25s, transform .35s cubic-bezier(.16, 1, .3, 1), background .25s; }
-@supports (corner-shape: squircle) { .st-minis a { corner-shape: squircle; border-radius: 48px; } .st-minis .pic { corner-shape: squircle; border-radius: 34px; } }
+/* the lists sit in a narrower column than the featured cards, and their cards are small on purpose */
+.st-grp { max-width: 1180px; margin-left: auto; margin-right: auto; }
+.st-minis { margin: 0; padding: 0 0 clamp(12px, 1.4vw, 22px); list-style: none; display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: clamp(10px, 1.1vw, 16px); }
+.st-minis li > * { display: flex; flex-direction: column; height: 100%; padding: 9px 9px 18px; border-radius: 20px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--card) 82%, transparent); transition: border-color .25s, transform .35s cubic-bezier(.16, 1, .3, 1), background .25s; }
+@supports (corner-shape: squircle) { .st-minis li > * { corner-shape: squircle; border-radius: 40px; } .st-minis .pic { corner-shape: squircle; border-radius: 28px; } }
 .st-minis a:hover { border-color: color-mix(in srgb, var(--ink) 55%, transparent); transform: translateY(-4px); background: var(--card); }
-.st-minis .pic { aspect-ratio: 3 / 2; overflow: hidden; border-radius: 15px; background: #0b0d12; border: 1px solid var(--ln); display: grid; color: #e9e9ec; }
+.st-minis .pic { aspect-ratio: 16 / 10; overflow: hidden; border-radius: 13px; background: #0b0d12; border: 1px solid var(--ln); display: grid; color: #e9e9ec; }
 .st-minis .pic img { width: 100%; height: 100%; object-fit: cover; object-position: 0 0; display: block; transition: transform .6s cubic-bezier(.16, 1, .3, 1); }
 .st-minis a:hover .pic img { transform: scale(1.03); }
-.st-minis table { align-self: center; width: calc(100% - 36px); margin: 0 auto; border-collapse: collapse; font: 400 clamp(11px, .95vw, 13.5px)/1 var(--mono); }
-.st-minis th { text-align: left; font-weight: 400; color: #7d7d86; padding: 0 0 9px; } .st-minis th:last-child, .st-minis td:last-child { text-align: right; }
-.st-minis td { padding: 7px 0; border-top: 1px solid #23242b; white-space: nowrap; } .st-minis td:nth-child(-n+2) { color: #7d7d86; width: 2.4em; }
-.st-minis .cite { align-self: center; padding: 0 20px; display: grid; gap: 8px; } .st-minis .cite b { font-weight: 500; font-size: clamp(24px, 2.6vw, 38px); letter-spacing: -.045em; line-height: 1; } .st-minis .cite span { font-size: 13.5px; color: #9a9aa3; }
-.st-minis .lab { margin: 18px 10px 0; font-size: 13px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; display: inline-block; transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
-.st-minis h3 { margin: 8px 10px 0; font-weight: 500; font-size: clamp(20px, 1.7vw, 25px); letter-spacing: -.035em; line-height: 1.15; }
-.st-minis p { margin: 10px 10px 0; font-size: 15px; line-height: 1.45; color: var(--mut); }
-.st-minis .tg { margin: auto 10px 0; padding-top: 16px; font-size: 13.5px; }
-@media (max-width: 900px) { .st-minis { grid-template-columns: 1fr; } }
-.st-grp h2 { margin: 0 0 22px; font-weight: 500; font-size: clamp(28px, 3vw, 44px); line-height: 1; letter-spacing: -.045em; }
-.st-rows { border-top: 1px solid var(--ln); }
-.st-rows li > * { display: grid; grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1.35fr) 40px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--ln); transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
-.st-rows li > a:hover { padding-left: 14px; padding-right: 14px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.st-rows .i { font-size: 14px; line-height: 1.3; padding-top: 7px; color: var(--mut); }
-.st-rows .n { font-size: clamp(20px, 1.9vw, 27px); letter-spacing: -.035em; line-height: 1.15; }
-.st-rows .b { font-size: 16px; line-height: 1.45; }
-.st-rows .n em { display: block; font-style: normal; margin-top: 8px; font-size: 14px; letter-spacing: 0; line-height: 1.3; color: var(--mut); }
-.st-rows .go { justify-self: end; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ln); display: grid; place-items: center; font-size: 12px; transition: background .2s, color .2s, border-color .2s; }
-.st-rows .go:empty { visibility: hidden; }
-.st-rows a:hover .go { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
+.st-minis table { align-self: center; width: calc(100% - 28px); margin: 0 auto; border-collapse: collapse; font: 400 11.5px/1 var(--mono); }
+.st-minis th { text-align: left; font-weight: 400; color: #7d7d86; padding: 0 0 7px; } .st-minis th:last-child, .st-minis td:last-child { text-align: right; }
+.st-minis td { padding: 5.5px 0; border-top: 1px solid #23242b; white-space: nowrap; } .st-minis td:nth-child(-n+2) { color: #7d7d86; width: 2.3em; }
+.st-minis .cite { align-self: center; padding: 0 16px; display: grid; gap: 7px; } .st-minis .cite b { font-weight: 500; font-size: clamp(22px, 2.1vw, 30px); letter-spacing: -.045em; line-height: 1; } .st-minis .cite span { font-size: 12.5px; line-height: 1.3; color: #9a9aa3; }
+.st-minis .lab { display: flex; justify-content: space-between; margin: 14px 8px 0; font-size: 12.5px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; color: var(--ink); transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
+.st-minis h3 { margin: 7px 8px 0; font-weight: 500; font-size: clamp(17px, 1.35vw, 20px); letter-spacing: -.03em; line-height: 1.18; }
+.st-minis em { margin: 5px 8px 0; font-style: normal; font-size: 12.5px; line-height: 1.3; color: var(--mut); }
+.st-minis p { margin: 9px 8px 0; font-size: 13.5px; line-height: 1.45; color: var(--mut); }
+.st-minis .tg { margin: auto 8px 0; padding-top: 13px; font-size: 12.5px; }
+@media (max-width: 1100px) { .st-minis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .st-minis { grid-template-columns: 1fr; } }
+.st-grp h2 { margin: 0 0 20px; font-weight: 500; font-size: clamp(24px, 2.3vw, 34px); line-height: 1; letter-spacing: -.045em; }
 
 .st-contact { padding-bottom: 22px; }
 .st-contact .avail { margin: -6px 0 26px; font-size: clamp(17px, 1.4vw, 21px); line-height: 1.4; letter-spacing: -.015em; color: var(--mut); max-width: 34em; }
@@ -1028,11 +1005,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-head { grid-template-columns: 1fr; gap: 16px; align-items: start; }
   .st-ct a { grid-template-columns: minmax(0, 1fr) 34px; gap: 6px 14px; } .st-ct .i { grid-column: 1; } .st-ct .n { grid-column: 1; } .st-ct .go { grid-column: 2; grid-row: 1 / span 2; }
   .st-ct .cp { position: static; transform: none; margin: 0 0 16px; } .st-ct .cp:hover { transform: none; }
-  .st-rows li > * { grid-template-columns: minmax(0, 1fr) 34px; gap: 8px 14px; }
-  .st-rows .i { grid-column: 1; grid-row: 1; padding-top: 0; }
-  .st-rows .n { grid-column: 1; grid-row: 2; }
-  .st-rows .b { grid-column: 1; grid-row: 3; }
-  .st-rows .go { grid-column: 2; grid-row: 2; }
 }
 @media (prefers-reduced-motion: reduce) {
   .st-left, .st-bar nav, .st-theme, .st-bar .st-pill, .st-theme button, .st-mark { transition: none; }

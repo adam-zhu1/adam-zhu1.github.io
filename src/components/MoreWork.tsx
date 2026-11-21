@@ -6,6 +6,8 @@ type Item = {
   stats?: [string, string][]; body: string; tags: string; href?: string; cta?: string;
   /* for its mini card: a screenshot, or a few real rows of its output (rank, position, player, value) */
   img?: string; alt?: string; rows?: [string, string, string, string][];
+  /* for a card with no picture: the organisation written out, and where it is */
+  mark?: [string, string];
 };
 
 /* Newest first. Every figure here is the resume's, word for word in substance; the paper is
@@ -13,7 +15,7 @@ type Item = {
 export const MORE: Item[] = [
   { year: "2026", when: "Sep 2026 to now", name: "ScottyLabs AI", role: "Software engineer", org: "Carnegie Mellon",
     body: "Set up the dev stack for Bark: a Python LLM backend, MCP tools and Postgres. Traced a login bug where expired sessions still looked signed in but every request failed.",
-    tags: "Python, MCP, Postgres", href: "https://scottylabs.org/", cta: "ScottyLabs" },
+    tags: "Python, MCP, Postgres", href: "https://scottylabs.org/", cta: "ScottyLabs", mark: ["ScottyLabs", "Carnegie Mellon"] },
   { year: "2026", when: "Sep 2026", name: "Fantasy draft assistant", role: "Side project",
     stats: [["3", "seasons of weekly variance"]],
     body: "Ranks players by floor-adjusted value over replacement, built from three seasons of weekly scoring variance, with a live draft board that tracks picks as they are made.",
@@ -26,15 +28,15 @@ export const MORE: Item[] = [
     img: "/media/more/march-madness.webp", alt: "The predictor’s Streamlit app, showing its recommended Round of 64 picks with win probabilities" },
   { year: "2024", when: "2024", name: "Matched binary diagnostic tests", role: "Paper", org: "Mathematics 12(5), 741",
     body: "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, applied to environmental testing for Salmonella in the United States. I joined at the revision stage: manuscript preparation, literature review, and data cleaning.",
-    tags: "Lin, Zhu, Wang", href: "https://doi.org/10.3390/math12050741", cta: "Paper" },
+    tags: "Lin, Zhu, Wang", href: "https://doi.org/10.3390/math12050741", cta: "Paper", mark: ["Mathematics", "12(5), 741 · Lin, Zhu, Wang"] },
   { year: "2024", when: "Jan to Jun 2024", name: "VR evacuation study", role: "Research intern", org: "VRAC, Iowa State",
     stats: [["454", "simulated evacuation trials"], ["227", "participants"]],
     body: "Fit regression models of time to escape in simulated VR evacuations. Smart audio guidance beat static and adaptive signage by a statistically significant margin. Manuscript in preparation.",
-    tags: "Regression, experimental design" },
+    tags: "Regression, experimental design", mark: ["VRAC", "Iowa State University"] },
   { year: "2023", when: "Jun 2023 to Aug 2024", name: "Forensic image research", role: "Research intern", org: "CSAFE, Iowa State",
     stats: [["24,000+", "camera images"], ["100+", "degraded writing samples"]],
     body: "Co-authored a manuscript, under review at Forensic Sciences, that evaluates camera fingerprinting for device identification. Built document-degradation methods to test handwriting-similarity analysis under realistic conditions.",
-    tags: "Forensic statistics" },
+    tags: "Forensic statistics", mark: ["CSAFE", "Iowa State University"] },
 ];
 
 /**
