@@ -341,8 +341,8 @@ export default function Studio() {
   }, [page]);
 
   /* everything under the two featured projects, as one kind of mini card */
-  type Mini = { key: string; label: string; name: string; sub?: string; body: string; tags?: string; img?: string; alt?: string; rows?: string[][]; mark?: [string, string]; logo?: string; white?: boolean; href?: string; page?: string };
-  const mini = (m: (typeof MORE)[number]): Mini => ({ key: m.name, label: m.when, name: m.name, sub: m.role === "Paper" ? "Paper" : [m.role, m.org].filter(Boolean).join(" · "), body: m.body, tags: m.role === "Paper" ? undefined : m.tags, img: m.img, alt: m.alt, rows: m.rows, mark: m.mark, logo: m.logo, href: m.href });
+  type Mini = { key: string; label: string; name: string; sub?: string; body: string; tags?: string; board?: [string, string, number, number][]; games?: [string, string, number][]; paper?: { title: string; authors: string[]; ref: string }; mark?: [string, string]; logo?: string; white?: boolean; href?: string; page?: string };
+  const mini = (m: (typeof MORE)[number]): Mini => ({ key: m.name, label: m.when, name: m.name, sub: m.role === "Paper" ? "Paper" : [m.role, m.org].filter(Boolean).join(" · "), body: m.body, tags: m.role === "Paper" ? undefined : m.tags, board: m.board, games: m.games, paper: m.paper, mark: m.mark, logo: m.logo, href: m.href });
   const minis = (g: (typeof GROUPS)[number]): Mini[] => [
     ...MORE.filter(m => g.lead.includes(m.name)).map(mini),
     ...(g.nist ? WORK.filter(w => !FEAT.includes(w)).map((w): Mini => ({ key: w.id, label: w.when, name: w.name, sub: w.kind, body: w.result ?? w.what, tags: w.meta?.split(" · ")[0], mark: ["NIST", "Gaithersburg, MD"], logo: "/media/orgs/nist.svg", white: true, page: slug(w) })) : []),
@@ -567,9 +567,39 @@ export default function Studio() {
                   <>
                     <div className="pic">
                       {m.logo ? <img className={`logo${m.white ? " white" : ""}`} src={m.logo} alt={`${m.mark?.[0]} logo`} loading="lazy" />
-                        : m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
-                        : m.rows ? <table aria-label="The top of the board it printed"><thead><tr><th /><th /><th>player</th><th>value</th></tr></thead><tbody>{m.rows.map(r => <tr key={r[0]}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table>
-                        : m.mark && <div className="cite"><b>{m.mark[0]}</b><span>{m.mark[1]}</span></div>}
+                        : m.board ? (
+                          /* the draft board: each player's value as a bar, with a line where one tier ends and the next begins */
+                          <div className="viz board" role="img" aria-label={`The top of the draft board: ${m.board.map(r => `${r[0]} ${r[2]}`).join(", ")}`}>
+                            <span className="cap">Value over replacement, 2026 draft</span>
+                            {m.board.map((r, j) => (
+                              <div key={r[0]} className={j > 0 && m.board![j - 1][3] !== r[3] ? "row brk" : "row"} data-tier={`Tier ${r[3]}`}>
+                                <span className="nm">{r[0]} <i>{r[1]}</i></span><span className="trk"><b style={{ width: `${(r[2] / m.board![0][2]) * 100}%` }} /></span><span className="v">{r[2].toFixed(1)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : m.games ? (
+                          /* the bracket picks: who it favours in each game, and by how much */
+                          <div className="viz games" role="img" aria-label={`Round of 64 picks: ${m.games.map(r => `${r[0]} over ${r[1]}, ${r[2]}%`).join("; ")}`}>
+                            <span className="cap">Round of 64, chance the favourite wins</span>
+                            {m.games.map(r => (
+                              <div key={r[0]} className="row">
+                                <span className="nm">{r[0]} <i>over {r[1]}</i></span><span className="v">{r[2].toFixed(1)}%</span>
+                                <span className="trk"><b style={{ width: `${r[2]}%` }} /></span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : m.paper ? (
+                          /* the paper as the top of its own first page */
+                          <div className="viz sheet" aria-hidden="true">
+                            <div className="pg">
+                              <small>Article</small>
+                              <strong>{m.paper.title}</strong>
+                              <span>{m.paper.authors.map((a, j) => <span key={a} className={a === "Adam Zhu" ? "me" : ""}>{a}{j < m.paper!.authors.length - 1 ? ", " : ""}</span>)}</span>
+                              <em>{m.paper.ref}</em>
+                              <i /><i /><i /><i />
+                            </div>
+                          </div>
+                        ) : m.mark && <div className="cite"><b>{m.mark[0]}</b><span>{m.mark[1]}</span></div>}
                     </div>
                     <span className="lab">{m.label}{(m.href || m.page) && <i>{m.page ? "→" : "↗"}</i>}</span>
                     <h3>{m.name}</h3>
@@ -878,9 +908,24 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-minis a:hover .pic img { transform: scale(1.03); }
 /* an organisation's logo sits small in the middle of its tile; NIST's one-colour mark is shown in white */
 .st-minis .pic img.logo { place-self: center; width: 64%; height: 56%; object-fit: contain; object-position: 50% 50%; } .st-minis .pic img.logo.white { filter: brightness(0) invert(1); width: 78%; }
-.st-minis table { align-self: center; width: calc(100% - 28px); margin: 0 auto; border-collapse: collapse; font: 400 11.5px/1 var(--mono); }
-.st-minis th { text-align: left; font-weight: 400; color: #7d7d86; padding: 0 0 7px; } .st-minis th:last-child, .st-minis td:last-child { text-align: right; }
-.st-minis td { padding: 5.5px 0; border-top: 1px solid #23242b; white-space: nowrap; } .st-minis td:nth-child(-n+2) { color: #7d7d86; width: 2.3em; }
+/* small drawings of real output, in the tile's own dark scope: one colour, thin bars, labels in text colours */
+.st-minis .viz { align-self: center; padding: 0 clamp(14px, 1.5vw, 22px); display: grid; gap: clamp(5px, .6vw, 8px); font-size: clamp(11px, .9vw, 13px); line-height: 1.15; color: #e9e9ec; }
+.st-minis .viz .cap { color: #7d7d86; font-size: 11.5px; margin-bottom: 3px; }
+.st-minis .viz .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .st-minis .viz .nm i { font-style: normal; color: #7d7d86; }
+.st-minis .viz .v { font-variant-numeric: tabular-nums; text-align: right; }
+.st-minis .viz .trk { display: block; height: 5px; border-radius: 3px; background: #1d1f26; overflow: hidden; } .st-minis .viz .trk b { display: block; height: 100%; border-radius: 3px; background: #d9d9de; }
+.st-minis .board .row { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr) 3.2em; gap: 10px; align-items: center; }
+.st-minis .board .row.brk { position: relative; margin-top: 7px; padding-top: 9px; border-top: 1px dashed #3a3c46; }
+.st-minis .board .row.brk::before { content: attr(data-tier); position: absolute; right: 0; top: -7px; padding-left: 6px; background: #0b0d12; font-size: 10px; color: #7d7d86; }
+.st-minis .games { gap: clamp(3px, .45vw, 7px); }
+.st-minis .games .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; } .st-minis .games .trk { grid-column: 1 / -1; }
+.st-minis .sheet { padding: 0; align-self: end; justify-self: center; width: 78%; height: 88%; }
+.st-minis .sheet .pg { height: 100%; padding: clamp(12px, 1.4vw, 20px) clamp(14px, 1.6vw, 22px) 0; background: #f3f2ee; color: #16161a; border-radius: 8px 8px 0 0; display: grid; align-content: start; gap: 7px; box-shadow: 0 12px 30px -10px rgb(0 0 0 / .7); overflow: hidden; }
+.st-minis .sheet small { font-size: 9.5px; letter-spacing: .04em; color: #8a8a90; }
+.st-minis .sheet strong { font-family: Georgia, "Times New Roman", serif; font-weight: 600; font-size: clamp(11px, 1vw, 14px); line-height: 1.22; letter-spacing: -.005em; }
+.st-minis .sheet .pg > span { font-size: 10.5px; color: #77777e; } .st-minis .sheet .me { color: #16161a; font-weight: 600; }
+.st-minis .sheet em { font-style: italic; font-size: 10px; color: #8a8a90; margin-bottom: 4px; }
+.st-minis .sheet .pg > i { height: 4px; border-radius: 2px; background: #dedcd5; } .st-minis .sheet .pg > i:last-child { width: 62%; }
 .st-minis .cite { align-self: center; padding: 0 16px; display: grid; gap: 7px; } .st-minis .cite b { font-weight: 500; font-size: clamp(22px, 2.1vw, 30px); letter-spacing: -.045em; line-height: 1; } .st-minis .cite span { font-size: 12.5px; line-height: 1.3; color: #9a9aa3; }
 .st-minis .lab { display: flex; justify-content: space-between; margin: 18px 8px 0; font-size: 13.5px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; color: var(--ink); transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
 .st-minis h3 { margin: 8px 8px 0; font-weight: 500; font-size: clamp(19px, 1.65vw, 25px); letter-spacing: -.03em; line-height: 1.18; }
