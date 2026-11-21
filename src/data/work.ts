@@ -11,7 +11,7 @@ export type Entry = {
   id: string; name: string; when: string;
   kind: string; role?: string; /* where the name changes to the project's colour: 4 gives "True" + "Line", 0 colours the whole name */ split?: number; accent: string; demo: "trueline" | "clarity" | "nist";
   body: string; meta?: string; result?: string;
-  line: string; what: string; big: [string, string]; fig: string; facts: [string, string][]; steps: [string, string][];
+  line: string; what: string; /* on the home card only: a second sentence after `what`, and the tech it is built with */ more?: string; stack?: string; big: [string, string]; fig: string; facts: [string, string][]; steps: [string, string][];
   links?: { href: string; label: string; page?: boolean }[];
 };
 
@@ -27,6 +27,8 @@ export const WORK: Entry[] = [
     line: "6 of 6 unseen clips tracked down the full lane",
     big: ["6 of 6", "unseen clips tracked down the full lane"],
     what: "An iPhone app that tracks a bowling ball down the lane from one video.",
+    more: "It measures speed, where the ball hooked, and the board and angle it hit the pins on, all on the phone.",
+    stack: "Swift, Vision, Core ML",
     fig: "One throw, tracked frame by frame and played through the stages of the pipeline.",
     facts: [
       ["Unseen clips tracked the full lane", "6 of 6"],
@@ -49,6 +51,8 @@ export const WORK: Entry[] = [
     line: "Built in two days at HackCMU, team of four",
     big: ["20 hours", "from the first commit to the last, at HackCMU"],
     what: "A Mac app that explains any problem on your screen.",
+    more: "Press a hotkey, drag a box around the problem, and get a written explanation, then an animation made for that exact problem.",
+    stack: "Python, Go, LangGraph, Manim",
     fig: "One capture, from the hotkey to the video, rebuilt from the app’s own windows.",
     facts: [
       ["Built in", "2 days"],
