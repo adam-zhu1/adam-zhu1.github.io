@@ -857,7 +857,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st.story.nist .pj-head { padding-bottom: clamp(8px, 2vh, 24px); }
 .st.story.nist .pj-why p { font-size: clamp(18px, 1.5vw, 23px); }
 .st.story.nist .pj-stands { margin-top: clamp(56px, 9vh, 110px); margin-bottom: clamp(24px, 5vh, 56px); }
-.st.story.nist .pj-stands .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (min-width: 901px) { .st.story.nist .pj-stands .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .st.story.nist .pj-stands .figs { grid-template-columns: 1fr; } }
 .st.story.nist .pj-stands .made { margin-bottom: 10px; }
 .pj-ret { display: flex; justify-content: center; padding: clamp(20px, 5vh, 56px) 0 clamp(8px, 2vh, 24px); }
 .pj-ret .st-pill { height: 56px; padding: 0 28px; font-size: 18px; background: var(--ink); color: var(--bg); border-color: var(--ink); }
