@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20260910" />
-    <link rel="shortcut icon" href="/favicon.svg?v=20260910" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261121" />
+    <link rel="shortcut icon" href="/favicon.svg?v=20261121" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261121" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,12 +18,12 @@
     />
     <meta name="author" content="Adam Zhu" />
     <meta name="theme-color" content="#070708" />
-    <!-- the theme before first paint, so a light reader never sees a dark flash: what they
-         chose last time, else paper -->
+    <!-- the theme before first paint, so nobody sees a flash of the other one: what they
+         chose last time, else dark -->
     <script>
       (function () {
         var t; try { t = localStorage.getItem("theme"); } catch (e) {}
-        if (t !== "light" && t !== "dark") t = "light";
+        if (t !== "light" && t !== "dark") t = "dark";
         document.documentElement.dataset.theme = t;
         var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "light" ? "#f1f1ee" : "#070708";
       })();
@@ -39,8 +39,8 @@
     <meta property="og:url" content="https://adamzhu.dev/" />
     <meta property="og:site_name" content="Adam Zhu" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:image" content="https://adamzhu.dev/og-image.png" />
-    <meta property="og:image:secure_url" content="https://adamzhu.dev/og-image.png" />
+    <meta property="og:image" content="https://adamzhu.dev/og-image.png?v=20261121" />
+    <meta property="og:image:secure_url" content="https://adamzhu.dev/og-image.png?v=20261121" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -52,7 +52,7 @@
       name="twitter:description"
       content="Statistics and Machine Learning at Carnegie Mellon. TrueLine, an iOS bowling ball tracker; Clarity, built at HackCMU 2026; research at NIST. Looking for Summer 2027 internships."
     />
-    <meta name="twitter:image" content="https://adamzhu.dev/og-image.png" />
+    <meta name="twitter:image" content="https://adamzhu.dev/og-image.png?v=20261121" />
     <meta name="twitter:image:alt" content="Adam Zhu | Statistics & Machine Learning, Carnegie Mellon" />
 
     <script type="application/ld+json">
@@ -61,7 +61,7 @@
         "@type": "Person",
         "name": "Adam Zhu",
         "url": "https://adamzhu.dev/",
-        "image": "https://adamzhu.dev/og-image.png",
+        "image": "https://adamzhu.dev/og-image.png?v=20261121",
         "jobTitle": "Statistics & Machine Learning Student",
         "email": "mailto:adamzhu@andrew.cmu.edu",
         "affiliation": {
