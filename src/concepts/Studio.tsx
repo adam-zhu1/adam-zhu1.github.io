@@ -11,7 +11,7 @@ import { seenRecently } from "./seen";
 import { flow, reach, scene, TITLE } from "./scene";
 import { TrueLine } from "../components/TrueLine";
 import { Clarity } from "../components/Clarity";
-import { NistFigure } from "../components/ProjectStage";
+import { NIST } from "../data/nist-story";
 import { LINKS } from "./links";
 import { TRUELINE, type Story } from "../data/trueline-story";
 import { CLARITY } from "../data/clarity-story";
@@ -92,7 +92,7 @@ const deckY = (i: number) => {
 };
 
 function Demo({ w }: { w: Entry }) {
-  return w.demo === "trueline" ? <TrueLine /> : w.demo === "clarity" ? <Clarity /> : <NistFigure on />;
+  return w.demo === "trueline" ? <TrueLine /> : <Clarity />;
 }
 
 /* The real demo, laid out at desktop width and scaled down until all of it fits its frame. */
@@ -446,49 +446,40 @@ export default function Studio() {
     );
   }
 
+  /* NIST: a smaller page in the same manner as the two projects' pages. It opens on its title with the
+     facts beside it, then says what the work was, what he did, and what came out of it. */
   if (proj) {
     return (
-      <div className="st pj ready" ref={root} key={proj.id} style={{ "--accent": proj.accent } as CSSProperties}>
+      <div className="st pj story nist ready" ref={root} key={proj.id} style={{ "--accent": proj.accent } as CSSProperties}>
         <style>{CSS}</style>
         {bar}
         <div className="pj-bg" aria-hidden="true" />
         <main className="pj-main">
-          <div className="pj-top">
-            <span />
-            <span className="pj-idx"><b>{two(cur + 1)}</b> / {two(WORK.length)}</span>
-          </div>
-
           <div className="pj-head">
             <div>
               <h1 aria-label={proj.name}><span aria-hidden="true">{[...proj.name].map((ch, i) => <span key={i} className={`ch${proj.split != null && i >= proj.split ? " ac" : ""}`} style={{ "--i": i } as CSSProperties}>{ch}</span>)}</span></h1>
               <p className="what">{proj.what}</p>
-              <p className="kind">{proj.kind} · {proj.when}</p>
-              {proj.links && <div className="st-pills">{proj.links.map(l => <a key={l.label} className="st-pill" href={l.href} {...(l.page ? {} : out)}>{l.label} <i>↗</i></a>)}</div>}
             </div>
-            <div className="pj-stat"><b>{proj.big[0]}</b><span>{proj.big[1]}</span></div>
+            <dl className="pj-strip">{NIST.strip.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
           </div>
 
-          <div className="pj-demo"><Demo w={proj} /></div>
-
-          <div className="pj-cols">
-            <section data-rv>
-              <h2>What it is</h2>
-              <p className="lead">{proj.body}</p>
-              {proj.result && <p className="lead">{proj.result}</p>}
-              {proj.meta && <p className="meta">{proj.meta}</p>}
-            </section>
-            <section data-rv style={d(1)}>
-              <h2>Results</h2>
-              <dl className="pj-facts">{proj.facts.map(([k, v]) => <div key={k}><dd>{v}</dd><dt>{k}</dt></div>)}</dl>
-            </section>
-          </div>
-
-          <section className="pj-steps">
-            <h2>How it works</h2>
-            <ol>{proj.steps.map(([k, v], i) => <li key={k} data-rv style={d(i)}><span>{two(i + 1)}</span><b>{k}</b><p>{v}</p></li>)}</ol>
+          <section className="pj-why">
+            <h2 data-rv>What I worked on</h2>
+            <div>{NIST.worked.map((t, i) => <p key={i} data-rv style={d(i + 1)}>{t}</p>)}</div>
           </section>
 
-          <div className="pj-ret" data-rv><a className="st-pill st-back" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> Return to all projects</a></div>
+          <section className="pj-why">
+            <h2 data-rv>What I did</h2>
+            <div>{NIST.did.map((t, i) => <p key={i} data-rv style={d(i + 1)}>{t}</p>)}</div>
+          </section>
+
+          <section className="pj-stands">
+            <h2 data-rv>What came out of it</h2>
+            <dl className="figs">{NIST.figs.map(([k, v], i) => <div key={k} data-rv style={d(i)}><dd>{k}</dd><dt>{v}</dt></div>)}</dl>
+            {NIST.after.map((t, i) => <p key={i} className="made" data-rv>{t}</p>)}
+          </section>
+
+          <div className="pj-ret" data-rv><a className="st-pill st-back" href={`${href(null)}#more`} onClick={go(null, "more")}><i>←</i> Return to all projects</a></div>
         </main>
       </div>
     );
@@ -859,6 +850,13 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .story .nexts li { border-top: 1px solid color-mix(in srgb, var(--at) 45%, var(--ln)); padding-top: 18px; }
 .story ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 .st .ac { color: var(--accent); } :root[data-theme="light"] .st .ac { color: var(--at); }
+/* NIST's page is the short one: its sections are their natural height and sit closer together */
+.st.story.nist .pj-why { min-height: 0; padding: clamp(40px, 7vh, 84px) 0 0; align-content: start; }
+.st.story.nist .pj-head { padding-bottom: clamp(8px, 2vh, 24px); }
+.st.story.nist .pj-why p { font-size: clamp(18px, 1.5vw, 23px); }
+.st.story.nist .pj-stands { margin-top: clamp(56px, 9vh, 110px); margin-bottom: clamp(24px, 5vh, 56px); }
+.st.story.nist .pj-stands .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.st.story.nist .pj-stands .made { margin-bottom: 10px; }
 .pj-ret { display: flex; justify-content: center; padding: clamp(20px, 5vh, 56px) 0 clamp(8px, 2vh, 24px); }
 .pj-ret .st-pill { height: 56px; padding: 0 28px; font-size: 18px; background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .pj-ret .st-pill:hover { background: var(--acc); color: var(--onacc); border-color: var(--acc); }

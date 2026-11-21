@@ -61,7 +61,7 @@ export const WORK: Entry[] = [
       ["Animation for the problem", "about a minute"],
     ],
     steps: CLARITY_STAGES.map(([a, b]) => [a, b]) },
-  { id: "p-nist", name: "NIST", when: "May to Aug 2026", kind: "Research internship, summer 2026", accent: "#8fa8f0", demo: "nist",
+  { id: "p-nist", name: "NIST", when: "May to Aug 2026", kind: "Research internship, summer 2026", split: 0, accent: "#8fa8f0", demo: "nist",
     body: "Research intern at the National Institute of Standards and Technology. A five-stage pandas and scikit-learn pipeline that separates automated from human traffic in the logs of NIST’s public data portal.",
     meta: "Python, pandas, scikit-learn · Gaithersburg, MD · No public code",
     result: "A random forest using only behavioral signals reached F1 = 0.94. An isolation forest surfaced a disguised scraper, and the cleaning rules built from it raised the measured automated share from 21.7% to 41.9%.",
