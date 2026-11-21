@@ -78,8 +78,9 @@ const PV = { trueline: 820, clarity: 800, nist: 600 };
 const FEAT = WORK.filter(w => w.demo !== "nist");
 /* the list under the cards, in two groups; NIST, which has a page of its own, leads the first */
 const GROUPS = [
-  { title: "Experience", nist: true, lead: ["ScottyLabs AI"], names: ["VR evacuation study", "Forensic image research"] },   /* newest first: lead rows, then NIST, then the rest */
+  /* projects first: the site is about what he has built; experience follows */
   { title: "Other projects and a paper", nist: false, lead: [] as string[], names: ["Fantasy draft assistant", "March Madness predictor", "Matched binary diagnostic tests"] },
+  { title: "Experience", nist: true, lead: ["ScottyLabs AI"], names: ["VR evacuation study", "Forensic image research"] },   /* newest first: lead rows, then NIST, then the rest */
 ];
 /* the projects whose page is told in full: why, how it works stage by stage, what was hard, where it stands */
 const STORY: Partial<Record<Entry["demo"], Story>> = { trueline: TRUELINE, clarity: CLARITY };
