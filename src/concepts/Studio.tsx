@@ -850,6 +850,8 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .story .nexts li { border-top: 1px solid color-mix(in srgb, var(--at) 45%, var(--ln)); padding-top: 18px; }
 .story ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 .st .ac { color: var(--accent); } :root[data-theme="light"] .st .ac { color: var(--at); }
+/* on the light theme NIST's page uses the full-strength blue of nist.gov */
+:root[data-theme="light"] .st.story.nist { --at: #005ea2; }
 /* NIST's page is the short one: its sections are their natural height and sit closer together */
 .st.story.nist .pj-why { min-height: 0; padding: clamp(40px, 7vh, 84px) 0 0; align-content: start; }
 .st.story.nist .pj-head { padding-bottom: clamp(8px, 2vh, 24px); }
