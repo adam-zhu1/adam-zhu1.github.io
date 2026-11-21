@@ -39,6 +39,8 @@ const ICON: Record<string, ReactNode> = {
 };
 /* the rows of the Contact panel after Email: the label, and what is written out for it */
 const CONTACT: [string, string][] = [["GitHub", "github.com/adam-zhu1"], ["LinkedIn", "linkedin.com/in/adam-zhu-cmu"], ["Resume", "Adam-Zhu-Resume.pdf"]];
+/* what he is looking for: on the first screen and again over the contact rows */
+const SEEKING = "Looking for Summer 2027 internships in software engineering, machine learning and data science.";
 const ORDER = ["Resume", "LinkedIn", "GitHub", "Email"].map(l => LINKS.find(x => x.label === l)!);
 
 /* A line of text that settles out of noise, left to right. */
@@ -78,8 +80,8 @@ const PV = { trueline: 820, clarity: 800, nist: 600 };
 const FEAT = WORK.filter(w => w.demo !== "nist");
 /* the list under the cards, in two groups; NIST, which has a page of its own, leads the first */
 const GROUPS = [
-  { title: "Experience", nist: true, names: ["ScottyLabs AI", "VR evacuation study", "Forensic image research"] },
-  { title: "Other projects and a paper", nist: false, names: ["Fantasy draft assistant", "March Madness predictor", "Matched binary diagnostic tests"] },
+  { title: "Experience", nist: true, lead: ["ScottyLabs AI"], names: ["VR evacuation study", "Forensic image research"] },   /* newest first: lead rows, then NIST, then the rest */
+  { title: "Other projects and a paper", nist: false, lead: [] as string[], names: ["Fantasy draft assistant", "March Madness predictor", "Matched binary diagnostic tests"] },
 ];
 /* the projects whose page is told in full: why, how it works stage by stage, what was hard, where it stands */
 const STORY: Partial<Record<Entry["demo"], Story>> = { trueline: TRUELINE, clarity: CLARITY };
@@ -340,6 +342,19 @@ export default function Studio() {
     return () => removeEventListener("scroll", on);
   }, [page]);
 
+  /* one row of the lists under the projects */
+            const more = (m: (typeof MORE)[number]) => {
+                const row = (
+                  <>
+                    <span className="i">{m.when}</span>
+                    <span className="n">{m.name}<em>{m.role}{m.role === "Paper" && <> · {m.tags}</>}{m.org && <> · {m.org}</>}</em></span>
+                    <span className="b">{m.body}</span>
+                    <span className="go">{m.href ? "↗" : ""}</span>
+                  </>
+                );
+                return <li key={m.name} data-rv>{m.href ? <a href={m.href} {...out}>{row}</a> : <div>{row}</div>}</li>;
+            };
+
   const bar = (
     <header className="st-bar">
       <div className="st-left">
@@ -499,9 +514,10 @@ export default function Studio() {
         </h1>
         <div className="st-id">
           <p aria-label="Carnegie Mellon University, Statistics and Machine Learning">
-            <Decode text="Carnegie Mellon University" on={ready} delay={520} /><br />
-            <Decode text="Statistics and Machine Learning" on={ready} delay={760} />
+            <Decode text="Carnegie Mellon University" on={ready} delay={200} /><br />
+            <Decode text="Statistics and Machine Learning" on={ready} delay={350} />
           </p>
+          <p className="seek">{SEEKING}</p>
           <div className="st-links">
             {ORDER.map((l, i) => <a key={l.label} href={l.href} style={{ "--i": i } as CSSProperties} {...(l.label === "Email" ? {} : out)}>{ICON[l.label]}<span>{l.label}</span></a>)}
           </div>
@@ -550,6 +566,7 @@ export default function Studio() {
           <div className="st-grp" key={g.title}>
             <h2 data-rv>{g.title}</h2>
             <ol className="st-rows">
+              {MORE.filter(m => g.lead.includes(m.name)).map(more)}
               {g.nist && WORK.filter(w => !FEAT.includes(w)).map(w => (
                 <li key={w.id} data-rv>
                   <a href={href(slug(w))} onClick={go(slug(w))}>
@@ -560,17 +577,7 @@ export default function Studio() {
                   </a>
                 </li>
               ))}
-              {MORE.filter(m => g.names.includes(m.name)).map(m => {
-                const row = (
-                  <>
-                    <span className="i">{m.when}</span>
-                    <span className="n">{m.name}<em>{m.role}{m.role === "Paper" && <> · {m.tags}</>}{m.org && <> · {m.org}</>}</em></span>
-                    <span className="b">{m.body}</span>
-                    <span className="go">{m.href ? "↗" : ""}</span>
-                  </>
-                );
-                return <li key={m.name} data-rv>{m.href ? <a href={m.href} {...out}>{row}</a> : <div>{row}</div>}</li>;
-              })}
+              {MORE.filter(m => g.names.includes(m.name)).map(more)}
             </ol>
           </div>
         ))}
@@ -580,7 +587,7 @@ export default function Studio() {
       <section className="st-sec st-contact" id="contact">
         <div className="st-grp">
           <h2 data-rv>Contact</h2>
-          <p className="avail" data-rv>Looking for Summer 2027 internships in software, ML, data science or quant.</p>
+          <p className="avail" data-rv>{SEEKING}</p>
           <ul className="st-ct">
             <li data-rv>
               <a href={LINKS[0].href}><span className="i">Email</span><span className="n">{MAIL}</span><span className="go">→</span></a>
@@ -622,6 +629,9 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-mark:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); }
 .st-pill.acc { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
 .st-pill.acc:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+/* anything reached with the Tab key shows a clear outline */
+.st a:focus-visible, .st button:focus-visible, .st summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
 
 /* bar */
 .st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -668,13 +678,14 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 @keyframes st-letter { from { transform: translateY(118%) rotate(9deg); } to { transform: none; } }
 .st-dec { white-space: pre; }
 .st-id .st-links a { opacity: 0; }
-.st.ready .st-id .st-links a { animation: st-pop .75s cubic-bezier(.2, 1.35, .35, 1) calc(1.15s + var(--i) * 85ms) both; }
+.st.ready .st-id .st-links a { animation: st-pop .75s cubic-bezier(.2, 1.35, .35, 1) calc(.55s + var(--i) * 70ms) both; }
 @keyframes st-pop { from { opacity: 0; transform: translateY(14px) scale(.72); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
 @keyframes st-rule { from { transform: scaleX(0); } to { transform: none; } }
 @keyframes st-rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
 .st.now .st-hero * { animation-duration: 1ms !important; animation-delay: 0s !important; }
 .st-id { position: absolute; left: 0; right: 0; top: calc(45% + clamp(32px, 6.2vw, 108px) + 6px); display: grid; justify-items: center; gap: 22px; padding: 0 22px; text-align: center; }
 .st-id p { margin: 0; font-size: clamp(17px, 1.5vw, 23px); line-height: 1.3; letter-spacing: -.02em; }
+.st-id .seek { margin-top: -10px; font-size: clamp(14px, 1.05vw, 16px); letter-spacing: 0; color: var(--mut); max-width: 30em; opacity: 0; transition: opacity .8s .7s; } .st.ready .st-id .seek { opacity: 1; }
 .st-links { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .st-links a { display: inline-flex; align-items: center; gap: 9px; height: 42px; padding: 0 17px 0 14px; border-radius: 999px; font-size: 15px; border: 1px solid var(--ln);
   background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(10px); transition: background .2s, color .2s, border-color .2s, transform .2s cubic-bezier(.2,.7,.2,1); }
