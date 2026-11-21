@@ -5,9 +5,8 @@ type Item = {
   year: string; when: string; name: string; role: string; org?: string;
   stats?: [string, string][]; body: string; tags: string; href?: string; cta?: string;
   /* for its mini card: a screenshot, or a few real rows of its output (rank, position, player, value) */
-  /* a small drawing of its real output: a tiered board (player, position, value, tier), games (favourite, underdog,
-     the favourite's win probability), or the paper's own first lines */
-  board?: [string, string, number, number][]; games?: [string, string, number][]; paper?: { title: string; authors: string[]; ref: string };
+  /* for its mini card: a picture that fills the tile, or `gh` for a plain GitHub mark where no picture exists */
+  img?: string; alt?: string; gh?: boolean;
   /* for a card with no picture: the organisation written out, and where it is */
   mark?: [string, string];
   /* for an experience card: the organisation's logo */
@@ -23,18 +22,15 @@ export const MORE: Item[] = [
   { year: "2026", when: "Sep 2026", name: "Fantasy draft assistant", role: "Side project",
     stats: [["3", "seasons of weekly variance"]],
     body: "Ranks players by floor-adjusted value over replacement, built from three seasons of weekly scoring variance, with a live draft board that tracks picks as they are made.",
-    tags: "Python", href: "https://github.com/adam-zhu1/fantasy-football-draft", cta: "GitHub",
-    /* the top of the board the tool printed for the 2026 draft (board.txt): value over replacement, and its tier */
-    board: [["Jahmyr Gibbs", "RB", 187.9, 1], ["Bijan Robinson", "RB", 179.9, 1], ["Ja’Marr Chase", "WR", 134.4, 1], ["Jaxon Smith-Njigba", "WR", 123.9, 2], ["Puka Nacua", "WR", 121.4, 2], ["Christian McCaffrey", "RB", 119.3, 2], ["Amon-Ra St. Brown", "WR", 115.6, 2]] },
+    tags: "Python", href: "https://github.com/adam-zhu1/fantasy-football-draft", cta: "GitHub", gh: true },
   { year: "2026", when: "Mar 2026", name: "March Madness predictor", role: "Side project",
     body: "A year-aware logistic regression on historical tournament matchups, served through a Streamlit app.",
-    tags: "Python, Streamlit", href: "https://github.com/adam-zhu1/march-madness-2026", cta: "GitHub",
-    /* its first Round of 64 picks for 2026 (round1_predictions_best.csv) */
-    games: [["Duke", "Siena", 97.6], ["Arkansas", "Hawaii", 93.2], ["Nebraska", "Troy", 87.0], ["Vanderbilt", "McNeese St.", 82.2], ["Louisville", "South Florida", 67.3], ["Ohio St.", "TCU", 64.6]] },
+    tags: "Python, Streamlit", href: "https://github.com/adam-zhu1/march-madness-2026", cta: "GitHub", gh: true },
   { year: "2024", when: "2024", name: "Matched binary diagnostic tests", role: "Paper", org: "Mathematics 12(5), 741",
     body: "Statistical tests for proportion difference in one-to-two matched binary diagnostic data, applied to environmental testing for Salmonella in the United States. I joined at the revision stage: manuscript preparation, literature review, and data cleaning.",
     tags: "Lin, Zhu, Wang", href: "https://doi.org/10.3390/math12050741", cta: "Paper",
-    paper: { title: "Statistical Tests for Proportion Difference in One-to-Two Matched Binary Diagnostic Data: Application to Environmental Testing of Salmonella in the United States", authors: ["Hui Lin", "Adam Zhu", "Chong Wang"], ref: "Mathematics 2024, 12(5), 741" } },
+    /* the journal's own banner image, the same one its link shows when shared */
+    img: "/media/orgs/mathematics.webp", alt: "The logo of the journal Mathematics" },
   { year: "2024", when: "Jan to Jun 2024", name: "VR evacuation study", role: "Research intern", org: "VRAC, Iowa State",
     stats: [["454", "simulated evacuation trials"], ["227", "participants"]],
     body: "Fit regression models of time to escape in simulated VR evacuations. Smart audio guidance beat static and adaptive signage by a statistically significant margin. Manuscript in preparation.",
