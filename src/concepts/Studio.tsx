@@ -37,8 +37,6 @@ const ICON: Record<string, ReactNode> = {
   GitHub: <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" /></svg>,
   Email: <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.6" y="3.2" width="12.8" height="9.6" rx="1.6" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="m2.2 4.4 5.8 4.4 5.8-4.4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>,
 };
-/* the rows of the Contact panel after Email: the label, and what is written out for it */
-const CONTACT: [string, string][] = [["GitHub", "github.com/adam-zhu1"], ["LinkedIn", "linkedin.com/in/adam-zhu-cmu"], ["Resume", "Adam-Zhu-Resume.pdf"]];
 /* what he is looking for: on the first screen and again over the contact rows */
 const SEEKING = "Looking for Summer 2027 internships in software engineering, machine learning and data science.";
 const ORDER = ["Resume", "LinkedIn", "GitHub", "Email"].map(l => LINKS.find(x => x.label === l)!);
@@ -591,22 +589,25 @@ export default function Studio() {
         ))}
       </section>
 
-      {/* the page ends on how to reach him: one panel, a labelled row per route, the address written out */}
-      <section className="st-sec st-contact" id="contact">
-        <div className="st-grp">
-          <h2 data-rv>Contact</h2>
-          <p className="avail" data-rv>{SEEKING}</p>
-          <ul className="st-ct">
-            <li data-rv>
-              <a href={LINKS[0].href}><span className="i">Email</span><span className="n">{MAIL}</span><span className="go">→</span></a>
-              <button type="button" className="cp" onClick={copy} aria-live="polite">{copied ? "Copied" : "Copy"}</button>
-            </li>
-            {CONTACT.map(([label, shown]) => { const l = LINKS.find(x => x.label === label)!; return (
-              <li key={label} data-rv><a href={l.href} {...out}><span className="i">{label}</span><span className="n">{shown}</span><span className="go">↗</span></a></li>
-            ); })}
-          </ul>
+      {/* The page ends the way it began: open, centred, on the dots. The first screen says who he is;
+          this one says how to reach him, with the address as the large line, and under it everything a
+          page's end should carry: the links, where he is, when this was last updated, a way back up. */}
+      <section className="st-out" id="contact">
+        <div className="mid">
+          <p className="k" data-rv>Contact</p>
+          <h2 data-rv className="mask"><span>Get in touch</span></h2>
+          <p className="avail" data-rv style={d(1)}>{SEEKING}</p>
+          <div className="addr" data-rv style={d(2)}>
+            <a href={LINKS[0].href}>{MAIL}</a>
+            <button type="button" className="cp" onClick={copy} aria-live="polite">{copied ? "Copied" : "Copy"}</button>
+          </div>
+          <div className="st-links" data-rv style={d(3)}>{ORDER.slice(0, 3).map(l => <a key={l.label} href={l.href} {...out}>{ICON[l.label]}<span>{l.label}</span></a>)}</div>
         </div>
-        <p className="st-end"><span>Adam Zhu, Pittsburgh</span><span>Updated November 2026</span></p>
+        <div className="st-end" role="contentinfo">
+          <span>© 2026 Adam Zhu · Pittsburgh, PA</span>
+          <span>Updated November 2026</span>
+          <a href="#top" onClick={e => { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); }}>Back to top <i>↑</i></a>
+        </div>
       </section>
       </div>
     </div>
@@ -866,11 +867,10 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* each list is a frosted panel: the dots still drift behind it, blurred and dimmed, and never cross the words */
 .st-grp { padding: clamp(22px, 2.6vw, 44px) clamp(18px, 2.6vw, 44px) clamp(8px, 1vw, 16px); border-radius: 30px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--bg) 58%, transparent); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
 @supports (corner-shape: squircle) { .st-grp { corner-shape: squircle; border-radius: 64px; } }
-.st-grp + .st-grp { margin-top: 28px; }
+.st-grp + .st-grp { margin-top: clamp(28px, 4vw, 56px); }
 /* the lists sit in a narrower column than the featured cards, and their cards are small on purpose */
-.st-grp { max-width: 1290px; margin-left: auto; margin-right: auto; }
-.st-minis { margin: 0; padding: 0 0 clamp(12px, 1.4vw, 22px); list-style: none; display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: clamp(10px, 1.1vw, 16px); }
-.st-minis li > * { display: flex; flex-direction: column; height: 100%; padding: 9px 9px 18px; border-radius: 20px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--card) 82%, transparent); transition: border-color .25s, transform .35s cubic-bezier(.16, 1, .3, 1), background .25s; }
+.st-minis { margin: 0; padding: 0 0 clamp(12px, 1.4vw, 22px); list-style: none; display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: clamp(16px, 2vw, 32px); }
+.st-minis li > * { display: flex; flex-direction: column; height: 100%; padding: 12px 12px 24px; border-radius: 22px; border: 1px solid var(--ln); background: color-mix(in srgb, var(--card) 82%, transparent); transition: border-color .25s, transform .35s cubic-bezier(.16, 1, .3, 1), background .25s; }
 @supports (corner-shape: squircle) { .st-minis li > * { corner-shape: squircle; border-radius: 40px; } .st-minis .pic { corner-shape: squircle; border-radius: 28px; } }
 .st-minis a:hover { border-color: color-mix(in srgb, var(--ink) 55%, transparent); transform: translateY(-4px); background: var(--card); }
 .st-minis .pic { aspect-ratio: 16 / 10; overflow: hidden; border-radius: 13px; background: #0b0d12; border: 1px solid var(--ln); display: grid; color: #e9e9ec; }
@@ -882,30 +882,29 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st-minis th { text-align: left; font-weight: 400; color: #7d7d86; padding: 0 0 7px; } .st-minis th:last-child, .st-minis td:last-child { text-align: right; }
 .st-minis td { padding: 5.5px 0; border-top: 1px solid #23242b; white-space: nowrap; } .st-minis td:nth-child(-n+2) { color: #7d7d86; width: 2.3em; }
 .st-minis .cite { align-self: center; padding: 0 16px; display: grid; gap: 7px; } .st-minis .cite b { font-weight: 500; font-size: clamp(22px, 2.1vw, 30px); letter-spacing: -.045em; line-height: 1; } .st-minis .cite span { font-size: 12.5px; line-height: 1.3; color: #9a9aa3; }
-.st-minis .lab { display: flex; justify-content: space-between; margin: 14px 8px 0; font-size: 12.5px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; color: var(--ink); transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
-.st-minis h3 { margin: 7px 8px 0; font-weight: 500; font-size: clamp(17px, 1.35vw, 20px); letter-spacing: -.03em; line-height: 1.18; }
-.st-minis em { margin: 5px 8px 0; font-style: normal; font-size: 12.5px; line-height: 1.3; color: var(--mut); }
-.st-minis p { margin: 9px 8px 0; font-size: 13.5px; line-height: 1.45; color: var(--mut); }
-.st-minis .tg { margin: auto 8px 0; padding-top: 13px; font-size: 12.5px; }
+.st-minis .lab { display: flex; justify-content: space-between; margin: 18px 8px 0; font-size: 13.5px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; color: var(--ink); transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
+.st-minis h3 { margin: 8px 8px 0; font-weight: 500; font-size: clamp(19px, 1.65vw, 25px); letter-spacing: -.03em; line-height: 1.18; }
+.st-minis em { margin: 6px 8px 0; font-style: normal; font-size: 13.5px; line-height: 1.3; color: var(--mut); }
+.st-minis p { margin: 12px 8px 0; font-size: 15px; line-height: 1.45; color: var(--mut); }
+.st-minis .tg { margin: auto 8px 0; padding-top: 18px; font-size: 13.5px; }
 @media (max-width: 1100px) { .st-minis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .st-minis { grid-template-columns: 1fr; } }
 .st-grp h2 { margin: 0 0 20px; font-weight: 500; font-size: clamp(24px, 2.3vw, 34px); line-height: 1; letter-spacing: -.045em; }
 
-.st-contact { padding-bottom: 22px; }
-.st-contact .avail { margin: -6px 0 26px; font-size: clamp(17px, 1.4vw, 21px); line-height: 1.4; letter-spacing: -.015em; color: var(--mut); max-width: 34em; }
-.st-ct { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--ln); }
-.st-ct li { position: relative; border-bottom: 1px solid var(--ln); }
-.st-ct li:last-child { border-bottom: 0; }
-.st-ct a { display: grid; grid-template-columns: 150px minmax(0, 1fr) 40px; gap: 20px; align-items: center; padding: 20px 0; transition: padding .35s cubic-bezier(.2,.7,.2,1), background .25s; }
-.st-ct a:hover { padding-left: 14px; padding-right: 14px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.st-ct .i { font-size: 14px; color: var(--mut); }
-.st-ct .n { font-size: clamp(20px, 1.9vw, 27px); letter-spacing: -.035em; line-height: 1.15; overflow-wrap: anywhere; }
-.st-ct .go { justify-self: end; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ln); display: grid; place-items: center; font-size: 12px; transition: background .2s, color .2s, border-color .2s; }
-.st-ct a:hover .go { background: var(--acc); border-color: var(--acc); color: var(--onacc); }
-.st-ct .cp { all: unset; position: absolute; right: 56px; top: 50%; transform: translateY(-50%); height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--ln); font-size: 13px; cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .2s cubic-bezier(.2,.7,.2,1); }
-.st-ct .cp:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: translateY(calc(-50% - 2px)); }
-.st-ct .cp:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
-.st-end { display: flex; justify-content: space-between; gap: 16px; margin: 26px 0 0; padding: 0 4px; font-size: 14px; color: var(--mut); }
+.st-out { position: relative; min-height: 100svh; display: grid; grid-template-rows: 1fr auto; padding: clamp(90px, 14vh, 170px) 22px 22px; text-align: center; }
+.st-out .mid { align-self: center; display: grid; justify-items: center; padding-bottom: 4vh; }
+.st-out .k { margin: 0 0 18px; font-size: 14px; color: var(--mut); }
+.st-out h2 { margin: 0; font-weight: 500; font-size: clamp(56px, 10.4vw, 180px); line-height: .95; letter-spacing: -.065em; white-space: nowrap; }
+.st-out .avail { margin: 26px 0 0; font-size: clamp(16px, 1.3vw, 20px); line-height: 1.35; letter-spacing: -.015em; color: var(--mut); max-width: 30em; }
+.st-out .addr { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; margin: 30px 0 22px; }
+.st-out .addr a { font-size: clamp(22px, 2.6vw, 40px); letter-spacing: -.04em; line-height: 1.1; border-bottom: 1px solid var(--ln); padding-bottom: 5px; transition: border-color .2s; overflow-wrap: anywhere; }
+.st-out .addr a:hover { border-color: var(--ink); }
+.st-out .cp { all: unset; height: 34px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--ln); font-size: 13px; cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .2s cubic-bezier(.2,.7,.2,1); }
+.st-out .cp:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: translateY(-2px); }
+.st-out .cp:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.st-end { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--ln); font-size: 14px; color: var(--mut); text-align: left; }
+.st-end > :nth-child(2) { text-align: center; } .st-end a { justify-self: end; color: var(--ink); } .st-end a i { font-style: normal; display: inline-block; transition: transform .25s; } .st-end a:hover i { transform: translateY(-3px); }
+@media (max-width: 700px) { .st-end { grid-template-columns: 1fr; text-align: center; } .st-end a { justify-self: center; } .st-out h2 { font-size: 17vw; } }
 
 /* a project's page told in full: why, the pipeline stage by stage, what was hard, where it stands */
 /* this page opens on its title with the reason it exists straight under it, not on a title alone at the foot of an empty screen */
@@ -1006,8 +1005,6 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
   .st-hud .tl { left: 14px; } .st-hud .tr { right: 14px; top: 46px; } .st-hud .bl { left: 14px; bottom: 18px; }
   .st-sec { padding-left: 14px; padding-right: 14px; }
   .st-head { grid-template-columns: 1fr; gap: 16px; align-items: start; }
-  .st-ct a { grid-template-columns: minmax(0, 1fr) 34px; gap: 6px 14px; } .st-ct .i { grid-column: 1; } .st-ct .n { grid-column: 1; } .st-ct .go { grid-column: 2; grid-row: 1 / span 2; }
-  .st-ct .cp { position: static; transform: none; margin: 0 0 16px; } .st-ct .cp:hover { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .st-left, .st-bar nav, .st-theme, .st-bar .st-pill, .st-theme button, .st-mark { transition: none; }
