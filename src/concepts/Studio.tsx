@@ -356,10 +356,6 @@ export default function Studio() {
         <a className="st-mark" href={href(null)} onClick={go(null)}>Adam Zhu</a>
         {proj && <a className="st-pill st-back" href={`${href(null)}#projects`} onClick={go(null, "projects")}><i>←</i> All projects</a>}
       </div>
-      <div className="st-theme" role="group" aria-label="Theme">
-        <button type="button" className={theme === "dark" ? "on" : ""} onClick={() => setTheme("dark")}>dark</button>
-        <button type="button" className={theme === "light" ? "on" : ""} onClick={() => setTheme("light")}>light</button>
-      </div>
       <nav>
         {!proj && <a className="st-pill" href={`${href(null)}#projects`} onClick={go(null, "projects")}>Projects</a>}
         <a className="st-pill" href="/Adam-Zhu-Resume.pdf" {...out}>Resume <i>↗</i></a>
@@ -636,7 +632,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st a:focus-visible, .st button:focus-visible, .st summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
 
 /* bar */
-.st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+.st-bar { position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 64px; padding: 0 22px; display: grid; grid-template-columns: 1fr auto; align-items: center;
   border: 1px solid transparent; border-radius: 22px; opacity: 0; transform: translateY(-10px); transition: opacity .6s .15s, transform .6s .15s cubic-bezier(.2,.7,.2,1); }
 .st.ready .st-bar { opacity: 1; transform: none; transition: opacity .6s, transform .5s cubic-bezier(.16, 1, .3, 1), background .35s, border-color .35s, top .5s cubic-bezier(.16, 1, .3, 1), left .5s cubic-bezier(.16, 1, .3, 1), right .5s cubic-bezier(.16, 1, .3, 1), height .5s cubic-bezier(.16, 1, .3, 1), padding .5s cubic-bezier(.16, 1, .3, 1); }
 /* Scrolling down slides the bar away so nothing sits on top of the page; scrolling up brings it back.

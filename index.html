@@ -18,15 +18,9 @@
     />
     <meta name="author" content="Adam Zhu" />
     <meta name="theme-color" content="#070708" />
-    <!-- the theme before first paint, so nobody sees a flash of the other one: what they
-         chose last time, else dark -->
+    <!-- the site is dark only; this is set before first paint and ignores any older saved choice -->
     <script>
-      (function () {
-        var t; try { t = localStorage.getItem("theme"); } catch (e) {}
-        if (t !== "light" && t !== "dark") t = "dark";
-        document.documentElement.dataset.theme = t;
-        var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t === "light" ? "#f1f1ee" : "#070708";
-      })();
+      document.documentElement.dataset.theme = "dark";
     </script>
     <link rel="canonical" href="https://adamzhu.dev/" />
 
