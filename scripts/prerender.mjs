@@ -19,50 +19,8 @@ import { join } from "node:path";
 const DIST = new URL("../dist/", import.meta.url).pathname;
 const ORIGIN = "https://adamzhu.dev";
 
-const ROUTES = [
-  {
-    dir: "trueline",
-    title: "TrueLine | A bowling ball tracker for iPhone, by Adam Zhu",
-    description:
-      "TrueLine turns one iPhone propped behind the approach into a bowling ball tracker. An on-device detector finds the ball frame by frame, a calibrated homography maps it onto real lane coordinates, and it reports entry board, entry angle, speed and breakpoint. Built by Adam Zhu.",
-    image: `${ORIGIN}/og-trueline.png`,
-    ld: {
-      "@context": "https://schema.org", "@type": "SoftwareApplication",
-      name: "TrueLine", applicationCategory: "SportsApplication",
-      operatingSystem: "iOS", url: `${ORIGIN}/trueline/`,
-      downloadUrl: "https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797",
-      author: { "@type": "Person", name: "Adam Zhu", url: `${ORIGIN}/` },
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    },
-    fallback: `
-      <h1>TrueLine</h1>
-      <p>
-        TrueLine is a native iOS app that turns one iPhone, propped behind the approach,
-        into a bowling ball tracker. It records a throw, finds the ball frame by frame with
-        an on-device Core ML detector, maps the path onto real lane coordinates through a
-        user-placed calibration, and reports the numbers coaches use: board at the arrows,
-        breakpoint, entry board, entry angle and speed. Everything runs on the phone, with
-        no cloud processing. Built by Adam Zhu and released on the App Store in August 2026.
-      </p>
-      <h2>How it works</h2>
-      <ol>
-        <li>Capture: AVFoundation records one throw in portrait from behind the approach.</li>
-        <li>Detection: a single-class YOLO detector, fine-tuned on hand-labeled frames and
-            exported to Core ML, finds the ball in each frame.</li>
-        <li>Tracking: a constant-velocity Kalman filter joins flickering detections into one
-            continuous path, with a gate that widens during detection gaps.</li>
-        <li>Lane mapping: the calibration homography converts each sample to board and feet,
-            so every metric is a lane measurement rather than a pixel measurement.</li>
-        <li>Metric extraction: Savitzky-Golay smoothing, interpolated line crossings and
-            least-squares slopes produce the reported numbers.</li>
-      </ol>
-      <h2>Links</h2>
-      <ul>
-        <li><a href="https://apps.apple.com/us/app/trueline-bowling-ball-tracker/id6801953797">TrueLine on the App Store</a></li>
-        <li><a href="${ORIGIN}/">Adam Zhu, adamzhu.dev</a></li>
-      </ul>`,
-  },
-];
+/* /trueline/ used to be pre-rendered here; it now redirects to truelinebowling.com (public/trueline/index.html) */
+const ROUTES = [];
 
 const shell = readFileSync(join(DIST, "index.html"), "utf8");
 
