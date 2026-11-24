@@ -384,7 +384,7 @@ export default function Studio() {
 
           {S.shots && <section className={`pj-shots ${proj.demo}`} aria-label={`Screenshots of ${proj.name}`}>
             <h2>What it looks like</h2>
-            <div className="row">{S.shots.map((s, i) => <figure key={s.src} style={{ "--r": s.w / s.h } as CSSProperties}><img src={s.src} width={s.w} height={s.h} alt={s.cap} loading="lazy" /><figcaption><span>{i + 1}</span>{s.cap}</figcaption></figure>)}</div>
+            <div className="row">{S.shots.map(s => <figure key={s.src} style={{ "--r": s.w / s.h } as CSSProperties}><img src={s.src} width={s.w} height={s.h} alt={s.cap} loading="lazy" /><figcaption>{s.cap}</figcaption></figure>)}</div>
           </section>}
 
           <section className="pj-why">
@@ -532,7 +532,7 @@ export default function Studio() {
                       {w.stack && <p className="stack">{w.stack}</p>}
                       <p className="by">{[w.role, w.when].filter(Boolean).join(" · ")}</p>
                       <div className="acts">
-                        <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span><i>→</i></a>
+                        <a className="open" href={href(slug(w))} onClick={go(slug(w))}><span>View {w.name}</span></a>
                         {w.links?.filter(l => !l.page).map(l => <a key={l.label} className="st-pill" href={l.href} {...out}>{l.label} <i>↗</i></a>)}
                       </div>
                     </div>
@@ -560,7 +560,7 @@ export default function Studio() {
                         : m.gh ? <span className="ph" aria-hidden="true">{ICON.GitHub}</span>
                         : m.mark && <div className="cite"><b>{m.mark[0]}</b><span>{m.mark[1]}</span></div>}
                     </div>
-                    <span className="lab">{m.label}{(m.href || m.page) && <i>{m.page ? "→" : "↗"}</i>}</span>
+                    <span className="lab">{m.label}{m.href && !m.page && <i>↗</i>}</span>
                     <h3>{m.name}</h3>
                     {m.sub && <em>{m.sub}</em>}
                     <p>{m.body}</p>
@@ -583,7 +583,6 @@ export default function Studio() {
           page's end should carry: the links, where he is, when this was last updated, a way back up. */}
       <section className="st-out" id="contact">
         <div className="mid">
-          <p className="k" data-rv>Contact</p>
           <h2 data-rv className="mask"><span>Get in touch</span></h2>
           <p className="avail" data-rv style={d(1)}>{SEEKING}</p>
           <div className="addr" data-rv style={d(2)}>
@@ -595,7 +594,7 @@ export default function Studio() {
         <div className="st-end" role="contentinfo">
           <span>© 2026 Adam Zhu · Pittsburgh, PA</span>
           <span>Updated November 2026</span>
-          <a href="#top" onClick={e => { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); }}>Back to top <i>↑</i></a>
+          <a href="#top" onClick={e => { e.preventDefault(); scrollTo({ top: 0, behavior: "smooth" }); }}>Back to top</a>
         </div>
       </section>
       </div>
@@ -698,7 +697,7 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 .st h2 { margin: 0; font-weight: 400; font-size: clamp(54px, 8.4vw, 136px); line-height: .95; letter-spacing: -.055em; }
 .st h2 i { display: inline-block; font-size: .8em; }
 .st-head p { margin: 0 0 12px; font-size: 18px; letter-spacing: -.015em; line-height: 1.4; max-width: 30em; }
-[data-rv] { opacity: 0; transform: translateY(34px); transition: opacity .8s var(--d, 0ms), transform 1s var(--d, 0ms) cubic-bezier(.2,.7,.2,1); }
+[data-rv] { opacity: 0; transform: translateY(10px); transition: opacity .45s var(--d, 0ms), transform .5s var(--d, 0ms) cubic-bezier(.2,.7,.2,1); }
 [data-rv].on { opacity: 1; transform: none; }
 
 /* the dots stay behind the whole page; the first screen's words fade as it scrolls away */
