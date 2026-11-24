@@ -557,7 +557,7 @@ export default function Studio() {
                     <div className="pic">
                       {m.logo ? <img className={`logo${m.white ? " white" : ""}`} src={m.logo} alt={`${m.mark?.[0]} logo`} loading="lazy" />
                         : m.img ? <img src={m.img} alt={m.alt} loading="lazy" />
-                        : m.gh ? <span className="ph" aria-hidden="true">{ICON.GitHub}</span>
+                        : m.gh && m.href ? <div className="repo" aria-hidden="true"><b><span>{m.href.split("/")[3]}/</span>{m.href.split("/")[4]}</b><i>{ICON.GitHub}</i></div>
                         : m.mark && <div className="cite"><b>{m.mark[0]}</b><span>{m.mark[1]}</span></div>}
                     </div>
                     <span className="lab">{m.label}{m.href && !m.page && <i>↗</i>}</span>
@@ -878,6 +878,11 @@ html[data-theme="light"]:has(.st), html[data-theme="light"]:has(.st) body { back
 /* an organisation's logo sits small in the middle of its tile; NIST's one-colour mark is shown in white */
 .st-minis .pic img.logo { place-self: center; width: 64%; height: 56%; object-fit: contain; object-position: 50% 50%; } .st-minis .pic img.logo.white { filter: brightness(0) invert(1); width: 78%; }
 /* where a project has no picture, its tile carries a quiet GitHub mark, the way an empty profile shows a silhouette */
+/* a repo's card in the site's own colours: owner/name the way GitHub writes it, the mark in the corner */
+.st-minis .repo { display: grid; align-content: space-between; padding: 8% 9%; }
+.st-minis .repo b { font-weight: 600; font-size: clamp(17px, 1.75vw, 27px); line-height: 1.16; letter-spacing: -.02em; overflow-wrap: anywhere; color: #e9e9ec; }
+.st-minis .repo b span { display: block; font-weight: 400; color: #8b8d98; }
+.st-minis .repo i { justify-self: end; display: grid; color: #4a4c57; transition: color .3s; } .st-minis .repo svg { width: clamp(26px, 2.4vw, 38px); height: auto; } .st-minis a:hover .repo i { color: #e9e9ec; }
 .st-minis .ph { place-self: center; display: grid; color: #3b3d47; transition: color .3s; } .st-minis .ph svg { width: clamp(54px, 5.2vw, 84px); height: auto; } .st-minis a:hover .ph { color: #8b8d98; }
 .st-minis .cite { align-self: center; padding: 0 16px; display: grid; gap: 7px; } .st-minis .cite b { font-weight: 500; font-size: clamp(22px, 2.1vw, 30px); letter-spacing: -.045em; line-height: 1; } .st-minis .cite span { font-size: 12.5px; line-height: 1.3; color: #9a9aa3; }
 .st-minis .lab { display: flex; justify-content: space-between; margin: 18px 8px 0; font-size: 13.5px; color: var(--mut); } .st-minis .lab i { font-style: normal; font-size: 11px; color: var(--ink); transition: transform .25s; } .st-minis a:hover .lab i { transform: translate(2px, -2px); }
