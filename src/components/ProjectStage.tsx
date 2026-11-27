@@ -25,8 +25,8 @@ function usePinned() {
   return on;
 }
 
-export const PROJECTS_INTRO = "An iPhone app on the App Store, a Mac app built at a hackathon, and a summer of research at NIST.";
-const KINDS = ["iPhone app, on the App Store", "Mac app, HackCMU 2026", "Research internship, summer 2026"];
+export const PROJECTS_INTRO = "An iPhone app on the App Store, a Mac app, and a summer of research at NIST.";
+const KINDS = ["iPhone app, on the App Store", "Mac app", "Research internship, summer 2026"];
 
 /* The automated share of all 1,039,639 portal requests at each stage of the cleaning, checked
    against the analysis output. Only aggregates: no IPs, schedules or search phrases. The last
@@ -160,8 +160,8 @@ export function ProjectStage({ active, onActive }: { active: number; onActive: (
         around the problem, and a written explanation arrives in seconds, then an animation made for
         that exact problem about a minute later.
       </p>
-      <p className="meta">Python, Go, LangGraph, Manim · HackCMU 2026</p>
-      <p className="result">Built in two days at HackCMU, team of four. I built the Mac app.</p>
+      <p className="meta">Python, Go, LangGraph, Manim</p>
+      <p className="result">Built in two days. I designed the AI agent workflow and built the desktop app.</p>
       <div className="ctas">
         <a className="store" {...out} href={CLARITY_SITE}>Clarity&rsquo;s site<i aria-hidden="true">&#8599;</i></a>
       </div>
